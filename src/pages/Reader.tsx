@@ -51,9 +51,9 @@ export default function Reader() {
       if (!storyId) return;
       setGenerating(true);
       
-      const directorSettings = {
-        mood: mood > 50 ? 'exciting' : 'calm' as const,
-        humor: humor > 50 ? 'funny' : 'serious' as const,
+      const directorSettings: { mood: 'calm' | 'exciting'; humor: 'serious' | 'funny' } = {
+        mood: mood > 50 ? 'exciting' : 'calm',
+        humor: humor > 50 ? 'funny' : 'serious',
       };
 
       const result = await generatePage(storyId, directorSettings);
