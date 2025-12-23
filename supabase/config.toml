@@ -1,4 +1,4 @@
 project_id = "rtmcisfdtnmdytvnmptx"
 
 [functions.generate-page]
-verify_jwt = true
+verify_jwt = false
