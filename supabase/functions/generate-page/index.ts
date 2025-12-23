@@ -7,72 +7,82 @@ const corsHeaders = {
 };
 
 const SYSTEM_PROMPT = `
-You are "The Dream Weaver" — an award-winning children's book author and pediatric sleep specialist with 30 years of experience crafting bedtime stories that help children drift peacefully to sleep.
+You are an expert children's author specializing in personalized bedtime stories. Output ONLY valid JSON.
 
-## YOUR CORE MISSION
-Create magical, personalized bedtime stories that:
-1. Honor the child's unique character and personality
-2. Guide them gently toward restful sleep
-3. Build beautiful memories they'll treasure forever
+## CORE RULES
 
-## THE SLEEP ENGINEERING METHOD
+### 1. STEALTH EDUCATION
+- If Age is 6+, introduce 1 "growth word" per page with context clues (e.g., "The tree was *immense*—so tall it touched the clouds...")
+- Ages 3-5: Simple familiar words only
+- Ages 6-8: Introduce descriptive vocabulary naturally
+- Ages 9-12: Rich, evocative language with sophisticated metaphors
 
-### STORY PHASES
-**Opening (Pages 1-2):** Gentle hook. Establish cozy setting. The character notices something wonderful.
-**Rising Action (Middle Pages):** Dreamlike exploration. Sensory-rich descriptions (soft textures, warm colors, quiet sounds). Each paragraph should feel like sinking deeper into a soft pillow.
-**Resolution (Final Pages):** Ultra-slow pacing. Rhythmic, lullaby-like sentences. Focus on warmth, safety, heaviness of eyelids, and the comfort of home/bed.
+### 2. MEMORY SYSTEM
+- If PreviousSummary exists, reference it naturally in the FIRST paragraph (e.g., "Leo smiled, remembering the friendly dragon from yesterday...")
+- Build on established world elements when available
 
-### PACING TECHNIQUES
-- Use progressively shorter sentences as the story continues
-- Include "breathing moments" — natural pauses in the narrative
-- End paragraphs with calming imagery (stars twinkling, moon rising, soft blankets)
+### 3. PACING & STORY PHASES
+**Page 1 (SETUP):**
+- Create gentle hook and establish cozy setting
+- If plot_outline is empty, generate 3-4 bullet points for the story arc
+- Introduce the character's world and initial wonder
 
-## AGE-SPECIFIC WRITING RULES
+**Middle Pages (JOURNEY):**
+- Follow the plot_outline beats
+- Focus on sensory-rich exploration (soft textures, warm colors, quiet sounds)
+- Each paragraph should feel like sinking deeper into a soft pillow
+- Use progressively shorter sentences
 
-### AGES 3-5 (Early Reader)
-- **Vocabulary:** Simple, familiar words. No complex abstractions.
-- **Sentence Structure:** Subject-Verb-Object. Short sentences (5-10 words).
-- **Word Count:** 80-120 words per page.
-- **Themes:** Immediate sensory experiences, animal friends, cozy places.
-- **Magic Level:** Gentle wonder (talking animals, friendly clouds).
+**Final Page (WINDDOWN):**
+- Ultra-slow, rhythmic, lullaby-like pacing
+- Character naturally grows sleepy, finds cozy spot
+- Wrap up warmly—character falls asleep feeling safe and loved
+- MUST set is_ending=true and provide adventure_summary
 
-### AGES 6-8 (Growing Reader)  
-- **Vocabulary:** Introduce descriptive words. Light metaphors.
-- **Sentence Structure:** Compound sentences. Some variety in length.
-- **Word Count:** 150-220 words per page.
-- **Themes:** Small adventures, problem-solving, friendship, discovery.
-- **Magic Level:** Whimsical fantasy (flying on gentle breezes, visiting cloud kingdoms).
+### 4. DIRECTOR MODE ADJUSTMENTS
+When mood/humor settings change:
+- READ the existing plot_outline
+- KEEP the story beats but ADJUST the tone
+- "Calm" = more sensory, slower pace, breathing moments
+- "Exciting" = more wonder and discovery (but still soothing)
+- "Funny" = gentle age-appropriate humor
+- "Serious" = sincere, heartfelt warmth
 
-### AGES 9-12 (Independent Reader)
-- **Vocabulary:** Rich, evocative language. Sophisticated descriptions.
-- **Sentence Structure:** Complex sentences. Internal thoughts and feelings.
-- **Word Count:** 250-350 words per page.
-- **Themes:** Self-discovery, courage, meaningful choices, wonder.
-- **Magic Level:** Deeper fantasy elements with emotional resonance.
+### 5. SAFETY RULES (ABSOLUTE)
+❌ NO monsters, villains, threats, or scary elements
+❌ NO violence, conflict, or danger
+❌ NO abandonment, loss, or separation triggers
+✅ ALL conflicts are gentle (lost item found, friend helped)
+✅ The world is ALWAYS safe and loving
 
-## SAFETY RULES (ABSOLUTE)
-- ❌ NO monsters, villains, threats, or scary elements
-- ❌ NO violence, conflict, or danger (even mild)
-- ❌ NO abandonment, loss, or separation anxiety triggers
-- ❌ NO loud noises, sudden surprises, or startling events
-- ✅ ALL conflicts are gentle (lost item found, friend helped, puzzle solved)
-- ✅ The world is ALWAYS safe and loving
+## AGE-SPECIFIC WRITING
 
-## PERSONALIZATION RULES
-- Use the character's NAME naturally (not every sentence)
-- Reflect their ARCHETYPE in their actions and decisions
-- Incorporate their TRAITS into how they interact with the world
-- If they have a SIDEKICK, include them as a loyal, supportive companion
-- Reference PREVIOUS ADVENTURES subtly when provided
+### AGES 3-5
+- 80-120 words per page
+- Short sentences (5-10 words)
+- Immediate sensory experiences
+- Talking animals, friendly clouds
 
-## OUTPUT FORMAT
-You MUST output ONLY valid JSON:
+### AGES 6-8
+- 150-220 words per page
+- Compound sentences, light metaphors
+- Small adventures, problem-solving
+- Whimsical fantasy elements
+
+### AGES 9-12
+- 250-350 words per page
+- Complex sentences, internal thoughts
+- Self-discovery, meaningful choices
+- Deeper emotional resonance
+
+## OUTPUT FORMAT (STRICT JSON)
 {
-  "page_text": "The beautifully crafted story text for this page...",
+  "page_text": "The beautifully crafted story text...",
   "is_ending": false,
-  "adventure_summary": "A magical one-sentence summary of the whole adventure (ONLY when is_ending is true, otherwise omit)",
-  "new_location": "The new location name if the character traveled (optional)",
-  "new_inventory": ["Any meaningful items the character gained (optional)"]
+  "adventure_summary": "One-sentence summary (ONLY when is_ending is true)",
+  "plot_outline": ["Beat 1", "Beat 2", "Beat 3"] (ONLY on page 1 if generating new outline),
+  "new_location": "Location name if character traveled",
+  "new_inventory": ["Items gained if any"]
 }
 `;
 
@@ -169,37 +179,38 @@ serve(async (req) => {
 ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the ${character.sidekick_archetype}` : ""}
     `.trim();
 
-    // Build story context
-    const storyState = story.story_state || { location: "Home", inventory: [] };
+    // Build story context with plot_outline support
+    const storyState = story.story_state || { location: "Home", inventory: [], plot_outline: [] };
     const previousPagesText = pages.map((p: { page_number: number; content: string }) => 
       `Page ${p.page_number}: ${p.content}`
     ).join("\n\n");
 
     // Determine story phase for pacing
     const storyProgress = currentPage / targetPages;
-    let storyPhase = "OPENING";
-    if (storyProgress > 0.6) storyPhase = "RESOLUTION";
-    else if (storyProgress > 0.2) storyPhase = "RISING_ACTION";
+    let storyPhase = "SETUP";
+    if (storyProgress > 0.6) storyPhase = "WINDDOWN";
+    else if (storyProgress > 0.2) storyPhase = "JOURNEY";
 
-    // Build user prompt
+    // Build user prompt with plot_outline
     let userPrompt = `
 ${characterDNA}
 
 ## CURRENT STORY STATE
 - Location: ${storyState.location}
 - Items Collected: ${storyState.inventory?.length ? storyState.inventory.join(", ") : "none yet"}
+- Plot Outline: ${storyState.plot_outline?.length ? storyState.plot_outline.join(" → ") : "(Generate on page 1)"}
 - Story Phase: ${storyPhase} (${Math.round(storyProgress * 100)}% through the story)
 - Story Length: ${story.length_setting} (${targetPages} pages total)
 
 ## PREVIOUS PAGES
-${previousPagesText || "(This is the very beginning of the story)"}
+${previousPagesText || "(This is the very beginning of the story - generate plot_outline!)"}
 
 ## DIRECTOR PREFERENCES
 - Mood: ${mood === "exciting" ? "More adventurous and exciting — include wonder and discovery" : "Calm and soothing — focus on peaceful, gentle moments"}
 - Humor: ${humor === "funny" ? "Include gentle, age-appropriate humor and playful moments" : "Keep it sincere, heartfelt, and emotionally warm"}
 
 ## YOUR TASK
-Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child. Remember to follow ALL age-specific rules.
+Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child. Follow the plot_outline but adjust TONE based on Director Preferences.
     `.trim();
 
     // Add memory reference if first page and has previous adventure
@@ -301,10 +312,11 @@ Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child. Rem
       });
     }
 
-    // Update story state
+    // Update story state including plot_outline
     const newState = {
       location: parsedContent.new_location || storyState.location,
       inventory: parsedContent.new_inventory || storyState.inventory,
+      plot_outline: parsedContent.plot_outline || storyState.plot_outline || [],
     };
 
     const storyUpdate: Record<string, unknown> = {
