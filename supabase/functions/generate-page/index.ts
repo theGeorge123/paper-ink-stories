@@ -158,11 +158,15 @@ serve(async (req) => {
 
     // Build character DNA
     const character = story.characters;
+    const ageBand = character.age_band || "6-8";
+    
     const characterDNA = `
-Character: ${character.name}
-Archetype: ${character.archetype}
-Traits: ${character.traits.join(", ")}
-${character.sidekick_name ? `Sidekick: ${character.sidekick_name} (${character.sidekick_archetype})` : ""}
+## CHARACTER PROFILE
+- Name: ${character.name}
+- Age Band: ${ageBand} years old (FOLLOW THE AGE-SPECIFIC RULES FOR THIS AGE GROUP)
+- Archetype: ${character.archetype}
+- Personality Traits: ${character.traits.join(", ")}
+${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the ${character.sidekick_archetype}` : ""}
     `.trim();
 
     // Build story context
@@ -171,21 +175,31 @@ ${character.sidekick_name ? `Sidekick: ${character.sidekick_name} (${character.s
       `Page ${p.page_number}: ${p.content}`
     ).join("\n\n");
 
+    // Determine story phase for pacing
+    const storyProgress = currentPage / targetPages;
+    let storyPhase = "OPENING";
+    if (storyProgress > 0.6) storyPhase = "RESOLUTION";
+    else if (storyProgress > 0.2) storyPhase = "RISING_ACTION";
+
     // Build user prompt
     let userPrompt = `
 ${characterDNA}
 
-Current Location: ${storyState.location}
-Inventory: ${storyState.inventory?.join(", ") || "none"}
+## CURRENT STORY STATE
+- Location: ${storyState.location}
+- Items Collected: ${storyState.inventory?.length ? storyState.inventory.join(", ") : "none yet"}
+- Story Phase: ${storyPhase} (${Math.round(storyProgress * 100)}% through the story)
+- Story Length: ${story.length_setting} (${targetPages} pages total)
 
-Story so far:
-${previousPagesText || "(Beginning of story)"}
+## PREVIOUS PAGES
+${previousPagesText || "(This is the very beginning of the story)"}
 
-Director settings:
-- Mood: ${mood === "exciting" ? "More adventurous and exciting" : "Calm and soothing"}
-- Humor: ${humor === "funny" ? "Include gentle humor" : "Keep it sincere and heartfelt"}
+## DIRECTOR PREFERENCES
+- Mood: ${mood === "exciting" ? "More adventurous and exciting — include wonder and discovery" : "Calm and soothing — focus on peaceful, gentle moments"}
+- Humor: ${humor === "funny" ? "Include gentle, age-appropriate humor and playful moments" : "Keep it sincere, heartfelt, and emotionally warm"}
 
-Generate page ${currentPage} of ${targetPages}.
+## YOUR TASK
+Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child. Remember to follow ALL age-specific rules.
     `.trim();
 
     // Add memory reference if first page and has previous adventure

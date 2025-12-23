@@ -24,10 +24,17 @@ const ARCHETYPES = [
 
 const TRAITS = ['Brave', 'Curious', 'Funny', 'Kind', 'Clever', 'Creative', 'Adventurous', 'Gentle'];
 
+const AGE_BANDS = [
+  { id: '3-5', label: 'Ages 3-5', emoji: '🧸', desc: 'Simple & cozy stories' },
+  { id: '6-8', label: 'Ages 6-8', emoji: '📚', desc: 'Magical adventures' },
+  { id: '9-12', label: 'Ages 9-12', emoji: '🌟', desc: 'Rich, immersive tales' },
+];
+
 export default function CreateCharacter() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [archetype, setArchetype] = useState('');
+  const [ageBand, setAgeBand] = useState('6-8');
   const [traits, setTraits] = useState<string[]>([]);
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
@@ -52,6 +59,7 @@ export default function CreateCharacter() {
       user_id: user.id,
       name,
       archetype,
+      age_band: ageBand,
       traits,
       icon: archetype,
       sidekick_name: sidekickName || null,
@@ -67,7 +75,7 @@ export default function CreateCharacter() {
     }
   };
 
-  const canProceed = step === 1 ? name && archetype : step === 2 ? traits.length > 0 : true;
+  const canProceed = step === 1 ? name && archetype && ageBand : step === 2 ? traits.length > 0 : true;
 
   return (
     <div className="min-h-screen bg-background paper-texture">
@@ -98,7 +106,8 @@ export default function CreateCharacter() {
                 className="mb-6 h-12 text-lg"
               />
 
-              <div className="grid grid-cols-4 gap-3">
+              <p className="text-sm text-muted-foreground mb-3">Choose their form</p>
+              <div className="grid grid-cols-4 gap-3 mb-6">
                 {ARCHETYPES.map((a) => (
                   <button
                     key={a.id}
@@ -108,6 +117,27 @@ export default function CreateCharacter() {
                     <a.icon className="w-6 h-6 mb-1" />
                     <span className="text-xs">{a.label}</span>
                   </button>
+                ))}
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-3">Child's age</p>
+              <div className="grid grid-cols-3 gap-3">
+                {AGE_BANDS.map((age) => (
+                  <motion.button
+                    key={age.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setAgeBand(age.id)}
+                    className={`flex flex-col items-center gap-1 p-4 rounded-xl border transition-all ${
+                      ageBand === age.id
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                        : 'border-border/50 bg-background/80 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-2xl">{age.emoji}</span>
+                    <span className="text-sm font-medium text-foreground">{age.label}</span>
+                    <span className="text-xs text-muted-foreground">{age.desc}</span>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>

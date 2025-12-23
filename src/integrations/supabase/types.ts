@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       characters: {
         Row: {
+          age_band: string
           archetype: string
           created_at: string
           icon: string
@@ -28,6 +29,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age_band?: string
           archetype: string
           created_at?: string
           icon?: string
@@ -40,6 +42,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age_band?: string
           archetype?: string
           created_at?: string
           icon?: string
