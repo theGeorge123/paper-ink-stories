@@ -30,6 +30,7 @@ interface Character {
   id: string;
   name: string;
   archetype: string;
+  age_band?: string;
   traits: string[];
   sidekick_name: string | null;
   sidekick_archetype: string | null;

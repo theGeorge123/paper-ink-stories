@@ -17,6 +17,12 @@ const ARCHETYPES = [
   { id: 'dragon', icon: Flame, label: 'Dragon' },
 ];
 
+const AGE_BANDS = [
+  { id: '3-5', label: '3-5', emoji: '🧸' },
+  { id: '6-8', label: '6-8', emoji: '📚' },
+  { id: '9-12', label: '9-12', emoji: '🌟' },
+];
+
 interface Character {
   id: string;
   name: string;
@@ -24,6 +30,7 @@ interface Character {
   traits: string[];
   sidekick_name: string | null;
   sidekick_archetype: string | null;
+  age_band?: string;
 }
 
 interface EditCharacterModalProps {
@@ -41,6 +48,7 @@ export default function EditCharacterModal({
 }: EditCharacterModalProps) {
   const [name, setName] = useState(character.name);
   const [archetype, setArchetype] = useState(character.archetype);
+  const [ageBand, setAgeBand] = useState(character.age_band || '6-8');
   const [sidekickName, setSidekickName] = useState(character.sidekick_name || '');
   const [saving, setSaving] = useState(false);
 
@@ -57,6 +65,7 @@ export default function EditCharacterModal({
       .update({
         name: name.trim(),
         archetype,
+        age_band: ageBand,
         sidekick_name: sidekickName.trim() || null,
       })
       .eq('id', character.id);
@@ -117,6 +126,34 @@ export default function EditCharacterModal({
                     <Icon className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span className={`text-xs ${isSelected ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
                       {arch.label}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Age Band */}
+          <div className="space-y-2">
+            <Label>Child's Age</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {AGE_BANDS.map((age) => {
+                const isSelected = ageBand === age.id;
+                return (
+                  <motion.button
+                    key={age.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setAgeBand(age.id)}
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                      isSelected 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border/50 bg-background/50 hover:border-border'
+                    }`}
+                  >
+                    <span className="text-lg">{age.emoji}</span>
+                    <span className={`text-xs ${isSelected ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                      {age.label}
                     </span>
                   </motion.button>
                 );
