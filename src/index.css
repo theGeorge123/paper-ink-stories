@@ -53,6 +53,14 @@
     /* Glass effect */
     --glass-bg: hsl(40 33% 98% / 0.8);
     --glass-border: hsl(40 20% 88% / 0.5);
+
+    /* Ending screen */
+    --night-sky: 220 26% 14%;
+    --night-text: 40 20% 95%;
+    
+    /* Book cover */
+    --book-spine: 30 20% 75%;
+    --book-paper: 40 33% 97%;
   }
 
   .dark {
@@ -148,6 +156,47 @@
 }
 
 @layer components {
+  /* Book cover card styling */
+  .book-cover {
+    @apply relative overflow-hidden rounded-lg;
+    aspect-ratio: 3 / 4;
+    background: hsl(var(--book-paper));
+    box-shadow: 
+      -4px 0 0 0 hsl(var(--book-spine)),
+      -6px 0 0 0 hsl(30 20% 65%),
+      0 2px 4px hsl(var(--ink) / 0.08),
+      0 8px 16px hsl(var(--ink) / 0.08),
+      0 16px 32px hsl(var(--ink) / 0.12);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .book-cover::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--ink) / 0.08) 0%,
+      transparent 100%
+    );
+    pointer-events: none;
+  }
+
+  .book-cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      hsl(40 50% 100% / 0.15) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+  }
+
   /* Character card styling */
   .character-card {
     @apply relative overflow-hidden rounded-2xl;

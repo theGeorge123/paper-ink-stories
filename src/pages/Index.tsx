@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import { Plus, BookOpen, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import CharacterCarousel from '@/components/CharacterCarousel';
 
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -23,7 +24,7 @@ export default function Index() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('characters')
-        .select('*, stories(*)')
+        .select('*, stories(id, is_active, last_summary)')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;
@@ -31,10 +32,25 @@ export default function Index() {
     enabled: !!user,
   });
 
+  const handleCharacterUpdated = () => {
+    queryClient.invalidateQueries({ queryKey: ['characters', user?.id] });
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-background paper-texture flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent"
+          />
+          <span className="text-muted-foreground font-serif">Loading your library...</span>
+        </motion.div>
       </div>
     );
   }
@@ -43,53 +59,85 @@ export default function Index() {
     <div className="min-h-screen bg-background paper-texture">
       <header className="px-6 py-8">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex items-center gap-3">
+          <motion.div 
+            className="flex items-center gap-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
             <BookOpen className="w-7 h-7 text-primary" />
             <h1 className="font-serif text-2xl text-foreground">Paper & Ink</h1>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => supabase.auth.signOut()}
-            className="text-muted-foreground"
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileTap={{ scale: 0.95 }}
           >
-            Sign Out
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => supabase.auth.signOut()}
+              className="text-muted-foreground"
+            >
+              Sign Out
+            </Button>
+          </motion.div>
         </div>
       </header>
 
       <main className="px-6 pb-24 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <motion.div 
+          className="flex items-center justify-between mb-8"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <h2 className="font-serif text-xl text-foreground">Your Characters</h2>
-          <Button onClick={() => navigate('/create')} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" />
-            New Hero
-          </Button>
-        </div>
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button onClick={() => navigate('/create')} size="sm" className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Hero
+            </Button>
+          </motion.div>
+        </motion.div>
 
         {characters && characters.length > 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
             className="py-4"
           >
-            <CharacterCarousel characters={characters} />
+            <CharacterCarousel 
+              characters={characters} 
+              onCharacterUpdated={handleCharacterUpdated}
+            />
           </motion.div>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
             className="text-center py-16"
           >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
-              <Sparkles className="w-10 h-10 text-muted-foreground" />
-            </div>
-            <h3 className="font-serif text-xl text-foreground mb-2">No characters yet</h3>
-            <p className="text-muted-foreground mb-6">Create your first hero to begin the adventure</p>
-            <Button onClick={() => navigate('/create')} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Create Character
-            </Button>
+            <motion.div 
+              className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-6"
+              animate={{ 
+                scale: [1, 1.05, 1],
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            >
+              <Sparkles className="w-12 h-12 text-primary" />
+            </motion.div>
+            <h3 className="font-serif text-2xl text-foreground mb-3">No characters yet</h3>
+            <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
+              Create your first hero to begin magical bedtime adventures
+            </p>
+            <motion.div whileTap={{ scale: 0.98 }}>
+              <Button onClick={() => navigate('/create')} size="lg" className="gap-2">
+                <Plus className="w-5 h-5" />
+                Create Your First Hero
+              </Button>
+            </motion.div>
           </motion.div>
         )}
       </main>

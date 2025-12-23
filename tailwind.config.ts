@@ -57,6 +57,7 @@ export default {
         gold: "hsl(var(--gold))",
         slate: "hsl(var(--slate))",
         cream: "hsl(var(--cream))",
+        night: "hsl(var(--night-sky))",
       },
       borderRadius: {
         lg: "var(--radius)",
