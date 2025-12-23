@@ -1,96 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Paper & Ink Design System */
+    --background: 40 33% 98%; /* Warm cream #FDFBF7 */
+    --foreground: 215 23% 23%; /* Soft charcoal #2D3748 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 40 30% 96%;
+    --card-foreground: 215 23% 23%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 40 33% 98%;
+    --popover-foreground: 215 23% 23%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Muted Gold as primary */
+    --primary: 38 65% 66%; /* #E2B96F */
+    --primary-foreground: 215 23% 18%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Soft Slate Blue as secondary */
+    --secondary: 197 35% 74%; /* #A5C4D4 */
+    --secondary-foreground: 215 23% 18%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 215 15% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 38 65% 66%;
+    --accent-foreground: 215 23% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 38 65% 66%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Custom tokens */
+    --ink: 215 23% 23%;
+    --paper: 40 33% 98%;
+    --gold: 38 65% 66%;
+    --slate: 197 35% 74%;
+    --cream: 40 30% 96%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Story reading */
+    --story-text: 215 20% 25%;
+    --page-shadow: 0 4px 20px -2px hsl(40 20% 70% / 0.4);
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Glass effect */
+    --glass-bg: hsl(40 33% 98% / 0.8);
+    --glass-border: hsl(40 20% 88% / 0.5);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 10%;
+    --foreground: 40 20% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 18% 14%;
+    --card-foreground: 40 20% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 20% 10%;
+    --popover-foreground: 40 20% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 38 65% 66%;
+    --primary-foreground: 220 20% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 197 35% 40%;
+    --secondary-foreground: 40 20% 92%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 40 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 38 50% 50%;
+    --accent-foreground: 40 20% 92%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 38 65% 66%;
+
+    --ink: 40 20% 92%;
+    --paper: 220 20% 10%;
+    --gold: 38 65% 66%;
+    --slate: 197 35% 50%;
+    --cream: 220 18% 14%;
+
+    --story-text: 40 15% 85%;
+    --page-shadow: 0 4px 20px -2px hsl(220 20% 5% / 0.6);
+
+    --glass-bg: hsl(220 20% 10% / 0.85);
+    --glass-border: hsl(220 15% 25% / 0.5);
   }
 }
 
@@ -100,6 +104,155 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Story text styling */
+  .story-text {
+    font-family: 'Merriweather', Georgia, serif;
+    color: hsl(var(--story-text));
+    line-height: 1.9;
+    letter-spacing: 0.01em;
+  }
+
+  /* Paper texture overlay */
+  .paper-texture {
+    background-image: 
+      radial-gradient(ellipse at 20% 30%, hsl(40 30% 95% / 0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 70%, hsl(38 40% 92% / 0.3) 0%, transparent 50%);
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Hide scrollbar for clean reading */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background: hsl(var(--gold) / 0.3);
+    color: hsl(var(--ink));
+  }
+}
+
+@layer components {
+  /* Character card styling */
+  .character-card {
+    @apply relative overflow-hidden rounded-2xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cream)) 0%,
+      hsl(var(--background)) 100%
+    );
+    box-shadow: 
+      0 1px 2px hsl(var(--ink) / 0.04),
+      0 4px 8px hsl(var(--ink) / 0.04),
+      0 8px 16px hsl(var(--ink) / 0.04),
+      0 16px 32px hsl(var(--ink) / 0.06);
+  }
+
+  .character-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      transparent 60%,
+      hsl(var(--gold) / 0.05) 100%
+    );
+    pointer-events: none;
+  }
+
+  /* Story length pills */
+  .length-pill {
+    @apply inline-flex items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all duration-300;
+    @apply border-2 border-transparent;
+  }
+
+  .length-pill:hover {
+    @apply bg-muted;
+  }
+
+  .length-pill.selected {
+    @apply border-primary bg-primary/10;
+  }
+
+  /* Trait chips */
+  .trait-chip {
+    @apply inline-flex items-center px-4 py-2 rounded-full text-sm font-medium;
+    @apply bg-muted text-muted-foreground cursor-pointer transition-all duration-200;
+  }
+
+  .trait-chip:hover {
+    @apply bg-secondary/30;
+  }
+
+  .trait-chip.selected {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Page container */
+  .page-container {
+    @apply relative min-h-screen flex flex-col;
+    box-shadow: var(--page-shadow);
+  }
+
+  /* Archetype icon button */
+  .archetype-btn {
+    @apply relative flex flex-col items-center justify-center p-4 rounded-xl;
+    @apply border-2 border-transparent bg-muted/50 transition-all duration-200;
+  }
+
+  .archetype-btn:hover {
+    @apply bg-muted border-border;
+  }
+
+  .archetype-btn.selected {
+    @apply bg-primary/10 border-primary;
+  }
+}
+
+@layer utilities {
+  /* Subtle animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-page-turn {
+    animation: pageTurn 0.4s ease-in-out;
+  }
+
+  @keyframes pageTurn {
+    0% {
+      transform: perspective(1000px) rotateY(0deg);
+      transform-origin: left center;
+    }
+    100% {
+      transform: perspective(1000px) rotateY(-5deg);
+      transform-origin: left center;
+    }
   }
 }
