@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import CharacterCard from '@/components/CharacterCard';
+import CharacterCarousel from '@/components/CharacterCarousel';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -69,16 +69,11 @@ export default function Index() {
 
         {characters && characters.length > 0 ? (
           <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: { transition: { staggerChildren: 0.1 } },
-            }}
-            className="space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-4"
           >
-            {characters.map((character) => (
-              <CharacterCard key={character.id} character={character} />
-            ))}
+            <CharacterCarousel characters={characters} />
           </motion.div>
         ) : (
           <motion.div

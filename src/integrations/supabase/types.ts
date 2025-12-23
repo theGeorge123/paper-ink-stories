@@ -116,6 +116,7 @@ export type Database = {
           current_page: number
           id: string
           is_active: boolean
+          last_summary: string | null
           length_setting: string
           story_state: Json
           title: string | null
@@ -127,6 +128,7 @@ export type Database = {
           current_page?: number
           id?: string
           is_active?: boolean
+          last_summary?: string | null
           length_setting?: string
           story_state?: Json
           title?: string | null
@@ -138,6 +140,7 @@ export type Database = {
           current_page?: number
           id?: string
           is_active?: boolean
+          last_summary?: string | null
           length_setting?: string
           story_state?: Json
           title?: string | null
