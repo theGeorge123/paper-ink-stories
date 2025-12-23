@@ -142,6 +142,20 @@ serve(async (req) => {
       });
     }
 
+    // Fetch user's language preference
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("language")
+      .eq("id", user.id)
+      .single();
+    
+    const language = profile?.language || "en";
+    const languageNames: Record<string, string> = {
+      en: "English",
+      nl: "Dutch (Nederlands)",
+      sv: "Swedish (Svenska)"
+    };
+
     // Fetch existing pages
     const { data: pagesData } = await supabase
       .from("pages")
@@ -191,9 +205,12 @@ ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the $
     if (storyProgress > 0.6) storyPhase = "WINDDOWN";
     else if (storyProgress > 0.2) storyPhase = "JOURNEY";
 
-    // Build user prompt with plot_outline
+    // Build user prompt with plot_outline and language
     let userPrompt = `
 ${characterDNA}
+
+## LANGUAGE
+Write the story in ${languageNames[language] || "English"}. All text must be in this language.
 
 ## CURRENT STORY STATE
 - Location: ${storyState.location}
@@ -210,7 +227,7 @@ ${previousPagesText || "(This is the very beginning of the story - generate plot
 - Humor: ${humor === "funny" ? "Include gentle, age-appropriate humor and playful moments" : "Keep it sincere, heartfelt, and emotionally warm"}
 
 ## YOUR TASK
-Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child. Follow the plot_outline but adjust TONE based on Director Preferences.
+Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child in ${languageNames[language] || "English"}. Follow the plot_outline but adjust TONE based on Director Preferences.
     `.trim();
 
     // Add memory reference if first page and has previous adventure
