@@ -5,10 +5,11 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Book, Plus, LogOut, Loader2 } from "lucide-react";
+import { Book, Plus, LogOut, Loader2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import CharacterCarousel from "@/components/CharacterCarousel";
 import SettingsMenu from "@/components/SettingsMenu";
+import ParentalControls from "@/components/ParentalControls";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -72,6 +73,13 @@ export default function Dashboard() {
             <span className="font-serif font-bold text-xl text-foreground">{t('appName')}</span>
           </div>
           <div className="flex items-center gap-2">
+            <ParentalControls
+              trigger={
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <Shield className="w-5 h-5" />
+                </Button>
+              }
+            />
             <SettingsMenu />
             <Button
               variant="ghost"
