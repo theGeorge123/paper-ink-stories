@@ -135,6 +135,7 @@ export const translations = {
     backToLibrary: 'Back to Library',
     tomorrowsAdventure: 'Tomorrow\'s Adventure',
     chooseNextAdventure: 'What will {name} do tomorrow?',
+    pickForMe: 'Child is asleep (Pick for me)',
     choiceSaved: 'Saved! {name} will do this tomorrow.',
     
     // Character Management
@@ -278,6 +279,7 @@ export const translations = {
     backToLibrary: 'Terug naar Bibliotheek',
     tomorrowsAdventure: 'Morgens Avontuur',
     chooseNextAdventure: 'Wat gaat {name} morgen doen?',
+    pickForMe: 'Kind slaapt (Kies voor mij)',
     choiceSaved: 'Opgeslagen! {name} gaat dit morgen doen.',
     
     // Character Management
@@ -421,6 +423,7 @@ export const translations = {
     backToLibrary: 'Tillbaka till Biblioteket',
     tomorrowsAdventure: 'Morgondagens Äventyr',
     chooseNextAdventure: 'Vad ska {name} göra imorgon?',
+    pickForMe: 'Barnet sover (Välj åt mig)',
     choiceSaved: 'Sparat! {name} kommer göra detta imorgon.',
     
     // Character Management

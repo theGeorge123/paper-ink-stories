@@ -1,14 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Bookmark } from 'lucide-react';
+import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Bookmark, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
-import PathFinderModal from './PathFinderModal';
 import useEmblaCarousel from 'embla-carousel-react';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
@@ -66,9 +65,9 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showPathFinder, setShowPathFinder] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [startingAdventure, setStartingAdventure] = useState(false);
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -116,9 +115,31 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  const handleNewAdventure = (character: Character) => {
-    setSelectedCharacter(character);
-    setShowPathFinder(true);
+  // Simplified: Immediately start new adventure without modal
+  const handleNewAdventure = async (character: Character) => {
+    setStartingAdventure(true);
+    
+    try {
+      // Create new story immediately using pending_choice from DB
+      const { data: newStory, error: storyError } = await supabase
+        .from('stories')
+        .insert({
+          character_id: character.id,
+          length_setting: 'MEDIUM',
+          story_state: { location: 'Home', inventory: [], plot_outline: [] },
+        })
+        .select()
+        .single();
+
+      if (storyError) throw storyError;
+
+      // Navigate directly to reader - pending_choice will be used by edge function
+      navigate(`/read/${newStory.id}`);
+    } catch (error) {
+      console.error('Failed to start adventure:', error);
+      toast.error('Failed to start adventure');
+      setStartingAdventure(false);
+    }
   };
 
   // Get last adventure summary from inactive stories
@@ -264,14 +285,19 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                         variant={activeStory ? 'outline' : 'default'}
                         className={`w-full gap-2 ${!activeStory ? 'animate-pulse-subtle' : ''}`}
                         size="sm"
+                        disabled={startingAdventure}
                       >
-                        <motion.div
-                          animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Sparkles className="w-4 h-4" />
-                        </motion.div>
-                        {t('newAdventure')}
+                        {startingAdventure ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <motion.div
+                            animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            <Sparkles className="w-4 h-4" />
+                          </motion.div>
+                        )}
+                        {startingAdventure ? 'Starting...' : t('newAdventure')}
                       </Button>
                     </motion.div>
                   </div>
@@ -338,15 +364,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           open={showEditModal}
           onOpenChange={setShowEditModal}
           onSaved={onCharacterUpdated}
-        />
-      )}
-
-      {/* Path Finder Modal */}
-      {selectedCharacter && (
-        <PathFinderModal
-          character={selectedCharacter}
-          open={showPathFinder}
-          onOpenChange={setShowPathFinder}
         />
       )}
     </>
