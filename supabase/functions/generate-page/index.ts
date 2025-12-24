@@ -330,17 +330,19 @@ This is the FINAL page. You MUST:
       });
     }
 
-    // Insert the new page
+    // Use upsert to handle race conditions from background prefetching
     const { error: pageError } = await supabase
       .from("pages")
-      .insert({
+      .upsert({
         story_id: storyId,
         page_number: currentPage,
         content: parsedContent.page_text,
+      }, {
+        onConflict: 'story_id,page_number'
       });
 
     if (pageError) {
-      console.error("Page insert error:", pageError);
+      console.error("Page upsert error:", pageError);
       return new Response(JSON.stringify({ error: "Failed to save page" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
