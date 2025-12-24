@@ -1,9 +1,11 @@
 import { motion } from "framer-motion";
-import { Book, Brain, Sparkles, Moon, ChevronRight } from "lucide-react";
+import { Book, Brain, Sparkles, Moon, ChevronRight, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { useEffect, useState } from "react";
+import { Language } from "@/lib/i18n";
 
 const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className?: string }) => (
   <motion.div
@@ -49,9 +51,17 @@ const ValueProp = ({
   </motion.div>
 );
 
+const LANGUAGES: { code: Language; flag: string; name: string }[] = [
+  { code: 'en', flag: '🇬🇧', name: 'English' },
+  { code: 'nl', flag: '🇳🇱', name: 'Nederlands' },
+  { code: 'sv', flag: '🇸🇪', name: 'Svenska' },
+];
+
 export default function Landing() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -72,6 +82,8 @@ export default function Landing() {
     );
   }
 
+  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
+
   return (
     <div className="min-h-screen bg-background paper-texture overflow-hidden">
       {/* Floating decorations */}
@@ -79,6 +91,46 @@ export default function Landing() {
       <FloatingBook delay={1} className="top-40 right-[15%]" />
       <FloatingBook delay={2} className="bottom-40 left-[20%]" />
       <FloatingBook delay={3} className="bottom-20 right-[10%]" />
+
+      {/* Language Switcher - Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            className="flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border/50 hover:bg-card"
+          >
+            <Globe className="w-4 h-4" />
+            <span>{currentLang.flag}</span>
+            <span className="hidden sm:inline">{currentLang.name}</span>
+          </Button>
+          
+          {showLangMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-full right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden min-w-[160px]"
+            >
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setLanguage(lang.code);
+                    setShowLangMenu(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted transition-colors ${
+                    language === lang.code ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  }`}
+                >
+                  <span className="text-lg">{lang.flag}</span>
+                  <span className="font-medium">{lang.name}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
@@ -101,17 +153,17 @@ export default function Landing() {
             className="inline-flex items-center gap-3 mb-8 px-4 py-2 rounded-full bg-muted/50 border border-border/50"
           >
             <Book className="w-5 h-5 text-primary" />
-            <span className="font-serif font-bold text-foreground">Paper & Ink</span>
+            <span className="font-serif font-bold text-foreground">{t('appName')}</span>
           </motion.div>
 
           <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground leading-tight mb-6">
-            The Bedtime Story that{" "}
-            <span className="text-primary">Grows</span> with Your Child
+            {t('heroTitle')}{" "}
+            <span className="text-primary">{t('heroTitleHighlight')}</span>{" "}
+            {t('heroTitleEnd')}
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            AI-powered personalized adventures that adapt to your child's age,
-            remember their journey, and gently guide them to peaceful sleep.
+            {t('heroSubtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -120,7 +172,7 @@ export default function Landing() {
               onClick={() => navigate("/auth")}
               className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated"
             >
-              Start Free Adventure
+              {t('startFree')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
             <Button
@@ -129,7 +181,7 @@ export default function Landing() {
               onClick={() => navigate("/auth")}
               className="px-8 py-6 text-lg font-medium rounded-xl"
             >
-              Login
+              {t('login')}
             </Button>
           </div>
         </motion.div>
@@ -161,30 +213,30 @@ export default function Landing() {
             className="text-center mb-16"
           >
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Parents Love Paper & Ink
+              {t('whyParentsLove')}
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Every story is crafted with science-backed techniques to help your child drift off to dreamland.
+              {t('whyParentsLoveSubtitle')}
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <ValueProp
               icon={Moon}
-              title="Sleep Engineered"
-              description="Stories use rhythmic pacing, sensory details, and progressively calming language to guide your child naturally toward sleep. No more endless negotiations at bedtime."
+              title={t('sleepEngineered')}
+              description={t('sleepEngineeredDesc')}
               delay={0.1}
             />
             <ValueProp
               icon={Brain}
-              title="Stealth Education"
-              description="Vocabulary and sentence complexity automatically scale with your child's age band (3-5, 6-8, 9-12). They learn new words without even realizing it."
+              title={t('infiniteMemory')}
+              description={t('infiniteMemoryDesc')}
               delay={0.2}
             />
             <ValueProp
               icon={Sparkles}
-              title="Infinite Memory"
-              description="'Leo remembers the dragon he met yesterday.' Each adventure builds on the last, creating a rich, continuous world unique to your child."
+              title={t('stealthEducation')}
+              description={t('stealthEducationDesc')}
               delay={0.3}
             />
           </div>
@@ -201,17 +253,17 @@ export default function Landing() {
         >
           <Book className="w-16 h-16 text-primary mx-auto mb-6" />
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Ready for Sweet Dreams?
+            {t('readyForDreams')}
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-            Create your child's first magical character and watch as their personalized adventure unfolds.
+            {t('readyForDreamsSubtitle')}
           </p>
           <Button
             size="lg"
             onClick={() => navigate("/auth")}
             className="px-10 py-6 text-lg font-medium rounded-xl shadow-elevated"
           >
-            Begin Your Story
+            {t('beginStory')}
             <ChevronRight className="w-5 h-5 ml-2" />
           </Button>
         </motion.div>
@@ -222,9 +274,9 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Book className="w-4 h-4 text-primary" />
-            <span className="font-serif font-bold">Paper & Ink</span>
+            <span className="font-serif font-bold">{t('appName')}</span>
           </div>
-          <p>© {new Date().getFullYear()} Paper & Ink. Made with love for bedtime.</p>
+          <p>© {new Date().getFullYear()} {t('appName')}. {t('madeWithLove')}</p>
         </div>
       </footer>
     </div>

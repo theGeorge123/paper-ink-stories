@@ -10,6 +10,30 @@ export const translations = {
     continue: 'Continue',
     back: 'Back',
     next: 'Next',
+    settings: 'Settings',
+    language: 'Language',
+    delete: 'Delete',
+    confirm: 'Confirm',
+    
+    // Landing Page
+    heroTitle: 'The Bedtime Story that',
+    heroTitleHighlight: 'Grows',
+    heroTitleEnd: 'with Your Child',
+    heroSubtitle: 'AI-powered personalized adventures that adapt to your child\'s age, remember their journey, and gently guide them to peaceful sleep.',
+    startFree: 'Start Free Adventure',
+    login: 'Login',
+    whyParentsLove: 'Why Parents Love Paper & Ink',
+    whyParentsLoveSubtitle: 'Every story is crafted with science-backed techniques to help your child drift off to dreamland.',
+    sleepEngineered: 'Sleep Engineered',
+    sleepEngineeredDesc: 'Uses psychological pacing to induce sleep. Stories feature rhythmic language and progressively calming scenes.',
+    infiniteMemory: 'Infinite Memory',
+    infiniteMemoryDesc: 'Leo remembers the dragon he met yesterday. Each adventure builds on the last, creating a rich continuous world.',
+    stealthEducation: 'Stealth Education',
+    stealthEducationDesc: 'Vocabulary scales automatically (ages 3-12). They learn new words without even realizing it.',
+    readyForDreams: 'Ready for Sweet Dreams?',
+    readyForDreamsSubtitle: 'Create your child\'s first magical character and watch as their personalized adventure unfolds.',
+    beginStory: 'Begin Your Story',
+    madeWithLove: 'Made with love for bedtime.',
     
     // Auth
     signIn: 'Sign In',
@@ -24,11 +48,15 @@ export const translations = {
     
     // Home
     yourCharacters: 'Your Characters',
+    chooseHero: 'Choose a hero for tonight\'s adventure',
     createCharacter: 'Create Character',
+    newCharacter: 'New Character',
     continueStory: 'Continue',
     newAdventure: 'New Adventure',
-    noCharacters: 'No characters yet',
+    noCharacters: 'No Characters Yet',
+    noCharactersDesc: 'Create your first magical character and start their bedtime adventure tonight.',
     startJourney: 'Create your first character to begin the adventure',
+    createFirstHero: 'Create Your First Hero',
     
     // Character Creator
     createHero: 'Create Your Hero',
@@ -44,6 +72,16 @@ export const translations = {
     sidekickNamePlaceholder: 'Enter companion name...',
     skipSidekick: 'Skip for now',
     finishCreating: 'Create Character',
+    selectAgeBand: 'Select Age Band',
+    selectTraits: 'Select Traits',
+    
+    // Age Bands
+    ageBand35: '3-5 years',
+    ageBand35Desc: 'Simple words, cozy stories',
+    ageBand68: '6-8 years',
+    ageBand68Desc: 'Richer vocabulary, small adventures',
+    ageBand912: '9-12 years',
+    ageBand912Desc: 'Complex tales, deeper themes',
     
     // Archetypes
     knight: 'Knight',
@@ -87,6 +125,23 @@ export const translations = {
     humorSerious: 'Serious',
     humorFunny: 'Funny',
     generateNext: 'Continue the story...',
+    weavingStory: 'Weaving the story...',
+    tapToContinue: 'Tap to continue...',
+    
+    // Sleep Well Screen
+    sleepWell: 'Sleep well',
+    memorySaved: 'Memory Saved',
+    goodnight: 'Goodnight',
+    backToLibrary: 'Back to Library',
+    tomorrowsAdventure: 'Tomorrow\'s Adventure',
+    chooseNextAdventure: 'What will {name} do tomorrow?',
+    choiceSaved: 'Saved! {name} will do this tomorrow.',
+    
+    // Character Management
+    editCharacter: 'Edit Character',
+    deleteCharacter: 'Delete Character',
+    deleteWarning: 'Delete {name}? All memories will be lost.',
+    characterDeleted: 'Character deleted',
   },
   
   nl: {
@@ -98,6 +153,30 @@ export const translations = {
     continue: 'Doorgaan',
     back: 'Terug',
     next: 'Volgende',
+    settings: 'Instellingen',
+    language: 'Taal',
+    delete: 'Verwijderen',
+    confirm: 'Bevestigen',
+    
+    // Landing Page
+    heroTitle: 'Het Slaapverhaaltje dat',
+    heroTitleHighlight: 'Meegroeit',
+    heroTitleEnd: 'met Je Kind',
+    heroSubtitle: 'AI-aangedreven gepersonaliseerde avonturen die zich aanpassen aan de leeftijd van je kind, hun reis onthouden en hen zachtjes naar een vredige slaap leiden.',
+    startFree: 'Start Gratis Avontuur',
+    login: 'Inloggen',
+    whyParentsLove: 'Waarom Ouders van Papier & Inkt Houden',
+    whyParentsLoveSubtitle: 'Elk verhaal is gemaakt met wetenschappelijk onderbouwde technieken om je kind naar dromenland te brengen.',
+    sleepEngineered: 'Slaap Ontworpen',
+    sleepEngineeredDesc: 'Gebruikt psychologische pacing om slaap te induceren. Verhalen bevatten ritmische taal en geleidelijk kalmerende scènes.',
+    infiniteMemory: 'Oneindig Geheugen',
+    infiniteMemoryDesc: 'Leo herinnert zich de draak die hij gisteren ontmoette. Elk avontuur bouwt voort op het vorige.',
+    stealthEducation: 'Verborgen Educatie',
+    stealthEducationDesc: 'Woordenschat schaalt automatisch (3-12 jaar). Ze leren nieuwe woorden zonder het te beseffen.',
+    readyForDreams: 'Klaar voor Zoete Dromen?',
+    readyForDreamsSubtitle: 'Maak het eerste magische personage van je kind en kijk hoe hun gepersonaliseerde avontuur zich ontvouwt.',
+    beginStory: 'Begin Je Verhaal',
+    madeWithLove: 'Met liefde gemaakt voor het slapengaan.',
     
     // Auth
     signIn: 'Inloggen',
@@ -112,11 +191,15 @@ export const translations = {
     
     // Home
     yourCharacters: 'Jouw Personages',
+    chooseHero: 'Kies een held voor het avontuur van vanavond',
     createCharacter: 'Personage Maken',
+    newCharacter: 'Nieuw Personage',
     continueStory: 'Doorgaan',
     newAdventure: 'Nieuw Avontuur',
-    noCharacters: 'Nog geen personages',
+    noCharacters: 'Nog Geen Personages',
+    noCharactersDesc: 'Maak je eerste magische personage en begin vanavond met hun slaapavontuur.',
     startJourney: 'Maak je eerste personage om het avontuur te beginnen',
+    createFirstHero: 'Maak Je Eerste Held',
     
     // Character Creator
     createHero: 'Maak Je Held',
@@ -132,6 +215,16 @@ export const translations = {
     sidekickNamePlaceholder: 'Voer naam metgezel in...',
     skipSidekick: 'Nu overslaan',
     finishCreating: 'Personage Maken',
+    selectAgeBand: 'Selecteer Leeftijdsgroep',
+    selectTraits: 'Selecteer Eigenschappen',
+    
+    // Age Bands
+    ageBand35: '3-5 jaar',
+    ageBand35Desc: 'Eenvoudige woorden, gezellige verhalen',
+    ageBand68: '6-8 jaar',
+    ageBand68Desc: 'Rijkere woordenschat, kleine avonturen',
+    ageBand912: '9-12 jaar',
+    ageBand912Desc: 'Complexe verhalen, diepere thema\'s',
     
     // Archetypes
     knight: 'Ridder',
@@ -175,6 +268,23 @@ export const translations = {
     humorSerious: 'Serieus',
     humorFunny: 'Grappig',
     generateNext: 'Ga verder met het verhaal...',
+    weavingStory: 'Het verhaal wordt geweven...',
+    tapToContinue: 'Tik om verder te gaan...',
+    
+    // Sleep Well Screen
+    sleepWell: 'Slaap lekker',
+    memorySaved: 'Herinnering Opgeslagen',
+    goodnight: 'Welterusten',
+    backToLibrary: 'Terug naar Bibliotheek',
+    tomorrowsAdventure: 'Morgens Avontuur',
+    chooseNextAdventure: 'Wat gaat {name} morgen doen?',
+    choiceSaved: 'Opgeslagen! {name} gaat dit morgen doen.',
+    
+    // Character Management
+    editCharacter: 'Personage Bewerken',
+    deleteCharacter: 'Personage Verwijderen',
+    deleteWarning: '{name} verwijderen? Alle herinneringen gaan verloren.',
+    characterDeleted: 'Personage verwijderd',
   },
   
   sv: {
@@ -186,6 +296,30 @@ export const translations = {
     continue: 'Fortsätt',
     back: 'Tillbaka',
     next: 'Nästa',
+    settings: 'Inställningar',
+    language: 'Språk',
+    delete: 'Radera',
+    confirm: 'Bekräfta',
+    
+    // Landing Page
+    heroTitle: 'Godnattsagan som',
+    heroTitleHighlight: 'Växer',
+    heroTitleEnd: 'med Ditt Barn',
+    heroSubtitle: 'AI-drivna personliga äventyr som anpassar sig till ditt barns ålder, minns deras resa och leder dem varsamt till fridfull sömn.',
+    startFree: 'Starta Gratis Äventyr',
+    login: 'Logga in',
+    whyParentsLove: 'Varför Föräldrar Älskar Papper & Bläck',
+    whyParentsLoveSubtitle: 'Varje saga är skapad med vetenskapligt beprövade tekniker för att hjälpa ditt barn att somna.',
+    sleepEngineered: 'Sömndesignad',
+    sleepEngineeredDesc: 'Använder psykologisk pacing för att främja sömn. Sagor har rytmiskt språk och gradvis lugnande scener.',
+    infiniteMemory: 'Oändligt Minne',
+    infiniteMemoryDesc: 'Leo minns draken han träffade igår. Varje äventyr bygger på det förra och skapar en rik sammanhängande värld.',
+    stealthEducation: 'Dold Utbildning',
+    stealthEducationDesc: 'Ordförrådet skalas automatiskt (3-12 år). De lär sig nya ord utan att ens märka det.',
+    readyForDreams: 'Redo för Söta Drömmar?',
+    readyForDreamsSubtitle: 'Skapa ditt barns första magiska karaktär och se hur deras personliga äventyr utvecklas.',
+    beginStory: 'Börja Din Saga',
+    madeWithLove: 'Gjord med kärlek för läggdags.',
     
     // Auth
     signIn: 'Logga in',
@@ -200,11 +334,15 @@ export const translations = {
     
     // Home
     yourCharacters: 'Dina Karaktärer',
+    chooseHero: 'Välj en hjälte för kvällens äventyr',
     createCharacter: 'Skapa Karaktär',
+    newCharacter: 'Ny Karaktär',
     continueStory: 'Fortsätt',
     newAdventure: 'Nytt Äventyr',
-    noCharacters: 'Inga karaktärer än',
+    noCharacters: 'Inga Karaktärer Än',
+    noCharactersDesc: 'Skapa din första magiska karaktär och börja deras godnattäventyr ikväll.',
     startJourney: 'Skapa din första karaktär för att börja äventyret',
+    createFirstHero: 'Skapa Din Första Hjälte',
     
     // Character Creator
     createHero: 'Skapa Din Hjälte',
@@ -220,6 +358,16 @@ export const translations = {
     sidekickNamePlaceholder: 'Ange kompisens namn...',
     skipSidekick: 'Hoppa över för nu',
     finishCreating: 'Skapa Karaktär',
+    selectAgeBand: 'Välj Åldersgrupp',
+    selectTraits: 'Välj Egenskaper',
+    
+    // Age Bands
+    ageBand35: '3-5 år',
+    ageBand35Desc: 'Enkla ord, mysiga sagor',
+    ageBand68: '6-8 år',
+    ageBand68Desc: 'Rikare ordförråd, små äventyr',
+    ageBand912: '9-12 år',
+    ageBand912Desc: 'Komplexa berättelser, djupare teman',
     
     // Archetypes
     knight: 'Riddare',
@@ -263,6 +411,23 @@ export const translations = {
     humorSerious: 'Allvarlig',
     humorFunny: 'Rolig',
     generateNext: 'Fortsätt berättelsen...',
+    weavingStory: 'Sagan vävs...',
+    tapToContinue: 'Tryck för att fortsätta...',
+    
+    // Sleep Well Screen
+    sleepWell: 'Sov gott',
+    memorySaved: 'Minne Sparat',
+    goodnight: 'Godnatt',
+    backToLibrary: 'Tillbaka till Biblioteket',
+    tomorrowsAdventure: 'Morgondagens Äventyr',
+    chooseNextAdventure: 'Vad ska {name} göra imorgon?',
+    choiceSaved: 'Sparat! {name} kommer göra detta imorgon.',
+    
+    // Character Management
+    editCharacter: 'Redigera Karaktär',
+    deleteCharacter: 'Radera Karaktär',
+    deleteWarning: 'Radera {name}? Alla minnen kommer att gå förlorade.',
+    characterDeleted: 'Karaktär raderad',
   },
 } as const;
 

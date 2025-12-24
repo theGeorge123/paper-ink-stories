@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Book, Plus, LogOut, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import CharacterCarousel from "@/components/CharacterCarousel";
+import SettingsMenu from "@/components/SettingsMenu";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -66,17 +69,20 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Book className="w-6 h-6 text-primary" />
-            <span className="font-serif font-bold text-xl text-foreground">Paper & Ink</span>
+            <span className="font-serif font-bold text-xl text-foreground">{t('appName')}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <SettingsMenu />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {t('signOut')}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -89,10 +95,10 @@ export default function Dashboard() {
         >
           <div>
             <h1 className="font-serif text-3xl font-bold text-foreground mb-2">
-              Your Characters
+              {t('yourCharacters')}
             </h1>
             <p className="text-muted-foreground">
-              Choose a hero for tonight's adventure
+              {t('chooseHero')}
             </p>
           </div>
           <Button
@@ -100,7 +106,7 @@ export default function Dashboard() {
             className="rounded-xl shadow-card"
           >
             <Plus className="w-4 h-4 mr-2" />
-            New Character
+            {t('newCharacter')}
           </Button>
         </motion.div>
 
@@ -119,10 +125,10 @@ export default function Dashboard() {
               <Book className="w-12 h-12 text-muted-foreground" />
             </div>
             <h2 className="font-serif text-2xl font-bold text-foreground mb-3">
-              No Characters Yet
+              {t('noCharacters')}
             </h2>
             <p className="text-muted-foreground mb-8 max-w-md">
-              Create your first magical character and start their bedtime adventure tonight.
+              {t('noCharactersDesc')}
             </p>
             <Button
               onClick={() => navigate("/create")}
@@ -130,7 +136,7 @@ export default function Dashboard() {
               className="rounded-xl shadow-card"
             >
               <Plus className="w-5 h-5 mr-2" />
-              Create Your First Hero
+              {t('createFirstHero')}
             </Button>
           </motion.div>
         )}

@@ -41,7 +41,7 @@ export default function Reader() {
   const [showEnding, setShowEnding] = useState(false);
   const [direction, setDirection] = useState(0);
   const [adventureSummary, setAdventureSummary] = useState<string | undefined>();
-
+  const [nextOptions, setNextOptions] = useState<string[] | undefined>();
   const { data: story } = useQuery({
     queryKey: ['story', storyId],
     queryFn: async () => {
