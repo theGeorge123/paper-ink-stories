@@ -58,20 +58,14 @@ You are an expert children's author and sleep specialist.
 - Deeper emotional resonance
 - Rich, evocative language with sophisticated metaphors
 
-## 3. DIRECTOR MODE ADJUSTMENTS
-- "Calm" = more sensory, slower pace, breathing moments
-- "Exciting" = more wonder and discovery (but still soothing)
-- "Funny" = gentle age-appropriate humor
-- "Serious" = sincere, heartfelt warmth
-
-## 4. SAFETY RULES (ABSOLUTE)
+## 3. SAFETY RULES (ABSOLUTE)
 ❌ NO monsters, villains, threats, or scary elements
 ❌ NO violence, conflict, or danger
 ❌ NO abandonment, loss, or separation triggers
 ✅ ALL conflicts are gentle (lost item found, friend helped)
 ✅ The world is ALWAYS safe and loving
 
-## 5. OUTPUT FORMAT (STRICT JSON ONLY)
+## 4. OUTPUT FORMAT (STRICT JSON ONLY)
 You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
 
 {
@@ -115,8 +109,8 @@ serve(async (req) => {
       });
     }
 
-    const { storyId, mood, humor } = await req.json();
-    console.log("Generating page for story:", storyId, "mood:", mood, "humor:", humor);
+    const { storyId } = await req.json();
+    console.log("Generating page for story:", storyId);
 
     // Fetch story with character
     const { data: story, error: storyError } = await supabase
@@ -205,7 +199,7 @@ ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the $
     if (storyProgress > 0.6) storyPhase = "WINDDOWN";
     else if (storyProgress > 0.2) storyPhase = "JOURNEY";
 
-    // Build user prompt with all context
+    // Build user prompt with all context (simplified - no mood/humor)
     let userPrompt = `
 ${characterDNA}
 
@@ -223,9 +217,8 @@ Write the entire story in ${languageNames[language] || "English"}. All text incl
 ## PREVIOUS PAGES
 ${previousPagesText || "(This is the very beginning of the story - generate plot_outline!)"}
 
-## DIRECTOR PREFERENCES
-- Mood: ${mood === "exciting" ? "More adventurous and exciting — include wonder and discovery" : "Calm and soothing — focus on peaceful, gentle moments"}
-- Humor: ${humor === "funny" ? "Include gentle, age-appropriate humor and playful moments" : "Keep it sincere, heartfelt, and emotionally warm"}
+## TONE
+Keep the story calm and soothing, focusing on peaceful, gentle moments with sincere, heartfelt warmth.
     `.trim();
 
     // CLIFFHANGER INJECTION: If first page and has pending choice, start there
@@ -265,7 +258,7 @@ This is the FINAL page. You MUST:
       .replace("{age_band}", ageBand)
       .replace("{phase}", storyPhase);
 
-    console.log("Calling OpenRouter API...");
+    console.log("Calling OpenRouter API for page", currentPage);
 
     const OPENROUTER_API_KEY = Deno.env.get("openrouter");
     if (!OPENROUTER_API_KEY) {
@@ -312,7 +305,7 @@ This is the FINAL page. You MUST:
     }
 
     const aiData = await aiResponse.json();
-    console.log("AI response received");
+    console.log("AI response received for page", currentPage);
 
     let content = aiData.choices?.[0]?.message?.content || "";
     
@@ -354,7 +347,7 @@ This is the FINAL page. You MUST:
       });
     }
 
-    // Update story state including plot_outline
+    // Update story state including plot_outline (always sync state for every page)
     const newState = {
       location: parsedContent.new_location || storyState.location,
       inventory: parsedContent.new_inventory || storyState.inventory,
@@ -376,14 +369,6 @@ This is the FINAL page. You MUST:
       if (!story.title) {
         storyUpdate.title = `${character.name}'s Bedtime Adventure`;
       }
-
-      // Clear the pending_choice since we used it
-      if (pendingChoice) {
-        await supabase
-          .from("characters")
-          .update({ pending_choice: null })
-          .eq("id", character.id);
-      }
     }
 
     const { error: updateError } = await supabase
@@ -395,7 +380,7 @@ This is the FINAL page. You MUST:
       console.error("Story update error:", updateError);
     }
 
-    console.log("Page generated successfully:", currentPage);
+    console.log("Page generated successfully:", currentPage, "of", targetPages);
 
     return new Response(JSON.stringify({
       success: true,

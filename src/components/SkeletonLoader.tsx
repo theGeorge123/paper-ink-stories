@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion';
 
 interface SkeletonLoaderProps {
-  type?: 'card' | 'page' | 'text';
+  type?: 'card' | 'page' | 'text' | 'reader';
   className?: string;
 }
 
 export default function SkeletonLoader({ type = 'card', className = '' }: SkeletonLoaderProps) {
-  if (type === 'page') {
+  if (type === 'reader' || type === 'page') {
     return (
       <div className={`min-h-screen bg-background paper-texture flex items-center justify-center ${className}`}>
         <motion.div

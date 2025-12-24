@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreHorizontal, Home, Moon, Zap, Meh, Smile, MoonStar } from 'lucide-react';
+import { Home, MoonStar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Slider } from '@/components/ui/slider';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getTotalPages } from '@/lib/storyEngine';
 import { toast } from 'sonner';
 import SleepWellScreen from '@/components/SleepWellScreen';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 // Page turn animation variants
 const pageVariants = {
@@ -35,13 +34,14 @@ export default function Reader() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [mood, setMood] = useState(50);
-  const [humor, setHumor] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [showEnding, setShowEnding] = useState(false);
   const [direction, setDirection] = useState(0);
   const [adventureSummary, setAdventureSummary] = useState<string | undefined>();
   const [nextOptions, setNextOptions] = useState<string[] | undefined>();
+  const [prefetchingNext, setPrefetchingNext] = useState(false);
+  const lastPrefetchedPage = useRef(0);
+
   const { data: story } = useQuery({
     queryKey: ['story', storyId],
     queryFn: async () => {
@@ -68,35 +68,39 @@ export default function Reader() {
       return data;
     },
     enabled: !!storyId,
+    refetchInterval: prefetchingNext ? 1000 : false,
   });
 
-  const generateMutation = useMutation({
-    mutationFn: async () => {
-      if (!storyId) return;
-      setGenerating(true);
-      
-      const moodSetting = mood > 50 ? 'exciting' : 'calm';
-      const humorSetting = humor > 50 ? 'funny' : 'serious';
+  // Generate page mutation (no mood/humor - simplified)
+  const generatePage = useCallback(async (isBackground = false) => {
+    if (!storyId) return null;
+    
+    if (!isBackground) setGenerating(true);
+    else setPrefetchingNext(true);
 
+    try {
       const { data, error } = await supabase.functions.invoke('generate-page', {
-        body: { 
-          storyId, 
-          mood: moodSetting, 
-          humor: humorSetting 
-        },
+        body: { storyId },
       });
-
-      setGenerating(false);
 
       if (error) {
         console.error('Generation error:', error);
-        toast.error("The story magic is taking a short nap. Try again in a moment.");
+        if (!isBackground) {
+          toast.error("The story magic is taking a short nap. Try again in a moment.");
+        }
         return null;
       }
 
       if (data?.fallback) {
-        toast.error(data.page_text || "The story magic is taking a short nap. Try again in a moment.");
+        if (!isBackground) {
+          toast.error(data.page_text || "The story magic is taking a short nap. Try again in a moment.");
+        }
         return null;
+      }
+
+      // Track which page we just generated
+      if (data?.page_number) {
+        lastPrefetchedPage.current = data.page_number;
       }
 
       if (data?.is_ending) {
@@ -108,27 +112,38 @@ export default function Reader() {
         }
       }
 
-      return data;
-    },
-    onSuccess: (data) => {
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['pages', storyId] });
       queryClient.invalidateQueries({ queryKey: ['story', storyId] });
-      
-      // If this was the ending page, show the ending screen after a brief delay
-      if (data?.is_ending) {
-        setTimeout(() => {
-          setShowEnding(true);
-        }, 2000);
-      }
-    },
-  });
 
+      return data;
+    } finally {
+      if (!isBackground) setGenerating(false);
+      else setPrefetchingNext(false);
+    }
+  }, [storyId, queryClient]);
+
+  // Initial page generation
   useEffect(() => {
     if (pages.length === 0 && story && !generating) {
-      generateMutation.mutate();
+      generatePage(false);
     }
-  }, [pages.length, story]);
+  }, [pages.length, story, generating, generatePage]);
 
+  // Clear pending_choice after Page 1 loads successfully
+  useEffect(() => {
+    if (pages.length >= 1 && story?.characters?.pending_choice) {
+      supabase
+        .from('characters')
+        .update({ pending_choice: null })
+        .eq('id', story.characters.id)
+        .then(({ error }) => {
+          if (error) console.error('Failed to clear pending_choice:', error);
+        });
+    }
+  }, [pages.length, story?.characters?.id, story?.characters?.pending_choice]);
+
+  // Set current page to latest when pages update
   useEffect(() => {
     if (pages.length > 0) {
       setCurrentPageIndex(pages.length - 1);
@@ -146,6 +161,30 @@ export default function Reader() {
       }
     }
   }, [story]);
+
+  // Background prefetch loop - always stay one page ahead
+  useEffect(() => {
+    if (!story || !storyId) return;
+    
+    const targetPages = getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG');
+    const isStoryEnded = !story.is_active || pages.length >= targetPages;
+    
+    // Only prefetch if:
+    // 1. Story is not ended
+    // 2. We're not already prefetching
+    // 3. We haven't already prefetched beyond current pages
+    // 4. We have at least 1 page (so story has started)
+    if (
+      !isStoryEnded && 
+      !prefetchingNext && 
+      !generating &&
+      pages.length > 0 && 
+      lastPrefetchedPage.current <= pages.length
+    ) {
+      // Trigger background fetch for next page
+      generatePage(true);
+    }
+  }, [pages.length, story, storyId, prefetchingNext, generating, generatePage]);
 
   const currentPage = pages[currentPageIndex];
   const totalPages = story ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 10;
@@ -167,7 +206,7 @@ export default function Reader() {
       setCurrentPageIndex(currentPageIndex + 1);
     } else if (canGenerate && !generating) {
       setDirection(1);
-      generateMutation.mutate();
+      generatePage(false);
     } else if (isOnFinalPage) {
       setShowEnding(true);
     }
@@ -195,47 +234,21 @@ export default function Reader() {
           </Button>
         </motion.div>
         
-        <Sheet>
-          <SheetTrigger asChild>
-            <motion.div whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
-            </motion.div>
-          </SheetTrigger>
-          <SheetContent className="glass">
-            <SheetHeader>
-              <SheetTitle className="font-serif">Director Mode</SheetTitle>
-            </SheetHeader>
-            <div className="space-y-8 mt-8">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Moon className="w-4 h-4" /> Calm
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    Exciting <Zap className="w-4 h-4" />
-                  </div>
-                </div>
-                <Slider value={[mood]} onValueChange={([v]) => setMood(v)} max={100} step={1} />
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Affects the next generated page
-                </p>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Meh className="w-4 h-4" /> Serious
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    Funny <Smile className="w-4 h-4" />
-                  </div>
-                </div>
-                <Slider value={[humor]} onValueChange={([v]) => setHumor(v)} max={100} step={1} />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        {/* Prefetching indicator */}
+        {prefetchingNext && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+          >
+            <motion.div
+              className="w-2 h-2 rounded-full bg-primary/50"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+            <span className="hidden sm:inline">Preparing next page...</span>
+          </motion.div>
+        )}
       </header>
 
       {/* Reading area */}
@@ -252,7 +265,16 @@ export default function Reader() {
           )}
 
           <AnimatePresence mode="wait" custom={direction}>
-            {generating ? (
+            {generating && pages.length === 0 ? (
+              <motion.div
+                key="loading-skeleton"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <SkeletonLoader type="reader" />
+              </motion.div>
+            ) : generating ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
@@ -275,7 +297,7 @@ export default function Reader() {
                   >
                     <MoonStar className="w-8 h-8 text-primary" />
                   </motion.div>
-                  <p className="font-serif">Weaving the story...</p>
+                  <p className="font-serif">Writing...</p>
                 </div>
               </motion.div>
             ) : currentPage ? (

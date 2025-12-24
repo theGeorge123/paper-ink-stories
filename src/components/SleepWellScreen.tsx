@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoonStar, Library, Bookmark, Sparkles, Check } from 'lucide-react';
+import { MoonStar, Library, Bookmark, Sparkles, Check, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -24,6 +24,7 @@ export default function SleepWellScreen({
   const { t } = useLanguage();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [dimmed, setDimmed] = useState(false);
 
   const handleSelectOption = async (option: string) => {
     setSelectedOption(option);
@@ -45,6 +46,59 @@ export default function SleepWellScreen({
       setSaving(false);
     }
   };
+
+  // "Child is asleep" - pick random option and dim screen
+  const handlePickForMe = async () => {
+    if (!nextOptions || nextOptions.length === 0) {
+      navigate('/dashboard');
+      return;
+    }
+
+    setSaving(true);
+    
+    // Pick random option
+    const randomOption = nextOptions[Math.floor(Math.random() * nextOptions.length)];
+    
+    try {
+      const { error } = await supabase
+        .from('characters')
+        .update({ pending_choice: randomOption })
+        .eq('id', characterId);
+
+      if (error) throw error;
+
+      // Dim screen to black
+      setDimmed(true);
+      
+      // Wait a moment then navigate silently
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    } catch (error) {
+      console.error('Error saving choice:', error);
+      setSaving(false);
+      navigate('/dashboard');
+    }
+  };
+
+  // Dimmed screen for sleeping child
+  if (dimmed) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Moon className="w-16 h-16 text-white" />
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -162,6 +216,25 @@ export default function SleepWellScreen({
                 </motion.button>
               ))}
             </div>
+
+            {/* Pick for me button */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+              className="mt-4"
+            >
+              <Button
+                onClick={handlePickForMe}
+                variant="ghost"
+                size="sm"
+                disabled={saving}
+                className="w-full text-white/50 hover:text-white hover:bg-white/10 border border-white/10"
+              >
+                <Moon className="w-4 h-4 mr-2" />
+                {t('pickForMe') || 'Child is asleep (Pick for me)'}
+              </Button>
+            </motion.div>
           </motion.div>
         )}
 
