@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, MoonStar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getTotalPages } from '@/lib/storyEngine';
 import { toast } from 'sonner';
@@ -33,6 +33,8 @@ export default function Reader() {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // CRITICAL: currentPageIndex is user-controlled, not auto-updated
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [showEnding, setShowEnding] = useState(false);
@@ -40,9 +42,13 @@ export default function Reader() {
   const [adventureSummary, setAdventureSummary] = useState<string | undefined>();
   const [nextOptions, setNextOptions] = useState<string[] | undefined>();
   const [prefetchingNext, setPrefetchingNext] = useState(false);
+  const [existingLifeSummary, setExistingLifeSummary] = useState<string | null>(null);
+  
+  // Track which page we've prefetched up to (to avoid duplicate calls)
   const lastPrefetchedPage = useRef(0);
+  const prefetchInProgress = useRef(false);
 
-  const { data: story } = useQuery({
+  const { data: story, refetch: refetchStory } = useQuery({
     queryKey: ['story', storyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -56,7 +62,7 @@ export default function Reader() {
     enabled: !!storyId,
   });
 
-  const { data: pages = [] } = useQuery({
+  const { data: pages = [], refetch: refetchPages } = useQuery({
     queryKey: ['pages', storyId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -68,15 +74,24 @@ export default function Reader() {
       return data;
     },
     enabled: !!storyId,
+    // Poll more frequently when prefetching
     refetchInterval: prefetchingNext ? 1000 : false,
   });
 
-  // Generate page mutation (no mood/humor - simplified)
+  // Generate page mutation (simplified - no mood/humor)
   const generatePage = useCallback(async (isBackground = false) => {
     if (!storyId) return null;
     
+    // Prevent duplicate background calls
+    if (isBackground && prefetchInProgress.current) {
+      return null;
+    }
+    
     if (!isBackground) setGenerating(true);
-    else setPrefetchingNext(true);
+    else {
+      setPrefetchingNext(true);
+      prefetchInProgress.current = true;
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-page', {
@@ -112,23 +127,35 @@ export default function Reader() {
         }
       }
 
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['pages', storyId] });
-      queryClient.invalidateQueries({ queryKey: ['story', storyId] });
+      // Refresh pages data
+      await refetchPages();
+      await refetchStory();
 
       return data;
     } finally {
       if (!isBackground) setGenerating(false);
-      else setPrefetchingNext(false);
+      else {
+        setPrefetchingNext(false);
+        prefetchInProgress.current = false;
+      }
     }
-  }, [storyId, queryClient]);
+  }, [storyId, refetchPages, refetchStory]);
 
-  // Initial page generation
+  // Initial page generation - only when no pages exist
   useEffect(() => {
-    if (pages.length === 0 && story && !generating) {
+    if (pages.length === 0 && story && !generating && !prefetchInProgress.current) {
       generatePage(false);
     }
   }, [pages.length, story, generating, generatePage]);
+
+  // Load existing life summary from character for cumulative memory
+  useEffect(() => {
+    if (story?.characters) {
+      // The character's last_summary IS the cumulative life summary
+      // We store it on the character, not on individual stories
+      setExistingLifeSummary(story.characters.pending_choice ? null : (story.characters as any).last_summary || null);
+    }
+  }, [story?.characters]);
 
   // Clear pending_choice after Page 1 loads successfully
   useEffect(() => {
@@ -143,13 +170,6 @@ export default function Reader() {
     }
   }, [pages.length, story?.characters?.id, story?.characters?.pending_choice]);
 
-  // Set current page to latest when pages update
-  useEffect(() => {
-    if (pages.length > 0) {
-      setCurrentPageIndex(pages.length - 1);
-    }
-  }, [pages.length]);
-
   // Check if story is already ended and load saved options
   useEffect(() => {
     if (story && !story.is_active) {
@@ -162,7 +182,8 @@ export default function Reader() {
     }
   }, [story]);
 
-  // Background prefetch loop - always stay one page ahead
+  // Background prefetch loop - SILENTLY stay one page ahead
+  // CRITICAL: This does NOT change currentPageIndex
   useEffect(() => {
     if (!story || !storyId) return;
     
@@ -171,18 +192,26 @@ export default function Reader() {
     
     // Only prefetch if:
     // 1. Story is not ended
-    // 2. We're not already prefetching
-    // 3. We haven't already prefetched beyond current pages
-    // 4. We have at least 1 page (so story has started)
+    // 2. We're not already prefetching or generating
+    // 3. We have at least 1 page (story has started)
+    // 4. The next page doesn't exist yet
+    // 5. We haven't already prefetched beyond current pages
+    const nextPageNumber = pages.length + 1;
+    
     if (
       !isStoryEnded && 
       !prefetchingNext && 
       !generating &&
+      !prefetchInProgress.current &&
       pages.length > 0 && 
-      lastPrefetchedPage.current <= pages.length
+      lastPrefetchedPage.current < nextPageNumber
     ) {
-      // Trigger background fetch for next page
-      generatePage(true);
+      // Small delay to let current render complete
+      const timer = setTimeout(() => {
+        generatePage(true);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
   }, [pages.length, story, storyId, prefetchingNext, generating, generatePage]);
 
@@ -201,13 +230,21 @@ export default function Reader() {
   };
 
   const handleTapRight = () => {
+    // If there's a next page available, go to it
     if (canGoNext) {
       setDirection(1);
       setCurrentPageIndex(currentPageIndex + 1);
-    } else if (canGenerate && !generating) {
+    } 
+    // If we're on the last available page but story isn't done, generate more
+    else if (canGenerate && !generating) {
       setDirection(1);
-      generatePage(false);
-    } else if (isOnFinalPage) {
+      generatePage(false).then(() => {
+        // After generation, move to the new page
+        setCurrentPageIndex(prev => prev + 1);
+      });
+    } 
+    // If we're on the final page of the story, show ending
+    else if (isOnFinalPage) {
       setShowEnding(true);
     }
   };
@@ -218,8 +255,10 @@ export default function Reader() {
       <SleepWellScreen 
         characterName={story.characters.name}
         characterId={story.characters.id}
+        storyId={storyId!}
         adventureSummary={adventureSummary}
         nextOptions={nextOptions}
+        existingLifeSummary={existingLifeSummary}
       />
     );
   }
@@ -274,7 +313,7 @@ export default function Reader() {
               >
                 <SkeletonLoader type="reader" />
               </motion.div>
-            ) : generating ? (
+            ) : generating && currentPageIndex === pages.length - 1 ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}

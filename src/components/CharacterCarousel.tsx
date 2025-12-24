@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
+import LengthSelectModal from './LengthSelectModal';
 import useEmblaCarousel from 'embla-carousel-react';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
@@ -65,6 +66,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLengthModal, setShowLengthModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [startingAdventure, setStartingAdventure] = useState(false);
@@ -115,17 +117,23 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  // Simplified: Immediately start new adventure without modal
-  const handleNewAdventure = async (character: Character) => {
+  // Show length selection modal first
+  const handleNewAdventure = (character: Character) => {
+    setSelectedCharacter(character);
+    setShowLengthModal(true);
+  };
+
+  // Start adventure with selected length
+  const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
+    if (!selectedCharacter) return;
     setStartingAdventure(true);
     
     try {
-      // Create new story immediately using pending_choice from DB
       const { data: newStory, error: storyError } = await supabase
         .from('stories')
         .insert({
-          character_id: character.id,
-          length_setting: 'MEDIUM',
+          character_id: selectedCharacter.id,
+          length_setting: length,
           story_state: { location: 'Home', inventory: [], plot_outline: [] },
         })
         .select()
@@ -133,7 +141,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
       if (storyError) throw storyError;
 
-      // Navigate directly to reader - pending_choice will be used by edge function
+      setShowLengthModal(false);
       navigate(`/read/${newStory.id}`);
     } catch (error) {
       console.error('Failed to start adventure:', error);
@@ -364,6 +372,17 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           open={showEditModal}
           onOpenChange={setShowEditModal}
           onSaved={onCharacterUpdated}
+        />
+      )}
+
+      {/* Length Selection Modal */}
+      {selectedCharacter && (
+        <LengthSelectModal
+          open={showLengthModal}
+          onOpenChange={setShowLengthModal}
+          onSelect={handleLengthSelect}
+          characterName={selectedCharacter.name}
+          loading={startingAdventure}
         />
       )}
     </>

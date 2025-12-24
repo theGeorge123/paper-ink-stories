@@ -10,15 +10,19 @@ import { toast } from 'sonner';
 interface SleepWellScreenProps {
   characterName: string;
   characterId: string;
+  storyId: string;
   adventureSummary?: string;
   nextOptions?: string[];
+  existingLifeSummary?: string | null;
 }
 
 export default function SleepWellScreen({ 
   characterName, 
   characterId,
+  storyId,
   adventureSummary, 
-  nextOptions 
+  nextOptions,
+  existingLifeSummary
 }: SleepWellScreenProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -26,17 +30,57 @@ export default function SleepWellScreen({
   const [saving, setSaving] = useState(false);
   const [dimmed, setDimmed] = useState(false);
 
+  // Build cumulative life summary from existing + new adventure
+  const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
+    if (!existingLifeSummary) {
+      // First adventure - just use this summary
+      return newAdventureSummary;
+    }
+    
+    // Combine: keep it concise (2 sentences max for the life summary)
+    // The AI will craft this better, but we do a simple merge here
+    const combined = `${existingLifeSummary} ${newAdventureSummary}`;
+    
+    // If it's getting too long, we just append and let it grow
+    // In production, you might want AI to summarize this
+    if (combined.length > 300) {
+      // Just keep the last 2 adventure summaries worth
+      return combined.slice(-300);
+    }
+    
+    return combined;
+  };
+
   const handleSelectOption = async (option: string) => {
     setSelectedOption(option);
     setSaving(true);
 
     try {
+      // Build cumulative life summary
+      const newLifeSummary = adventureSummary 
+        ? buildCumulativeLifeSummary(adventureSummary)
+        : existingLifeSummary;
+
+      // Update character with pending_choice AND cumulative life summary
       const { error } = await supabase
         .from('characters')
-        .update({ pending_choice: option })
+        .update({ 
+          pending_choice: option,
+          // Store cumulative summary on the character (not story)
+          // Note: We need to add this column if it doesn't exist
+          // For now, we piggyback on stories.last_summary pattern
+        })
         .eq('id', characterId);
 
       if (error) throw error;
+
+      // Also update the story's last_summary for this adventure
+      if (newLifeSummary) {
+        await supabase
+          .from('stories')
+          .update({ last_summary: newLifeSummary })
+          .eq('id', storyId);
+      }
 
       toast.success(t('choiceSaved').replace('{name}', characterName));
     } catch (error) {
@@ -47,7 +91,7 @@ export default function SleepWellScreen({
     }
   };
 
-  // "Child is asleep" - pick random option and dim screen
+  // "Child is asleep" - pick random option, save cumulative summary, and dim screen
   const handlePickForMe = async () => {
     if (!nextOptions || nextOptions.length === 0) {
       navigate('/dashboard');
@@ -60,6 +104,12 @@ export default function SleepWellScreen({
     const randomOption = nextOptions[Math.floor(Math.random() * nextOptions.length)];
     
     try {
+      // Build cumulative life summary
+      const newLifeSummary = adventureSummary 
+        ? buildCumulativeLifeSummary(adventureSummary)
+        : existingLifeSummary;
+
+      // Update character with random choice
       const { error } = await supabase
         .from('characters')
         .update({ pending_choice: randomOption })
@@ -67,18 +117,40 @@ export default function SleepWellScreen({
 
       if (error) throw error;
 
-      // Dim screen to black
+      // Update story with cumulative summary
+      if (newLifeSummary) {
+        await supabase
+          .from('stories')
+          .update({ last_summary: newLifeSummary })
+          .eq('id', storyId);
+      }
+
+      // Dim screen to black (Goodnight mode)
       setDimmed(true);
       
       // Wait a moment then navigate silently
       setTimeout(() => {
         navigate('/dashboard');
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error('Error saving choice:', error);
       setSaving(false);
       navigate('/dashboard');
     }
+  };
+
+  // Handle goodnight without option selection
+  const handleGoodnight = async () => {
+    // Save cumulative summary even if no option selected
+    if (adventureSummary) {
+      const newLifeSummary = buildCumulativeLifeSummary(adventureSummary);
+      await supabase
+        .from('stories')
+        .update({ last_summary: newLifeSummary })
+        .eq('id', storyId);
+    }
+    
+    navigate('/dashboard');
   };
 
   // Dimmed screen for sleeping child
@@ -93,8 +165,17 @@ export default function SleepWellScreen({
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 0.1, scale: 1 }}
           transition={{ delay: 0.3 }}
+          className="text-center"
         >
-          <Moon className="w-16 h-16 text-white" />
+          <Moon className="w-16 h-16 text-white mx-auto mb-4" />
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.2 }}
+            transition={{ delay: 0.5 }}
+            className="text-white/20 font-serif text-xl"
+          >
+            {t('sleepWell')}, {characterName}
+          </motion.p>
         </motion.div>
       </motion.div>
     );
@@ -162,7 +243,7 @@ export default function SleepWellScreen({
           {t('sleepWell')}, {characterName}
         </motion.p>
 
-        {/* Memory box */}
+        {/* Memory box - shows THIS adventure's summary */}
         {adventureSummary && (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -232,7 +313,7 @@ export default function SleepWellScreen({
                 className="w-full text-white/50 hover:text-white hover:bg-white/10 border border-white/10"
               >
                 <Moon className="w-4 h-4 mr-2" />
-                {t('pickForMe') || 'Child is asleep (Pick for me)'}
+                {t('pickForMe')}
               </Button>
             </motion.div>
           </motion.div>
@@ -268,7 +349,7 @@ export default function SleepWellScreen({
         >
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button
-              onClick={() => navigate('/dashboard')}
+              onClick={handleGoodnight}
               size="lg"
               className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
             >

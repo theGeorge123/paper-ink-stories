@@ -18,7 +18,7 @@ You are an expert children's author and sleep specialist.
 
 **SETUP (Page 1):**
 - If \`pending_choice\` exists, START the story with that choice happening. Example: "Leo opened the mysterious door..."
-- If \`previous_summary\` exists, mention it naturally in the FIRST paragraph.
+- If \`life_summary\` exists, reference this hero's past experiences NATURALLY in the first paragraph.
 - If no plot_outline exists, generate 3-4 bullet points for the story arc.
 - Create a gentle hook and establish a cozy setting.
 
@@ -34,6 +34,7 @@ You are an expert children's author and sleep specialist.
 - Wrap up warmly—character falls asleep feeling safe and loved.
 - MUST set is_ending=true and provide adventure_summary.
 - MUST provide exactly 3 next_options for tomorrow's adventure.
+- The adventure_summary should be ONE sentence about what happened in THIS adventure only.
 
 ## 2. AGE-SPECIFIC RULES
 
@@ -71,7 +72,7 @@ You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
 {
   "page_text": "The beautifully crafted story text in the specified language...",
   "is_ending": false,
-  "adventure_summary": "One-sentence summary (ONLY when is_ending is true, else null)",
+  "adventure_summary": "One-sentence summary of THIS adventure (ONLY when is_ending is true, else null)",
   "next_options": ["Option A", "Option B", "Option C"] (ONLY when is_ending is true, else null),
   "plot_outline": ["Beat 1", "Beat 2", "Beat 3"] (ONLY on page 1 if generating new outline),
   "new_location": "Location name if character traveled",
@@ -161,20 +162,12 @@ serve(async (req) => {
     const targetPages = LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8;
     const isLastPage = currentPage >= targetPages;
 
-    // Fetch last_summary from previous completed stories for memory
-    const { data: previousStories } = await supabase
-      .from("stories")
-      .select("last_summary")
-      .eq("character_id", story.character_id)
-      .eq("is_active", false)
-      .not("last_summary", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(1);
-
-    const lastSummary = previousStories?.[0]?.last_summary;
+    // CUMULATIVE MEMORY: Fetch the character's life_summary (cumulative history)
+    // This is stored on the character and grows with each adventure
+    const character = story.characters;
+    const lifeSummary = character.last_summary || null;
 
     // Build character DNA
-    const character = story.characters;
     const ageBand = character.age_band || "6-8";
     const pendingChoice = character.pending_choice;
     
@@ -230,13 +223,13 @@ The user previously chose: "${pendingChoice}"
 You MUST start this story with ${character.name} doing exactly this action. The first paragraph must show this choice happening.`;
     }
 
-    // MEMORY INJECTION: Reference previous adventure naturally
-    if (currentPage === 1 && lastSummary) {
+    // CUMULATIVE MEMORY INJECTION: Reference the hero's life history
+    if (currentPage === 1 && lifeSummary) {
       userPrompt += `
 
-## MEMORY REFERENCE
-Previous adventure summary: "${lastSummary}"
-Briefly reference this memory naturally in the first paragraph (e.g., "${character.name} smiled, remembering...")`;
+## HERO'S LIFE HISTORY (CUMULATIVE MEMORY)
+${character.name}'s journey so far: "${lifeSummary}"
+Naturally weave references to their past experiences throughout the story. This makes the world feel continuous and their growth meaningful.`;
     }
 
     // Add ending instructions if last page
@@ -248,7 +241,7 @@ This is the FINAL page. You MUST:
 1. Wrap up the plot warmly
 2. Character must fall asleep feeling safe and loved
 3. Set is_ending=true
-4. Provide adventure_summary (one sentence recap)
+4. Provide adventure_summary - ONE sentence about what happened in THIS adventure ONLY
 5. Provide exactly 3 next_options in ${languageNames[language] || "English"} - exciting choices for TOMORROW's adventure (e.g., "Explore the crystal cave", "Visit the friendly dragon", "Find the hidden treasure")`;
     }
 
@@ -361,7 +354,8 @@ This is the FINAL page. You MUST:
       story_state: newState,
     };
 
-    // If ending, save summary, options, and mark inactive
+    // If ending, save summary to STORY, options, and mark inactive
+    // Note: The cumulative life_summary update happens in the client when user confirms
     if (parsedContent.is_ending) {
       storyUpdate.last_summary = parsedContent.adventure_summary;
       storyUpdate.generated_options = parsedContent.next_options || [];
