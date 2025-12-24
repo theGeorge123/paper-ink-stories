@@ -22,6 +22,7 @@ export type Database = {
           icon: string
           id: string
           name: string
+          pending_choice: string | null
           sidekick_archetype: string | null
           sidekick_name: string | null
           traits: string[]
@@ -35,6 +36,7 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          pending_choice?: string | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
           traits?: string[]
@@ -48,6 +50,7 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          pending_choice?: string | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
           traits?: string[]
@@ -117,6 +120,7 @@ export type Database = {
           character_id: string
           created_at: string
           current_page: number
+          generated_options: Json | null
           id: string
           is_active: boolean
           last_summary: string | null
@@ -129,6 +133,7 @@ export type Database = {
           character_id: string
           created_at?: string
           current_page?: number
+          generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null
@@ -141,6 +146,7 @@ export type Database = {
           character_id?: string
           created_at?: string
           current_page?: number
+          generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null

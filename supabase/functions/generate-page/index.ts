@@ -7,79 +7,78 @@ const corsHeaders = {
 };
 
 const SYSTEM_PROMPT = `
-You are an expert children's author specializing in personalized bedtime stories. Output ONLY valid JSON.
+You are an expert children's author and sleep specialist.
 
-## CORE RULES
+## CONTEXT VARIABLES
+- Language: {language}
+- Age: {age_band}
+- StoryPhase: {phase}
 
-### 1. STEALTH EDUCATION
-- If Age is 6+, introduce 1 "growth word" per page with context clues (e.g., "The tree was *immense*—so tall it touched the clouds...")
-- Ages 3-5: Simple familiar words only
-- Ages 6-8: Introduce descriptive vocabulary naturally
-- Ages 9-12: Rich, evocative language with sophisticated metaphors
+## 1. STORY STRUCTURE
 
-### 2. MEMORY SYSTEM
-- If PreviousSummary exists, reference it naturally in the FIRST paragraph (e.g., "Leo smiled, remembering the friendly dragon from yesterday...")
-- Build on established world elements when available
+**SETUP (Page 1):**
+- If \`pending_choice\` exists, START the story with that choice happening. Example: "Leo opened the mysterious door..."
+- If \`previous_summary\` exists, mention it naturally in the FIRST paragraph.
+- If no plot_outline exists, generate 3-4 bullet points for the story arc.
+- Create a gentle hook and establish a cozy setting.
 
-### 3. PACING & STORY PHASES
-**Page 1 (SETUP):**
-- Create gentle hook and establish cozy setting
-- If plot_outline is empty, generate 3-4 bullet points for the story arc
-- Introduce the character's world and initial wonder
+**JOURNEY (Middle Pages):**
+- Follow the plot_outline beats.
+- Use "Deep Sensory Visualization" (describe textures, smells, soft sounds) to tire the mind.
+- Each paragraph should feel like sinking deeper into a soft pillow.
+- Use progressively shorter sentences.
 
-**Middle Pages (JOURNEY):**
-- Follow the plot_outline beats
-- Focus on sensory-rich exploration (soft textures, warm colors, quiet sounds)
-- Each paragraph should feel like sinking deeper into a soft pillow
-- Use progressively shorter sentences
+**WIND-DOWN (Final Page):**
+- Ultra-slow, rhythmic, lullaby-like pacing.
+- Character naturally grows sleepy, finds a cozy spot.
+- Wrap up warmly—character falls asleep feeling safe and loved.
+- MUST set is_ending=true and provide adventure_summary.
+- MUST provide exactly 3 next_options for tomorrow's adventure.
 
-**Final Page (WINDDOWN):**
-- Ultra-slow, rhythmic, lullaby-like pacing
-- Character naturally grows sleepy, finds cozy spot
-- Wrap up warmly—character falls asleep feeling safe and loved
-- MUST set is_ending=true and provide adventure_summary
+## 2. AGE-SPECIFIC RULES
 
-### 4. DIRECTOR MODE ADJUSTMENTS
-When mood/humor settings change:
-- READ the existing plot_outline
-- KEEP the story beats but ADJUST the tone
+**Ages 3-5:**
+- 80-120 words per page
+- Short sentences (5-10 words)
+- Immediate sensory experiences
+- Talking animals, friendly clouds
+- Simple familiar words only
+
+**Ages 6-8:**
+- 150-220 words per page
+- Compound sentences, light metaphors
+- Small adventures, problem-solving
+- Whimsical fantasy elements
+- 1 "growth word" per page with context clues (e.g., "The tree was *immense*—so tall it touched the clouds...")
+
+**Ages 9-12:**
+- 250-350 words per page
+- Complex sentences, internal thoughts
+- Self-discovery, meaningful choices
+- Deeper emotional resonance
+- Rich, evocative language with sophisticated metaphors
+
+## 3. DIRECTOR MODE ADJUSTMENTS
 - "Calm" = more sensory, slower pace, breathing moments
 - "Exciting" = more wonder and discovery (but still soothing)
 - "Funny" = gentle age-appropriate humor
 - "Serious" = sincere, heartfelt warmth
 
-### 5. SAFETY RULES (ABSOLUTE)
+## 4. SAFETY RULES (ABSOLUTE)
 ❌ NO monsters, villains, threats, or scary elements
 ❌ NO violence, conflict, or danger
 ❌ NO abandonment, loss, or separation triggers
 ✅ ALL conflicts are gentle (lost item found, friend helped)
 ✅ The world is ALWAYS safe and loving
 
-## AGE-SPECIFIC WRITING
+## 5. OUTPUT FORMAT (STRICT JSON ONLY)
+You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
 
-### AGES 3-5
-- 80-120 words per page
-- Short sentences (5-10 words)
-- Immediate sensory experiences
-- Talking animals, friendly clouds
-
-### AGES 6-8
-- 150-220 words per page
-- Compound sentences, light metaphors
-- Small adventures, problem-solving
-- Whimsical fantasy elements
-
-### AGES 9-12
-- 250-350 words per page
-- Complex sentences, internal thoughts
-- Self-discovery, meaningful choices
-- Deeper emotional resonance
-
-## OUTPUT FORMAT (STRICT JSON)
 {
-  "page_text": "The beautifully crafted story text...",
+  "page_text": "The beautifully crafted story text in the specified language...",
   "is_ending": false,
-  "adventure_summary": "One-sentence summary (ONLY when is_ending is true)",
+  "adventure_summary": "One-sentence summary (ONLY when is_ending is true, else null)",
+  "next_options": ["Option A", "Option B", "Option C"] (ONLY when is_ending is true, else null),
   "plot_outline": ["Beat 1", "Beat 2", "Beat 3"] (ONLY on page 1 if generating new outline),
   "new_location": "Location name if character traveled",
   "new_inventory": ["Items gained if any"]
@@ -183,6 +182,7 @@ serve(async (req) => {
     // Build character DNA
     const character = story.characters;
     const ageBand = character.age_band || "6-8";
+    const pendingChoice = character.pending_choice;
     
     const characterDNA = `
 ## CHARACTER PROFILE
@@ -205,12 +205,12 @@ ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the $
     if (storyProgress > 0.6) storyPhase = "WINDDOWN";
     else if (storyProgress > 0.2) storyPhase = "JOURNEY";
 
-    // Build user prompt with plot_outline and language
+    // Build user prompt with all context
     let userPrompt = `
 ${characterDNA}
 
-## LANGUAGE
-Write the story in ${languageNames[language] || "English"}. All text must be in this language.
+## LANGUAGE REQUIREMENT
+Write the entire story in ${languageNames[language] || "English"}. All text including next_options must be in this language.
 
 ## CURRENT STORY STATE
 - Location: ${storyState.location}
@@ -218,6 +218,7 @@ Write the story in ${languageNames[language] || "English"}. All text must be in 
 - Plot Outline: ${storyState.plot_outline?.length ? storyState.plot_outline.join(" → ") : "(Generate on page 1)"}
 - Story Phase: ${storyPhase} (${Math.round(storyProgress * 100)}% through the story)
 - Story Length: ${story.length_setting} (${targetPages} pages total)
+- Current Page: ${currentPage} of ${targetPages}
 
 ## PREVIOUS PAGES
 ${previousPagesText || "(This is the very beginning of the story - generate plot_outline!)"}
@@ -225,20 +226,44 @@ ${previousPagesText || "(This is the very beginning of the story - generate plot
 ## DIRECTOR PREFERENCES
 - Mood: ${mood === "exciting" ? "More adventurous and exciting — include wonder and discovery" : "Calm and soothing — focus on peaceful, gentle moments"}
 - Humor: ${humor === "funny" ? "Include gentle, age-appropriate humor and playful moments" : "Keep it sincere, heartfelt, and emotionally warm"}
-
-## YOUR TASK
-Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child in ${languageNames[language] || "English"}. Follow the plot_outline but adjust TONE based on Director Preferences.
     `.trim();
 
-    // Add memory reference if first page and has previous adventure
+    // CLIFFHANGER INJECTION: If first page and has pending choice, start there
+    if (currentPage === 1 && pendingChoice) {
+      userPrompt += `
+
+## CLIFFHANGER CONTINUATION (CRITICAL!)
+The user previously chose: "${pendingChoice}"
+You MUST start this story with ${character.name} doing exactly this action. The first paragraph must show this choice happening.`;
+    }
+
+    // MEMORY INJECTION: Reference previous adventure naturally
     if (currentPage === 1 && lastSummary) {
-      userPrompt += `\n\nBriefly reference the previous adventure: "${lastSummary}"`;
+      userPrompt += `
+
+## MEMORY REFERENCE
+Previous adventure summary: "${lastSummary}"
+Briefly reference this memory naturally in the first paragraph (e.g., "${character.name} smiled, remembering...")`;
     }
 
     // Add ending instructions if last page
     if (isLastPage) {
-      userPrompt += `\n\nThis is the FINAL page. Wrap up the plot warmly. The character must fall asleep feeling safe and loved. Set is_ending=true and provide adventure_summary.`;
+      userPrompt += `
+
+## FINAL PAGE INSTRUCTIONS (CRITICAL!)
+This is the FINAL page. You MUST:
+1. Wrap up the plot warmly
+2. Character must fall asleep feeling safe and loved
+3. Set is_ending=true
+4. Provide adventure_summary (one sentence recap)
+5. Provide exactly 3 next_options in ${languageNames[language] || "English"} - exciting choices for TOMORROW's adventure (e.g., "Explore the crystal cave", "Visit the friendly dragon", "Find the hidden treasure")`;
     }
+
+    // Build the system prompt with variables replaced
+    const finalSystemPrompt = SYSTEM_PROMPT
+      .replace("{language}", languageNames[language] || "English")
+      .replace("{age_band}", ageBand)
+      .replace("{phase}", storyPhase);
 
     console.log("Calling OpenRouter API...");
 
@@ -265,11 +290,11 @@ Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child in $
       body: JSON.stringify({
         model: "deepseek/deepseek-chat",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: finalSystemPrompt },
           { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 1500,
       }),
     });
 
@@ -341,14 +366,23 @@ Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child in $
       story_state: newState,
     };
 
-    // If ending, save summary and mark inactive
+    // If ending, save summary, options, and mark inactive
     if (parsedContent.is_ending) {
       storyUpdate.last_summary = parsedContent.adventure_summary;
+      storyUpdate.generated_options = parsedContent.next_options || [];
       storyUpdate.is_active = false;
       
       // Generate title if not set
       if (!story.title) {
         storyUpdate.title = `${character.name}'s Bedtime Adventure`;
+      }
+
+      // Clear the pending_choice since we used it
+      if (pendingChoice) {
+        await supabase
+          .from("characters")
+          .update({ pending_choice: null })
+          .eq("id", character.id);
       }
     }
 
@@ -367,6 +401,8 @@ Write page ${currentPage} of ${targetPages} for a ${ageBand} year old child in $
       success: true,
       page_text: parsedContent.page_text,
       is_ending: parsedContent.is_ending || false,
+      adventure_summary: parsedContent.adventure_summary || null,
+      next_options: parsedContent.next_options || null,
       page_number: currentPage,
       total_pages: targetPages,
     }), {
