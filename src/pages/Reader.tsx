@@ -99,8 +99,13 @@ export default function Reader() {
         return null;
       }
 
-      if (data?.is_ending && data?.adventure_summary) {
-        setAdventureSummary(data.adventure_summary);
+      if (data?.is_ending) {
+        if (data?.adventure_summary) {
+          setAdventureSummary(data.adventure_summary);
+        }
+        if (data?.next_options) {
+          setNextOptions(data.next_options);
+        }
       }
 
       return data;
@@ -130,10 +135,15 @@ export default function Reader() {
     }
   }, [pages.length]);
 
-  // Check if story is already ended
+  // Check if story is already ended and load saved options
   useEffect(() => {
-    if (story && !story.is_active && story.last_summary) {
-      setAdventureSummary(story.last_summary);
+    if (story && !story.is_active) {
+      if (story.last_summary) {
+        setAdventureSummary(story.last_summary);
+      }
+      if (story.generated_options && Array.isArray(story.generated_options)) {
+        setNextOptions(story.generated_options as string[]);
+      }
     }
   }, [story]);
 
@@ -167,8 +177,10 @@ export default function Reader() {
   if (showEnding && story?.characters) {
     return (
       <SleepWellScreen 
-        characterName={story.characters.name} 
+        characterName={story.characters.name}
+        characterId={story.characters.id}
         adventureSummary={adventureSummary}
+        nextOptions={nextOptions}
       />
     );
   }
