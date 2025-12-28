@@ -110,8 +110,8 @@ serve(async (req) => {
       });
     }
 
-    const { storyId } = await req.json();
-    console.log("Generating page for story:", storyId);
+    const { storyId, targetPage } = await req.json();
+    console.log("Generating page for story:", storyId, "target page:", targetPage);
 
     // Fetch story with character
     const { data: story, error: storyError } = await supabase
@@ -150,7 +150,7 @@ serve(async (req) => {
       sv: "Swedish (Svenska)"
     };
 
-    // Fetch existing pages
+    // Fetch existing pages to determine state
     const { data: pagesData } = await supabase
       .from("pages")
       .select("*")
@@ -158,7 +158,28 @@ serve(async (req) => {
       .order("page_number", { ascending: true });
 
     const pages = pagesData || [];
-    const currentPage = pages.length + 1;
+    
+    // Use targetPage if provided, otherwise next page
+    const currentPage = targetPage || pages.length + 1;
+    
+    // Check if this page already exists (idempotent)
+    const existingPage = pages.find(p => p.page_number === currentPage);
+    if (existingPage) {
+      console.log(`Page ${currentPage} already exists, returning existing`);
+      return new Response(JSON.stringify({
+        success: true,
+        page_text: existingPage.content,
+        is_ending: !story.is_active,
+        adventure_summary: story.last_summary || null,
+        next_options: story.generated_options || null,
+        page_number: currentPage,
+        total_pages: LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8,
+        already_existed: true,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
     const targetPages = LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8;
     const isLastPage = currentPage >= targetPages;
 

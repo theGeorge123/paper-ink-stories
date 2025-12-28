@@ -2,3 +2,6 @@ project_id = "rtmcisfdtnmdytvnmptx"
 
 [functions.generate-page]
 verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false
