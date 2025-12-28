@@ -7,45 +7,77 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Generate secure token for disable links
+async function generateDisableToken(userId: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(userId + Date.now().toString().slice(0, -5));
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, data);
+  return btoa(String.fromCharCode(...new Uint8Array(signature))).slice(0, 32);
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("=== SEND-REMINDERS FUNCTION STARTED ===");
+  const startTime = Date.now();
+
   try {
+    // Validate Resend API key
     const resendApiKey = Deno.env.get("resend");
     if (!resendApiKey) {
-      console.error("RESEND API key not configured");
-      return new Response(JSON.stringify({ error: "Resend not configured" }), {
+      console.error("CRITICAL: RESEND API key not configured");
+      return new Response(JSON.stringify({ 
+        error: "Resend API key not configured",
+        action: "Add 'resend' secret in Lovable Cloud settings"
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (resendApiKey.length < 20) {
+      console.error("CRITICAL: RESEND API key appears invalid (too short)");
+      return new Response(JSON.stringify({ 
+        error: "Resend API key appears invalid",
+        action: "Check that the 'resend' secret contains a valid API key"
+      }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const resend = new Resend(resendApiKey);
+    console.log("Resend client initialized");
 
-    // Create admin client to access all users
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    // Get current UTC time
-    const now = new Date();
-    const currentMinutes = now.getUTCMinutes();
+    // Create admin client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     
-    // Only run on 10-minute intervals (0, 10, 20, 30, 40, 50)
-    if (currentMinutes % 10 !== 0) {
-      console.log("Skipping - not on 10-minute interval");
-      return new Response(JSON.stringify({ skipped: true }), {
+    if (!serviceRoleKey) {
+      console.error("CRITICAL: Service role key not configured");
+      return new Response(JSON.stringify({ error: "Service role key not configured" }), {
+        status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Running reminder check at", now.toISOString());
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Fetch all reminder settings where email_opt_in is true
+    // Get current time
+    const now = new Date();
+    console.log(`Running reminder check at ${now.toISOString()}`);
+
+    // Fetch users where email_opt_in=true AND at least one reminder is enabled
     const { data: reminderSettings, error: fetchError } = await supabase
       .from("reminder_settings")
       .select("*")
@@ -54,15 +86,15 @@ serve(async (req) => {
 
     if (fetchError) {
       console.error("Failed to fetch reminder settings:", fetchError);
-      return new Response(JSON.stringify({ error: "Failed to fetch settings" }), {
+      return new Response(JSON.stringify({ error: "Failed to fetch settings", details: fetchError }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (!reminderSettings || reminderSettings.length === 0) {
-      console.log("No active reminder settings found");
-      return new Response(JSON.stringify({ sent: 0 }), {
+      console.log("No users with active reminders found");
+      return new Response(JSON.stringify({ sent: 0, checked: 0, duration_ms: Date.now() - startTime }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -71,14 +103,25 @@ serve(async (req) => {
 
     let sentCount = 0;
     const errors: string[] = [];
+    const processed: string[] = [];
+
+    // Build base URL for disable links
+    const functionsUrl = supabaseUrl.replace('.supabase.co', '.supabase.co/functions/v1');
 
     for (const setting of reminderSettings) {
       try {
+        // Validate individual toggles
+        if (!setting.bedtime_enabled && !setting.story_enabled) {
+          console.log(`User ${setting.user_id}: no reminders enabled, skipping`);
+          continue;
+        }
+
         // Get user email
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(setting.user_id);
         
         if (userError || !userData?.user?.email) {
           console.error(`Failed to get user email for ${setting.user_id}:`, userError);
+          errors.push(`no_email:${setting.user_id}`);
           continue;
         }
 
@@ -86,12 +129,23 @@ serve(async (req) => {
         const userTimezone = setting.timezone || "UTC";
 
         // Get current time in user's timezone
-        const userNow = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+        let userNow: Date;
+        try {
+          userNow = new Date(now.toLocaleString("en-US", { timeZone: userTimezone }));
+        } catch {
+          console.error(`Invalid timezone ${userTimezone} for user ${setting.user_id}, using UTC`);
+          userNow = now;
+        }
+
         const userHours = userNow.getHours().toString().padStart(2, "0");
-        const userMinutes = Math.floor(userNow.getMinutes() / 10) * 10; // Round to 10-min interval
+        const userMinutes = Math.floor(userNow.getMinutes() / 10) * 10;
         const userTimeStr = `${userHours}:${userMinutes.toString().padStart(2, "0")}`;
 
-        console.log(`User ${setting.user_id}: local time is ${userTimeStr}, timezone ${userTimezone}`);
+        console.log(`User ${setting.user_id}: local time ${userTimeStr} (${userTimezone})`);
+
+        // Generate secure disable token
+        const disableToken = await generateDisableToken(setting.user_id, serviceRoleKey);
+        const disableAllUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=all`;
 
         // Check bedtime reminder
         if (setting.bedtime_enabled && setting.bedtime_time) {
@@ -102,24 +156,25 @@ serve(async (req) => {
           if (userTimeStr === bedTimeStr) {
             console.log(`Sending bedtime reminder to ${userEmail}`);
             
+            const disableBedtimeUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=bedtime`;
+            
             const { error: sendError } = await resend.emails.send({
               from: "Paper & Ink <reminders@resend.dev>",
               to: [userEmail],
               subject: "🌙 Time to Wind Down",
               html: `
-                <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                  <h1 style="color: #4a5568; font-size: 24px;">Time to Wind Down 🌙</h1>
+                <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #fffbf5;">
+                  <h1 style="color: #4a5568; font-size: 24px; margin-bottom: 16px;">Time to Wind Down 🌙</h1>
                   <p style="color: #718096; line-height: 1.6;">
                     It's almost bedtime! Consider putting away devices and preparing for a peaceful night.
                   </p>
                   <p style="color: #718096; line-height: 1.6;">
                     Maybe it's time for a cozy bedtime story?
                   </p>
-                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-                  <p style="color: #a0aec0; font-size: 12px;">
-                    <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovableproject.com')}/dashboard" style="color: #667eea;">Open Paper & Ink</a>
-                    &nbsp;|&nbsp;
-                    <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovableproject.com')}/dashboard?disable_reminders=true" style="color: #a0aec0;">Disable reminders</a>
+                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                  <p style="color: #a0aec0; font-size: 12px; text-align: center;">
+                    <a href="${disableBedtimeUrl}" style="color: #a0aec0; margin-right: 16px;">Stop bedtime reminders</a>
+                    <a href="${disableAllUrl}" style="color: #a0aec0;">Unsubscribe from all</a>
                   </p>
                 </div>
               `,
@@ -127,9 +182,10 @@ serve(async (req) => {
 
             if (sendError) {
               console.error(`Failed to send bedtime email to ${userEmail}:`, sendError);
-              errors.push(`bedtime:${setting.user_id}`);
+              errors.push(`bedtime_send:${setting.user_id}`);
             } else {
               sentCount++;
+              processed.push(`bedtime:${setting.user_id}`);
             }
           }
         }
@@ -143,25 +199,22 @@ serve(async (req) => {
           if (userTimeStr === storyTimeStr) {
             console.log(`Sending story reminder to ${userEmail}`);
             
+            const disableStoryUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=story`;
+            
             const { error: sendError } = await resend.emails.send({
               from: "Paper & Ink <reminders@resend.dev>",
               to: [userEmail],
               subject: "✨ Story Time Awaits!",
               html: `
-                <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                  <h1 style="color: #4a5568; font-size: 24px;">Story Time Awaits! ✨</h1>
+                <div style="font-family: Georgia, serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #fffbf5;">
+                  <h1 style="color: #4a5568; font-size: 24px; margin-bottom: 16px;">Story Time Awaits! ✨</h1>
                   <p style="color: #718096; line-height: 1.6;">
                     Your heroes are waiting for their next adventure. Ready to create some bedtime magic?
                   </p>
-                  <p style="margin-top: 20px;">
-                    <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovableproject.com')}/dashboard" 
-                       style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                      Start a Story
-                    </a>
-                  </p>
-                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;" />
-                  <p style="color: #a0aec0; font-size: 12px;">
-                    <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovableproject.com')}/dashboard?disable_reminders=true" style="color: #a0aec0;">Disable reminders</a>
+                  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+                  <p style="color: #a0aec0; font-size: 12px; text-align: center;">
+                    <a href="${disableStoryUrl}" style="color: #a0aec0; margin-right: 16px;">Stop story reminders</a>
+                    <a href="${disableAllUrl}" style="color: #a0aec0;">Unsubscribe from all</a>
                   </p>
                 </div>
               `,
@@ -169,9 +222,10 @@ serve(async (req) => {
 
             if (sendError) {
               console.error(`Failed to send story email to ${userEmail}:`, sendError);
-              errors.push(`story:${setting.user_id}`);
+              errors.push(`story_send:${setting.user_id}`);
             } else {
               sentCount++;
+              processed.push(`story:${setting.user_id}`);
             }
           }
         }
@@ -181,19 +235,25 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Sent ${sentCount} reminder emails, ${errors.length} errors`);
+    const duration = Date.now() - startTime;
+    console.log(`=== COMPLETED: Sent ${sentCount} emails, ${errors.length} errors, ${duration}ms ===`);
 
     return new Response(JSON.stringify({ 
       sent: sentCount, 
       checked: reminderSettings.length,
-      errors: errors.length > 0 ? errors : undefined 
+      processed,
+      errors: errors.length > 0 ? errors : undefined,
+      duration_ms: duration
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
-    console.error("Reminder function error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    console.error("Reminder function fatal error:", error);
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
