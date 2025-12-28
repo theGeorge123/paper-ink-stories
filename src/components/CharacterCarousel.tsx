@@ -123,12 +123,13 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     setShowLengthModal(true);
   };
 
-  // Start adventure with selected length
+  // Start adventure with selected length - pre-generate Page 1 before navigating
   const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     if (!selectedCharacter) return;
     setStartingAdventure(true);
     
     try {
+      // Step 1: Create the story
       const { data: newStory, error: storyError } = await supabase
         .from('stories')
         .insert({
@@ -140,6 +141,16 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
         .single();
 
       if (storyError) throw storyError;
+
+      // Step 2: Pre-generate Page 1 before navigating
+      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
+        body: { storyId: newStory.id, targetPage: 1 },
+      });
+
+      if (pageError) {
+        console.error('Page 1 generation failed:', pageError);
+        // Still navigate - Reader will handle generation
+      }
 
       setShowLengthModal(false);
       navigate(`/read/${newStory.id}`);

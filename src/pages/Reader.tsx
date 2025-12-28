@@ -44,8 +44,8 @@ export default function Reader() {
   const [prefetchingNext, setPrefetchingNext] = useState(false);
   const [existingLifeSummary, setExistingLifeSummary] = useState<string | null>(null);
   
-  // Track which page we've prefetched up to (to avoid duplicate calls)
-  const lastPrefetchedPage = useRef(0);
+  // Track inflight requests by page number to prevent duplicates
+  const inflightRequests = useRef<Set<number>>(new Set());
   const prefetchInProgress = useRef(false);
 
   const { data: story, refetch: refetchStory } = useQuery({
@@ -78,14 +78,17 @@ export default function Reader() {
     refetchInterval: prefetchingNext ? 1000 : false,
   });
 
-  // Generate page mutation (simplified - no mood/humor)
-  const generatePage = useCallback(async (isBackground = false) => {
+  // Generate page mutation with deduplication
+  const generatePage = useCallback(async (targetPageNumber: number, isBackground = false) => {
     if (!storyId) return null;
     
-    // Prevent duplicate background calls
-    if (isBackground && prefetchInProgress.current) {
+    // Prevent duplicate inflight requests for same page
+    if (inflightRequests.current.has(targetPageNumber)) {
+      console.log(`Page ${targetPageNumber} already inflight, skipping`);
       return null;
     }
+    
+    inflightRequests.current.add(targetPageNumber);
     
     if (!isBackground) setGenerating(true);
     else {
@@ -95,7 +98,7 @@ export default function Reader() {
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-page', {
-        body: { storyId },
+        body: { storyId, targetPage: targetPageNumber },
       });
 
       if (error) {
@@ -113,11 +116,6 @@ export default function Reader() {
         return null;
       }
 
-      // Track which page we just generated
-      if (data?.page_number) {
-        lastPrefetchedPage.current = data.page_number;
-      }
-
       if (data?.is_ending) {
         if (data?.adventure_summary) {
           setAdventureSummary(data.adventure_summary);
@@ -133,6 +131,7 @@ export default function Reader() {
 
       return data;
     } finally {
+      inflightRequests.current.delete(targetPageNumber);
       if (!isBackground) setGenerating(false);
       else {
         setPrefetchingNext(false);
@@ -141,10 +140,10 @@ export default function Reader() {
     }
   }, [storyId, refetchPages, refetchStory]);
 
-  // Initial page generation - only when no pages exist
+  // Initial page generation - only when no pages exist (Page 1 should already be generated)
   useEffect(() => {
-    if (pages.length === 0 && story && !generating && !prefetchInProgress.current) {
-      generatePage(false);
+    if (pages.length === 0 && story && !generating && !inflightRequests.current.has(1)) {
+      generatePage(1, false);
     }
   }, [pages.length, story, generating, generatePage]);
 
@@ -182,7 +181,7 @@ export default function Reader() {
     }
   }, [story]);
 
-  // Background prefetch loop - SILENTLY stay one page ahead
+  // Background prefetch loop - SILENTLY stay 1-2 pages ahead (rolling window)
   // CRITICAL: This does NOT change currentPageIndex
   useEffect(() => {
     if (!story || !storyId) return;
@@ -190,30 +189,33 @@ export default function Reader() {
     const targetPages = getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG');
     const isStoryEnded = !story.is_active || pages.length >= targetPages;
     
+    // Prefetch up to 2 pages ahead of current position
+    const nextPageToFetch = pages.length + 1;
+    const maxPrefetch = Math.min(currentPageIndex + 3, targetPages); // 2 pages ahead of current view
+    
     // Only prefetch if:
     // 1. Story is not ended
     // 2. We're not already prefetching or generating
     // 3. We have at least 1 page (story has started)
-    // 4. The next page doesn't exist yet
-    // 5. We haven't already prefetched beyond current pages
-    const nextPageNumber = pages.length + 1;
-    
+    // 4. Next page is within our prefetch window
+    // 5. Not already inflight
     if (
       !isStoryEnded && 
       !prefetchingNext && 
       !generating &&
       !prefetchInProgress.current &&
       pages.length > 0 && 
-      lastPrefetchedPage.current < nextPageNumber
+      nextPageToFetch <= maxPrefetch &&
+      !inflightRequests.current.has(nextPageToFetch)
     ) {
       // Small delay to let current render complete
       const timer = setTimeout(() => {
-        generatePage(true);
+        generatePage(nextPageToFetch, true);
       }, 500);
       
       return () => clearTimeout(timer);
     }
-  }, [pages.length, story, storyId, prefetchingNext, generating, generatePage]);
+  }, [pages.length, story, storyId, prefetchingNext, generating, generatePage, currentPageIndex]);
 
   const currentPage = pages[currentPageIndex];
   const totalPages = story ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 10;
@@ -237,8 +239,9 @@ export default function Reader() {
     } 
     // If we're on the last available page but story isn't done, generate more
     else if (canGenerate && !generating) {
+      const nextPage = pages.length + 1;
       setDirection(1);
-      generatePage(false).then(() => {
+      generatePage(nextPage, false).then(() => {
         // After generation, move to the new page
         setCurrentPageIndex(prev => prev + 1);
       });
@@ -264,11 +267,11 @@ export default function Reader() {
   }
 
   return (
-    <div className="min-h-screen bg-background paper-texture flex flex-col">
+    <div className="h-screen bg-background paper-texture flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center">
+      <header className="flex-shrink-0 p-4 flex justify-between items-center z-10">
         <motion.div whileTap={{ scale: 0.95 }}>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
             <Home className="w-5 h-5" />
           </Button>
         </motion.div>
@@ -290,14 +293,14 @@ export default function Reader() {
         )}
       </header>
 
-      {/* Reading area */}
-      <main className="flex-1 flex items-center justify-center px-6 py-20">
-        <div className="max-w-xl w-full" style={{ perspective: '1000px' }}>
+      {/* Scrollable reading area */}
+      <main className="flex-1 overflow-y-auto px-6 pb-4">
+        <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {story?.title && currentPageIndex === 0 && (
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-2xl text-center text-foreground mb-8"
+              className="font-serif text-2xl text-center text-foreground mb-8 pt-4"
             >
               {story.title}
             </motion.h1>
@@ -319,7 +322,7 @@ export default function Reader() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center text-muted-foreground"
+                className="text-center text-muted-foreground py-20"
               >
                 <div className="flex flex-col items-center gap-4">
                   <motion.div 
@@ -352,7 +355,7 @@ export default function Reader() {
                   opacity: { duration: 0.2 },
                   rotateY: { duration: 0.3 },
                 }}
-                className="story-text text-lg leading-relaxed"
+                className="story-text text-lg leading-relaxed py-4"
               >
                 {currentPage.content}
               </motion.div>
@@ -365,7 +368,7 @@ export default function Reader() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="text-center mt-8"
+              className="text-center mt-8 pb-8"
             >
               <motion.p 
                 className="text-sm text-muted-foreground"
@@ -379,8 +382,8 @@ export default function Reader() {
         </div>
       </main>
 
-      {/* Navigation touch areas */}
-      <div className="absolute inset-0 flex pointer-events-none">
+      {/* Navigation touch areas - overlay */}
+      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '60px', bottom: '60px' }}>
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapLeft}
@@ -392,8 +395,8 @@ export default function Reader() {
         />
       </div>
 
-      {/* Page indicator */}
-      <footer className="absolute bottom-0 left-0 right-0 p-4 text-center">
+      {/* Fixed page indicator footer - OUTSIDE scrollable area */}
+      <footer className="flex-shrink-0 p-4 text-center border-t border-border/50 bg-background">
         <motion.span 
           key={currentPageIndex}
           initial={{ opacity: 0, y: 5 }}

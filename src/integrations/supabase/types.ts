@@ -115,6 +115,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_settings: {
+        Row: {
+          bedtime_enabled: boolean
+          bedtime_time: string | null
+          email_opt_in: boolean
+          story_enabled: boolean
+          story_time: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bedtime_enabled?: boolean
+          bedtime_time?: string | null
+          email_opt_in?: boolean
+          story_enabled?: boolean
+          story_time?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bedtime_enabled?: boolean
+          bedtime_time?: string | null
+          email_opt_in?: boolean
+          story_enabled?: boolean
+          story_time?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           character_id: string

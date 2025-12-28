@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Globe, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Settings, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Language } from '@/lib/i18n';
+import ReminderSettings from './ReminderSettings';
 
 const LANGUAGES: { code: Language; flag: string; name: string }[] = [
   { code: 'en', flag: '🇬🇧', name: 'English' },
@@ -25,7 +27,7 @@ export default function SettingsMenu() {
           </Button>
         </motion.div>
       </SheetTrigger>
-      <SheetContent className="glass">
+      <SheetContent className="glass w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="font-serif flex items-center gap-2">
             <Settings className="w-5 h-5" />
@@ -33,39 +35,52 @@ export default function SettingsMenu() {
           </SheetTitle>
         </SheetHeader>
         
-        <div className="mt-8 space-y-6">
-          {/* Language Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4 text-sm font-medium text-muted-foreground">
-              <Globe className="w-4 h-4" />
-              {t('language')}
-            </div>
+        <div className="mt-6">
+          <Tabs defaultValue="language" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="language">Language</TabsTrigger>
+              <TabsTrigger value="reminders">Reminders</TabsTrigger>
+            </TabsList>
             
-            <div className="grid grid-cols-1 gap-2">
-              {LANGUAGES.map((lang) => (
-                <motion.button
-                  key={lang.code}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setLanguage(lang.code)}
-                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left transition-all ${
-                    language === lang.code
-                      ? 'bg-primary/10 border-2 border-primary text-primary'
-                      : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
-                  }`}
-                >
-                  <span className="text-2xl">{lang.flag}</span>
-                  <span className="font-medium">{lang.name}</span>
-                  {language === lang.code && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="ml-auto w-2 h-2 rounded-full bg-primary"
-                    />
-                  )}
-                </motion.button>
-              ))}
-            </div>
-          </div>
+            <TabsContent value="language" className="mt-4">
+              {/* Language Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4 text-sm font-medium text-muted-foreground">
+                  <Globe className="w-4 h-4" />
+                  {t('language')}
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2">
+                  {LANGUAGES.map((lang) => (
+                    <motion.button
+                      key={lang.code}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setLanguage(lang.code)}
+                      className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-left transition-all ${
+                        language === lang.code
+                          ? 'bg-primary/10 border-2 border-primary text-primary'
+                          : 'bg-muted/50 border-2 border-transparent hover:bg-muted'
+                      }`}
+                    >
+                      <span className="text-2xl">{lang.flag}</span>
+                      <span className="font-medium">{lang.name}</span>
+                      {language === lang.code && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="ml-auto w-2 h-2 rounded-full bg-primary"
+                        />
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reminders" className="mt-4">
+              <ReminderSettings />
+            </TabsContent>
+          </Tabs>
         </div>
       </SheetContent>
     </Sheet>
