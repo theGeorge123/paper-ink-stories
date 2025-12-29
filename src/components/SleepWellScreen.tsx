@@ -68,25 +68,30 @@ export default function SleepWellScreen({
         return;
       }
 
+      type StoryWithOwner = {
+        character_id: string;
+        characters: { user_id: string } | null;
+      };
+
       const { data: story, error: storyError } = await supabase
         .from('stories')
         .select('character_id, characters!inner(user_id)')
         .eq('id', storyId)
-        .single();
+        .single<StoryWithOwner>();
 
-      if (storyError || (story?.characters as any)?.user_id !== user.id) {
+      if (storyError || story?.characters?.user_id !== user.id) {
         toast.error('Deze beoordeling kan alleen voor je eigen verhaal worden opgeslagen.');
         setRatingSaving(false);
         return;
       }
 
-      const { error } = await (supabase
-        .from('ratings' as any)
+      const { error } = await supabase
+        .from('ratings' as never)
         .upsert({
           user_id: user.id,
           story_id: storyId,
           score: value,
-        }, { onConflict: 'user_id,story_id' }) as any);
+        } as { user_id: string; story_id: string; score: number }, { onConflict: 'user_id,story_id' });
 
       if (error) throw error;
 
