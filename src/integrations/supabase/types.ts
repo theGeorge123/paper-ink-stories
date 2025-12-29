@@ -19,8 +19,12 @@ export type Database = {
           age_band: string
           archetype: string
           created_at: string
+          hero_image_prompt: string | null
+          hero_image_style: string | null
+          hero_image_url: string | null
           icon: string
           id: string
+          last_summary: string | null
           name: string
           pending_choice: string | null
           sidekick_archetype: string | null
@@ -33,8 +37,12 @@ export type Database = {
           age_band?: string
           archetype: string
           created_at?: string
+          hero_image_prompt?: string | null
+          hero_image_style?: string | null
+          hero_image_url?: string | null
           icon?: string
           id?: string
+          last_summary?: string | null
           name: string
           pending_choice?: string | null
           sidekick_archetype?: string | null
@@ -47,14 +55,36 @@ export type Database = {
           age_band?: string
           archetype?: string
           created_at?: string
+          hero_image_prompt?: string | null
+          hero_image_style?: string | null
+          hero_image_url?: string | null
           icon?: string
           id?: string
+          last_summary?: string | null
           name?: string
           pending_choice?: string | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
           traits?: string[]
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hero_creation_log: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
