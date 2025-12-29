@@ -29,9 +29,3 @@ CREATE POLICY "Users can insert own ratings"
   ON public.ratings
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own ratings"
-  ON public.ratings
-  FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
