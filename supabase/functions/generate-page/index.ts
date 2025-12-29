@@ -95,6 +95,14 @@ If current_page is the midpoint:
 - Style: MUST remain 'storybook_illustration_v1' (watercolor style).
 `;
 
+function getFirstEnvValue(keys: string[]): string | null {
+  for (const key of keys) {
+    const value = Deno.env.get(key);
+    if (value) return value;
+  }
+  return null;
+}
+
 function extractImageUrl(imageData: Record<string, unknown>): string | null {
   // Riverflow returns image URLs either as an image array or string content
   const choices = (imageData as { choices?: unknown })?.choices as Array<{
@@ -146,12 +154,13 @@ async function generateStoryImage(params: {
 }): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const openRouterImageKey =
-    Deno.env.get("openrouterimage") ||
-    Deno.env.get("openrouter_image") ||
-    Deno.env.get("openrouter") ||
-    Deno.env.get("OPENROUTER_API_KEY") ||
-    Deno.env.get("OPENROUTER");
+  const openRouterImageKey = getFirstEnvValue([
+    "openrouterimage",
+    "openrouter_image",
+    "openrouter",
+    "OPENROUTER_API_KEY",
+    "OPENROUTER",
+  ]);
 
   if (!params.description?.trim()) return null;
   if (!openRouterImageKey || !serviceRoleKey || !supabaseUrl) {
@@ -424,7 +433,11 @@ This is the FINAL page. You MUST:
 
     console.log("Calling OpenRouter API for page", currentPage);
 
-    const OPENROUTER_API_KEY = Deno.env.get("openrouter");
+    const OPENROUTER_API_KEY = getFirstEnvValue([
+      "openrouter",
+      "OPENROUTER",
+      "OPENROUTER_API_KEY",
+    ]);
     if (!OPENROUTER_API_KEY) {
       console.error("OpenRouter API key not configured");
       return new Response(JSON.stringify({ 
