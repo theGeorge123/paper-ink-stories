@@ -54,9 +54,48 @@ serve(async (req) => {
     });
   }
 
-  const { heroId, storyId, pageNumber } = await req.json();
+  const { heroId, heroIds, storyId, pageNumber } = await req.json();
 
   try {
+    // BATCH MODE: Sign multiple hero portrait URLs at once
+    if (heroIds && Array.isArray(heroIds) && heroIds.length > 0) {
+      // Verify ownership of all characters in one query
+      const { data: characters, error: charsError } = await supabase
+        .from("characters")
+        .select("id, user_id")
+        .in("id", heroIds);
+
+      if (charsError) {
+        console.error("Batch character fetch error:", charsError);
+        return new Response(JSON.stringify({ error: "Failed to fetch characters" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Filter to only characters owned by this user
+      const ownedCharacterIds = new Set(
+        characters?.filter(c => c.user_id === user.id).map(c => c.id) || []
+      );
+
+      // Sign URLs for owned characters in parallel
+      const results: Record<string, { signedUrl: string | null; storagePath: string }> = {};
+      await Promise.all(
+        heroIds.map(async (hId: string) => {
+          if (ownedCharacterIds.has(hId)) {
+            const storagePath = `${user.id}/${hId}.png`;
+            const signedUrl = await signUrl(admin, "hero-portraits", storagePath);
+            results[hId] = { signedUrl, storagePath };
+          }
+        })
+      );
+
+      return new Response(JSON.stringify({ urls: results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // SINGLE MODE: Original behavior for single heroId
     if (heroId) {
       const { data: character, error: characterError } = await supabase
         .from("characters")
