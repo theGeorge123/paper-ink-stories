@@ -9,7 +9,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
 import LengthSelectModal from './LengthSelectModal';
-import useEmblaCarousel from 'embla-carousel-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -60,37 +60,16 @@ interface CharacterCarouselProps {
 }
 
 export default function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: 'center',
-    loop: characters.length > 1,
-    inViewThreshold: 0.6,
-    dragFree: true,
-  });
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLengthModal, setShowLengthModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [startingAdventure, setStartingAdventure] = useState(false);
+  const [loadingCharacterId, setLoadingCharacterId] = useState<string | null>(null);
   const { t } = useLanguage();
   const navigate = useNavigate();
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-
-    onSelect();
-    emblaApi.on('select', onSelect);
-
-    return () => {
-      emblaApi.off('select', onSelect);
-    };
-  }, [emblaApi, onSelect]);
+  const isMobile = useIsMobile();
 
   const handleEditCharacter = (character: Character, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -125,19 +104,17 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  // Show length selection modal first
   const handleNewAdventure = (character: Character) => {
     setSelectedCharacter(character);
     setShowLengthModal(true);
   };
 
-  // Start adventure with selected length - pre-generate Page 1 before navigating
   const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     if (!selectedCharacter) return;
     setStartingAdventure(true);
+    setLoadingCharacterId(selectedCharacter.id);
     
     try {
-      // Step 1: Create the story
       const { data: newStory, error: storyError } = await supabase
         .from('stories')
         .insert({
@@ -150,14 +127,12 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
       if (storyError) throw storyError;
 
-      // Step 2: Pre-generate Page 1 before navigating
       const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
         body: { storyId: newStory.id, targetPage: 1 },
       });
 
       if (pageError) {
         console.error('Page 1 generation failed:', pageError);
-        // Still navigate - Reader will handle generation
       }
 
       setShowLengthModal(false);
@@ -165,216 +140,254 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast.error('Failed to start adventure');
+    } finally {
       setStartingAdventure(false);
+      setLoadingCharacterId(null);
     }
   };
 
-  // Get last adventure summary from inactive stories
-  const getLastAdventure = (character: Character) => {
-    const inactiveStory = character.stories?.find(s => !s.is_active && s.last_summary);
-    return inactiveStory?.last_summary;
+  const handleContinueStory = (storyId: string) => {
+    navigate(`/read/${storyId}`);
+  };
+
+  // Mobile compact card component
+  const MobileCharacterCard = ({ character }: { character: Character }) => {
+    const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
+    const activeStory = character.stories?.find((s) => s.is_active);
+    const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
+    const isLoading = loadingCharacterId === character.id;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden"
+      >
+        <div className="p-4">
+          {/* Header row: avatar + name + action buttons */}
+          <div className="flex items-center gap-3 mb-3">
+            {/* Avatar */}
+            {character.hero_image_url ? (
+              <div className={`w-14 h-14 rounded-full border-2 border-background shadow-md ${colors.glow} overflow-hidden flex-shrink-0`}>
+                <img
+                  src={character.hero_image_url}
+                  alt={character.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${colors.bg} border-2 border-background shadow-md flex items-center justify-center flex-shrink-0`}>
+                <Icon className={`w-7 h-7 ${colors.accent}`} />
+              </div>
+            )}
+
+            {/* Name and archetype */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-serif text-lg font-medium text-foreground truncate">
+                {character.name}
+              </h3>
+              <p className="text-xs text-muted-foreground capitalize">
+                The {character.archetype}
+                {character.sidekick_name && ` • ${character.sidekick_name}`}
+              </p>
+            </div>
+
+            {/* Edit/Delete buttons */}
+            <div className="flex gap-1.5 flex-shrink-0">
+              <button
+                onClick={(e) => handleDeleteClick(character, e)}
+                aria-label={`Delete ${character.name}`}
+                className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center text-destructive active:bg-destructive/20"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={(e) => handleEditCharacter(character, e)}
+                aria-label={`Edit ${character.name}`}
+                className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground active:bg-muted/80"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Action buttons - full width, stacked */}
+          <div className="flex flex-col gap-2">
+            {activeStory && (
+              <Button
+                onClick={() => handleContinueStory(activeStory.id)}
+                className="w-full h-12 text-base gap-2"
+                size="lg"
+              >
+                <Play className="w-5 h-5" />
+                {t('continueStory')}
+              </Button>
+            )}
+            <Button
+              onClick={() => handleNewAdventure(character)}
+              variant={activeStory ? 'outline' : 'default'}
+              className={`w-full h-12 text-base gap-2 ${!activeStory ? 'animate-pulse-subtle' : ''}`}
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
+              {isLoading ? 'Starting...' : t('newAdventure')}
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Desktop book-style card
+  const DesktopCharacterCard = ({ character, index }: { character: Character; index: number }) => {
+    const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
+    const activeStory = character.stories?.find((s) => s.is_active);
+    const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
+    const isLoading = loadingCharacterId === character.id;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+        className="book-cover group relative flex flex-col p-6 min-w-[300px] max-w-[340px]"
+      >
+        {/* Settings & Delete buttons */}
+        <div className="absolute top-3 right-3 flex gap-2 z-10">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => handleDeleteClick(character, e)}
+            aria-label={`Delete ${character.name}`}
+            className="w-10 h-10 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1, rotate: 45 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => handleEditCharacter(character, e)}
+            aria-label={`Edit ${character.name}`}
+            className="w-10 h-10 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+          </motion.button>
+        </div>
+
+        {/* Decorative top border */}
+        <div className="absolute top-0 left-4 right-4 h-1 rounded-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+        {/* Character icon or portrait */}
+        <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-1">
+          {character.hero_image_url ? (
+            <motion.div
+              className={`w-24 h-24 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
+              whileHover={{ scale: 1.05 }}
+            >
+              <img
+                src={character.hero_image_url}
+                alt={character.name}
+                className="w-full h-full object-cover rounded-full"
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              className={`w-24 h-24 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
+              whileHover={{ scale: 1.05 }}
+            >
+              <Icon className={`w-10 h-10 ${colors.accent}`} />
+            </motion.div>
+          )}
+
+          {/* Character info */}
+          <h3 className="font-serif text-xl text-foreground text-center mb-0.5 tracking-tight">
+            {character.name}
+          </h3>
+          <p className="text-sm text-muted-foreground capitalize font-medium mb-2">
+            The {character.archetype}
+          </p>
+
+          {character.sidekick_name && (
+            <p className="text-xs text-muted-foreground/80 mb-3">
+              with {character.sidekick_name}
+            </p>
+          )}
+
+          {/* Traits */}
+          <div className="flex flex-wrap justify-center gap-1.5 mb-4 px-2">
+            {character.traits.slice(0, 3).map((trait) => (
+              <span
+                key={trait}
+                className="text-xs px-3 py-1 rounded-full bg-muted/70 text-muted-foreground border border-border/60 shadow-sm"
+              >
+                {trait}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Pending choice indicator */}
+        {character.pending_choice && (
+          <div className="mb-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 shadow-sm">
+            <p className="text-xs text-primary font-medium">
+              Tomorrow: {character.pending_choice}
+            </p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2 mt-auto">
+          {activeStory && (
+            <Button
+              onClick={() => handleContinueStory(activeStory.id)}
+              className="w-full gap-2 shadow-sm"
+              size="default"
+            >
+              <Play className="w-4 h-4" />
+              {t('continueStory')}
+            </Button>
+          )}
+          <Button
+            onClick={() => handleNewAdventure(character)}
+            variant={activeStory ? 'outline' : 'default'}
+            className={`w-full gap-2 shadow-sm ${!activeStory ? 'animate-pulse-subtle' : ''}`}
+            size="default"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            {isLoading ? 'Starting...' : t('newAdventure')}
+          </Button>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
     <>
-      <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-3 sm:p-6 shadow-inner">
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex items-stretch justify-center gap-3 sm:gap-6 px-1 sm:px-6 md:px-10 touch-pan-y cursor-grab active:cursor-grabbing">
-            {characters.map((character, index) => {
-              const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
-              const activeStory = character.stories?.find((s) => s.is_active);
-              const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
-              const lastAdventure = getLastAdventure(character);
-              const isActive = index === selectedIndex;
-
-                return (
-                  <motion.div
-                    key={character.id}
-                    className="flex-shrink-0 basis-[85%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] min-w-[280px] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
-                    animate={{
-                      scale: isActive ? 1 : 0.92,
-                      rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
-                      opacity: isActive ? 1 : 0.95,
-                    }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    style={{ perspective: '1000px' }}
-                    onClick={() => emblaApi?.scrollTo(index)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        emblaApi?.scrollTo(index);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                  <div className="book-cover group relative flex h-full flex-col p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-
-                    {/* Settings & Delete buttons */}
-                    <div className="absolute top-3 right-3 flex gap-2 z-10">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => handleDeleteClick(character, e)}
-                        aria-label={`Delete ${character.name}`}
-                        className="w-11 h-11 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1, rotate: 45 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => handleEditCharacter(character, e)}
-                        aria-label={`Edit ${character.name}`}
-                        className="w-11 h-11 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Settings className="w-5 h-5" />
-                      </motion.button>
-                    </div>
-
-                    {/* Decorative top border */}
-                    <div className="absolute top-0 left-4 right-4 h-1 rounded-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
-                    {/* Character icon or portrait */}
-                    <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-1">
-                      {character.hero_image_url ? (
-                        <motion.div
-                          className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
-                          whileHover={{ scale: 1.05 }}
-                          animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <img
-                            src={character.hero_image_url}
-                            alt={character.name}
-                            className="w-full h-full object-cover rounded-full"
-                          />
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
-                          whileHover={{ scale: 1.05 }}
-                          animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Icon className={`w-10 h-10 ${colors.accent}`} />
-                        </motion.div>
-                      )}
-
-                      {/* Character info */}
-                      <h3 className="font-serif text-xl sm:text-2xl text-foreground text-center mb-0.5 tracking-tight">
-                        {character.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground capitalize font-medium mb-2">
-                        The {character.archetype}
-                      </p>
-
-                      {character.sidekick_name && (
-                        <p className="text-[11px] text-muted-foreground/80 mb-3">
-                          with {character.sidekick_name}
-                        </p>
-                      )}
-
-                      {/* Traits */}
-                      <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-4 px-2">
-                        {character.traits.slice(0, 3).map((trait) => (
-                          <span
-                            key={trait}
-                            className="text-[11px] sm:text-xs px-3 py-1 rounded-full bg-muted/70 text-muted-foreground border border-border/60 shadow-sm"
-                          >
-                            {trait}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Last adventure memory */}
-                    {lastAdventure && (
-                      <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50/70 border border-amber-200/70 shadow-sm">
-                        <p className="text-[11px] sm:text-xs text-muted-foreground italic line-clamp-2 font-serif">
-                          "{lastAdventure}"
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Pending choice indicator */}
-                    {character.pending_choice && (
-                      <div className="mb-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 shadow-sm">
-                        <p className="text-[11px] sm:text-xs text-primary font-medium">
-                          Tomorrow: {character.pending_choice}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex flex-col gap-3 mt-auto pt-2">
-                      {activeStory && (
-                        <motion.div whileTap={{ scale: 0.98 }}>
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/read/${activeStory.id}`);
-                            }}
-                            className="w-full gap-2 shadow-sm min-h-[48px] text-base"
-                            size="lg"
-                          >
-                            <Play className="w-5 h-5" />
-                            {t('continueStory')}
-                          </Button>
-                        </motion.div>
-                      )}
-                      <motion.div whileTap={{ scale: 0.98 }}>
-                        <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleNewAdventure(character);
-                          }}
-                          variant={activeStory ? 'outline' : 'default'}
-                          className={`w-full gap-2 shadow-sm transition-all min-h-[48px] text-base ${!activeStory ? 'animate-pulse-subtle' : 'hover:-translate-y-0.5'} ${activeStory ? 'hover:border-primary/50' : ''}`}
-                          size="lg"
-                          disabled={startingAdventure}
-                        >
-                          {startingAdventure ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <motion.div
-                              animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
-                              transition={{ duration: 2, repeat: Infinity }}
-                            >
-                              <Sparkles className="w-5 h-5" />
-                            </motion.div>
-                          )}
-                          {startingAdventure ? 'Starting...' : t('newAdventure')}
-                        </Button>
-                      </motion.div>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation dots */}
-      {characters.length > 1 && (
-        <div className="flex justify-center gap-4 mt-6">
-          {characters.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => emblaApi?.scrollTo(index)}
-              aria-label={`Go to character ${index + 1}`}
-              className="h-11 w-11 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            >
-              <span
-                className={`block rounded-full transition-all duration-300 shadow-sm ${
-                  index === selectedIndex
-                    ? 'w-4 h-4 bg-primary'
-                    : 'w-3 h-3 bg-muted hover:bg-muted-foreground/40'
-                }`}
-              />
-            </button>
+      {/* Mobile: Stacked list layout */}
+      {isMobile ? (
+        <div className="flex flex-col gap-4 px-1">
+          {characters.map((character) => (
+            <MobileCharacterCard key={character.id} character={character} />
           ))}
+        </div>
+      ) : (
+        /* Desktop: Horizontal scroll with book cards */
+        <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-6 shadow-inner">
+          <div className="flex gap-6 overflow-x-auto pb-4 px-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            {characters.map((character, index) => (
+              <DesktopCharacterCard key={character.id} character={character} index={index} />
+            ))}
+          </div>
         </div>
       )}
 
