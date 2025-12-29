@@ -8,13 +8,34 @@ interface Options {
   pageNumber?: number;
 }
 
+// Parse storage:// URLs to extract bucket and path
+function parseStorageUrl(url: string | null | undefined): { bucket: string; path: string } | null {
+  if (!url?.startsWith('storage://')) return null;
+  const withoutProtocol = url.slice('storage://'.length);
+  const slashIndex = withoutProtocol.indexOf('/');
+  if (slashIndex === -1) return null;
+  return {
+    bucket: withoutProtocol.slice(0, slashIndex),
+    path: withoutProtocol.slice(slashIndex + 1),
+  };
+}
+
 export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: Options) {
-  const [url, setUrl] = useState<string | null>(initialUrl ?? null);
+  const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!heroId && !storyId) return;
+    // Determine if we need to fetch a signed URL
+    const needsSignedUrl = heroId || (storyId && pageNumber);
+    const isStorageUrl = parseStorageUrl(initialUrl);
+    
+    if (!needsSignedUrl && !isStorageUrl) {
+      // Regular URL, use as-is
+      if (initialUrl) setUrl(initialUrl);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -42,11 +63,17 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
     }
-  }, [heroId, storyId, pageNumber]);
+  }, [heroId, storyId, pageNumber, initialUrl]);
 
   useEffect(() => {
+    const isStorageUrl = parseStorageUrl(initialUrl);
+    
     if (heroId || (storyId && pageNumber)) {
       refresh();
+    } else if (isStorageUrl) {
+      // Storage URL needs signing - but we need storyId/pageNumber context
+      // Fall back to showing we need to load it
+      setUrl(null);
     } else if (initialUrl) {
       setUrl(initialUrl);
     }
