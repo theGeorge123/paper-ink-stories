@@ -16,7 +16,7 @@ export default function StarRating({ value, onChange, readOnly, label }: StarRat
   const [hovered, setHovered] = useState<number | null>(null);
   const { t } = useLanguage();
   const displayValue = hovered ?? value;
-  const labelText = label || t('ratingPrompt');
+  const labelText = label ?? t('ratingPrompt');
 
   return (
     <div className="w-full">
