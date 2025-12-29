@@ -63,7 +63,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
     loop: characters.length > 1,
-    draggable: true,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);

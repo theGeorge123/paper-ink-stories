@@ -70,23 +70,23 @@ export default function SleepWellScreen({
 
       const { data: story, error: storyError } = await supabase
         .from('stories')
-        .select('user_id')
+        .select('character_id, characters!inner(user_id)')
         .eq('id', storyId)
         .single();
 
-      if (storyError || story?.user_id !== user.id) {
+      if (storyError || (story?.characters as any)?.user_id !== user.id) {
         toast.error('Deze beoordeling kan alleen voor je eigen verhaal worden opgeslagen.');
         setRatingSaving(false);
         return;
       }
 
-      const { error } = await supabase
-        .from('ratings')
+      const { error } = await (supabase
+        .from('ratings' as any)
         .upsert({
           user_id: user.id,
           story_id: storyId,
           score: value,
-        }, { onConflict: 'user_id,story_id' });
+        }, { onConflict: 'user_id,story_id' }) as any);
 
       if (error) throw error;
 

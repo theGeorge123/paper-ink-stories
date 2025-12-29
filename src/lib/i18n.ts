@@ -127,6 +127,7 @@ export const translations = {
     generateNext: 'Continue the story...',
     weavingStory: 'Weaving the story...',
     tapToContinue: 'Tap to continue...',
+    generatingPortrait: 'Generating portrait...',
     
     // Sleep Well Screen
     sleepWell: 'Sleep well',
@@ -271,6 +272,7 @@ export const translations = {
     generateNext: 'Ga verder met het verhaal...',
     weavingStory: 'Het verhaal wordt geweven...',
     tapToContinue: 'Tik om verder te gaan...',
+    generatingPortrait: 'Portret wordt gemaakt...',
     
     // Sleep Well Screen
     sleepWell: 'Slaap lekker',
@@ -415,6 +417,7 @@ export const translations = {
     generateNext: 'Fortsätt berättelsen...',
     weavingStory: 'Sagan vävs...',
     tapToContinue: 'Tryck för att fortsätta...',
+    generatingPortrait: 'Genererar porträtt...',
     
     // Sleep Well Screen
     sleepWell: 'Sov gott',
