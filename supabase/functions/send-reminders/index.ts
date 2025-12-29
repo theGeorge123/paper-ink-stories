@@ -4,7 +4,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 // Generate secure token for disable links
@@ -32,6 +32,33 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
+    // SECURITY: Validate X-CRON-SECRET header for cron-triggered execution
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const providedSecret = req.headers.get("x-cron-secret");
+    
+    if (!cronSecret) {
+      console.error("CRITICAL: CRON_SECRET not configured");
+      return new Response(JSON.stringify({ 
+        error: "CRON_SECRET not configured",
+        action: "Add 'CRON_SECRET' secret in Lovable Cloud settings"
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    if (!providedSecret || providedSecret !== cronSecret) {
+      console.error("Unauthorized: Invalid or missing X-CRON-SECRET header");
+      return new Response(JSON.stringify({ 
+        error: "Unauthorized",
+        message: "Valid X-CRON-SECRET header required"
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    
+    console.log("CRON secret validated successfully");
     // Validate Resend API key
     const resendApiKey = Deno.env.get("resend");
     if (!resendApiKey) {
