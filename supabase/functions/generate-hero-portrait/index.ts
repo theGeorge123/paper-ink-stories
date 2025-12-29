@@ -24,6 +24,32 @@ const ARCHETYPE_DESCRIPTIONS: Record<string, string> = {
   bear: "a cuddly teddy bear with warm brown fur and kind eyes",
 };
 
+async function hashPrompt(prompt: string): Promise<string> {
+  const buffer = new TextEncoder().encode(prompt.trim());
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function createSignedUrl(
+  client: ReturnType<typeof createClient>,
+  bucket: string,
+  path: string,
+  expiresInSeconds = 60 * 60 * 24 * 7, // 7 days
+) {
+  const { data, error } = await client.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSeconds, { download: false });
+
+  if (error || !data?.signedUrl) {
+    console.error("Failed to create signed URL:", error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+
 const AGE_MODIFIERS: Record<string, string> = {
   "3-5": "very cute and simple, extra rounded features, bright cheerful colors",
   "6-8": "whimsical and magical, balanced proportions, vibrant warm colors",
@@ -67,18 +93,6 @@ serve(async (req) => {
       });
     }
 
-    // IDEMPOTENT: Skip if image already exists (unless regenerate flag)
-    if (character.hero_image_url && !regenerate) {
-      console.log(`Character ${characterId} already has a portrait, skipping`);
-      return new Response(JSON.stringify({ 
-        success: true,
-        already_exists: true,
-        hero_image_url: character.hero_image_url 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Validate OpenRouter API key
     const openRouterKey = Deno.env.get("openrouterimage");
     if (!openRouterKey) {
@@ -109,6 +123,46 @@ serve(async (req) => {
     const fullPrompt = `${characterPrompt}${anchorPrompt} ${STORYBOOK_STYLE}`;
 
     console.log("Generated prompt:", fullPrompt);
+
+    const promptHash = await hashPrompt(fullPrompt);
+
+    // IDEMPOTENT: reuse latest matching asset unless regenerate flag
+    if (!regenerate) {
+      const { data: existingAsset } = await adminClient
+        .from("image_assets")
+        .select("storage_bucket,storage_path")
+        .eq("hero_id", characterId)
+        .eq("type", "hero")
+        .eq("prompt_hash", promptHash)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (existingAsset) {
+        const signedUrl = await createSignedUrl(
+          adminClient,
+          existingAsset.storage_bucket,
+          existingAsset.storage_path
+        );
+
+        if (signedUrl) {
+          await adminClient
+            .from("characters")
+            .update({ hero_image_url: signedUrl })
+            .eq("id", characterId);
+
+          console.log(`Reused cached portrait for character ${characterId}`);
+          return new Response(JSON.stringify({
+            success: true,
+            already_exists: true,
+            hero_image_url: signedUrl,
+            storage_path: existingAsset.storage_path,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
 
     // Call OpenRouter with Sourceful Riverflow V2 Fast Preview model
     console.log("Calling OpenRouter Riverflow for image generation...");
@@ -240,18 +294,30 @@ serve(async (req) => {
       });
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = adminClient.storage
-      .from("hero-portraits")
-      .getPublicUrl(storagePath);
+    await adminClient.from("image_assets").insert({
+      user_id: character.user_id,
+      hero_id: characterId,
+      type: "hero",
+      prompt_hash: promptHash,
+      model: "sourceful/riverflow-v2-fast-preview",
+      storage_bucket: "hero-portraits",
+      storage_path: storagePath,
+      is_public: false,
+    });
 
-    console.log("Public URL:", publicUrl);
+    const signedUrl = await createSignedUrl(adminClient, "hero-portraits", storagePath);
+    if (!signedUrl) {
+      return new Response(JSON.stringify({ error: "Failed to sign image URL" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Update character with image data
     const { error: updateError } = await adminClient
       .from("characters")
       .update({
-        hero_image_url: publicUrl,
+        hero_image_url: signedUrl,
         hero_image_prompt: fullPrompt,
         hero_image_style: "storybook_illustration_v1",
       })
@@ -269,8 +335,9 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true,
-      hero_image_url: publicUrl,
-      prompt_used: fullPrompt
+      hero_image_url: signedUrl,
+      prompt_used: fullPrompt,
+      storage_path: storagePath,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

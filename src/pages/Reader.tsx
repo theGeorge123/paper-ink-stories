@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import SleepWellScreen from '@/components/SleepWellScreen';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import CoverPage from '@/components/CoverPage';
+import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
 
 // Page turn animation variants
 const pageVariants = {
@@ -110,6 +111,11 @@ export default function Reader() {
     enabled: !!storyId,
     // Poll more frequently when prefetching
     refetchInterval: prefetchingNext ? 1000 : false,
+  });
+
+  const heroPortrait = useSignedImageUrl({
+    initialUrl: story?.characters?.hero_image_url,
+    heroId: story?.characters?.id,
   });
 
   // Generate page mutation with deduplication
@@ -264,7 +270,53 @@ export default function Reader() {
   const canGoNext = currentPageIndex < pages.length - 1;
   const canGenerate = !isLastPage && currentPageIndex === pages.length - 1;
   const isOnFinalPage = isLastPage && currentPageIndex === pages.length - 1;
-  const showCover = !!(story?.characters?.hero_image_url && !hasOpenedCover);
+  const showCover = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
+
+  const SceneImage = ({ imageUrl, pageNumber }: { imageUrl?: string | null; pageNumber: number }) => {
+    const { url, error, refresh, handleError, loading } = useSignedImageUrl({
+      initialUrl: imageUrl,
+      storyId: storyId ?? undefined,
+      pageNumber,
+    });
+
+    if (!url || error) {
+      return (
+        <div className="overflow-hidden rounded-xl shadow-lg">
+          <div className="aspect-[16/9] bg-black/5 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>{error ? 'Illustration unavailable' : 'Loading illustration...'}</span>
+            <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+              {loading ? 'Refreshing...' : 'Retry image'}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <motion.div
+        key={url}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="overflow-hidden rounded-xl shadow-lg"
+      >
+        <div className="aspect-[16/9] bg-black/5">
+          <motion.img
+            src={url}
+            alt="Story scene"
+            className="h-full w-full object-cover"
+            initial={{ scale: 1.02, opacity: 0.85 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            onError={(e) => {
+              e.preventDefault();
+              handleError();
+            }}
+          />
+        </div>
+      </motion.div>
+    );
+  };
 
   const handleTapLeft = () => {
     if (currentPageIndex > 0) {
@@ -313,7 +365,7 @@ export default function Reader() {
     return (
       <CoverPage
         title={story.title || `${story.characters.name}'s avontuur`}
-        heroImageUrl={characterDetails.hero_image_url}
+        heroImageUrl={heroPortrait.url || characterDetails.hero_image_url}
         onOpen={() => setHasOpenedCover(true)}
       />
     );
@@ -431,26 +483,7 @@ export default function Reader() {
                 }}
                 className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
               >
-                {currentPage.image_url && (
-                  <motion.div
-                    key={currentPage.image_url}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                    className="overflow-hidden rounded-xl shadow-lg"
-                  >
-                    <div className="aspect-[16/9] bg-black/5">
-                      <motion.img
-                        src={currentPage.image_url}
-                        alt="Story scene"
-                        className="h-full w-full object-cover"
-                        initial={{ scale: 1.02, opacity: 0.85 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.6 }}
-                      />
-                    </div>
-                  </motion.div>
-                )}
+                <SceneImage imageUrl={currentPage.image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />
                 <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>
             ) : null}

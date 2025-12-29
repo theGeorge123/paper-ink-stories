@@ -95,6 +95,32 @@ If current_page is the midpoint:
 - Style: MUST remain 'storybook_illustration_v1' (watercolor style).
 `;
 
+async function hashPrompt(prompt: string): Promise<string> {
+  const buffer = new TextEncoder().encode(prompt.trim());
+  const hash = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function createSignedUrl(
+  client: ReturnType<typeof createClient>,
+  bucket: string,
+  path: string,
+  expiresInSeconds = 60 * 60 * 6 // 6 hours for story pages to allow refresh
+) {
+  const { data, error } = await client.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSeconds, { download: false });
+
+  if (error || !data?.signedUrl) {
+    console.error("Failed to sign URL for", path, error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+
 function extractImageUrl(imageData: Record<string, unknown>): string | null {
   // Riverflow returns image URLs either as an image array or string content
   const choices = (imageData as { choices?: unknown })?.choices as Array<{
@@ -160,6 +186,25 @@ async function generateStoryImage(params: {
     : " Focus on the scenery and lighting.";
 
   const prompt = `Illustrate this bedtime story scene in storybook_illustration_v1 watercolor style: ${params.description}. Use cozy lighting and cinematic framing.${anchorPrompt} ${STORYBOOK_IMAGE_STYLE}`;
+  const promptHash = await hashPrompt(prompt);
+
+  const { data: existingAsset } = await adminClient
+    .from("image_assets")
+    .select("storage_bucket,storage_path")
+    .eq("story_id", params.storyId)
+    .eq("type", "scene")
+    .eq("prompt_hash", promptHash)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (existingAsset) {
+    const cachedUrl = await createSignedUrl(adminClient, existingAsset.storage_bucket, existingAsset.storage_path);
+    if (cachedUrl) {
+      console.log("Reusing cached scene image for story", params.storyId);
+      return cachedUrl;
+    }
+  }
 
   const imageResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -207,8 +252,18 @@ async function generateStoryImage(params: {
     return null;
   }
 
-  const { data: publicUrlData } = adminClient.storage.from("story-images").getPublicUrl(storagePath);
-  return publicUrlData?.publicUrl || null;
+  await adminClient.from("image_assets").insert({
+    user_id: params.userId,
+    story_id: params.storyId,
+    type: "scene",
+    prompt_hash: promptHash,
+    model: "sourceful/riverflow-v2-fast-preview",
+    storage_bucket: "story-images",
+    storage_path: storagePath,
+    is_public: false,
+  });
+
+  return await createSignedUrl(adminClient, "story-images", storagePath);
 }
 
 serve(async (req) => {
@@ -225,10 +280,16 @@ serve(async (req) => {
       });
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
+      supabaseUrl,
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const serviceClient = createClient(
+      supabaseUrl,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -298,6 +359,10 @@ serve(async (req) => {
     const existingPage = pages.find(p => p.page_number === currentPage);
     if (existingPage) {
       console.log(`Page ${currentPage} already exists, returning existing`);
+
+      const storagePath = `${story.characters.user_id}/${storyId}/page-${currentPage}.png`;
+      const refreshedUrl = await createSignedUrl(serviceClient, "story-images", storagePath);
+
       return new Response(JSON.stringify({
         success: true,
         page_text: existingPage.content,
@@ -306,7 +371,7 @@ serve(async (req) => {
         next_options: story.generated_options || null,
         page_number: currentPage,
         total_pages: LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8,
-        image_url: existingPage.image_url || null,
+        image_url: refreshedUrl || existingPage.image_url || null,
         already_existed: true,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight' },
@@ -53,6 +54,10 @@ export default function EditCharacterModal({
   const [sidekickName, setSidekickName] = useState(character.sidekick_name || '');
   const [saving, setSaving] = useState(false);
   const [regeneratingPortrait, setRegeneratingPortrait] = useState(false);
+  const { url: signedPortrait, error: portraitError, refresh, handleError, loading } = useSignedImageUrl({
+    initialUrl: character.hero_image_url,
+    heroId: character.id,
+  });
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -125,12 +130,13 @@ export default function EditCharacterModal({
         <div className="space-y-6 pb-4">
           {/* Portrait Preview & Regenerate */}
           <div className="flex flex-col items-center gap-3">
-            {character.hero_image_url ? (
+            {signedPortrait && !portraitError ? (
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
-                <img 
-                  src={character.hero_image_url} 
+                <img
+                  src={signedPortrait}
                   alt={character.name}
                   className="w-full h-full object-cover"
+                  onError={handleError}
                 />
               </div>
             ) : (
@@ -148,6 +154,11 @@ export default function EditCharacterModal({
               <RefreshCw className={`w-4 h-4 ${regeneratingPortrait ? 'animate-spin' : ''}`} />
               {regeneratingPortrait ? 'Generating...' : 'Regenerate Portrait'}
             </Button>
+            {portraitError && (
+              <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
+                {loading ? 'Refreshing...' : 'Retry loading portrait'}
+              </Button>
+            )}
           </div>
 
           {/* Name */}
