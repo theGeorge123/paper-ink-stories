@@ -413,7 +413,7 @@ export default function SleepWellScreen({
               </span>
             )}
           </div>
-          <StarRating value={rating} onChange={handleRatingChange} />
+          <StarRating value={rating} onChange={handleRatingChange} label="" />
           {ratingSaving && (
             <p className="mt-2 text-xs text-white/70">{t('ratingSaving')}</p>
           )}
