@@ -192,7 +192,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
               </p>
             </div>
 
-            {/* Edit/Delete buttons */}
+          {/* Edit/Delete buttons */}
             <div className="flex gap-1.5 flex-shrink-0">
               <button
                 onClick={(e) => handleDeleteClick(character, e)}
@@ -210,6 +210,15 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
               </button>
             </div>
           </div>
+
+          {/* Pending choice / Next adventure direction */}
+          {character.pending_choice && (
+            <div className="mb-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+              <p className="text-xs text-primary font-medium line-clamp-2">
+                ✨ Next: {character.pending_choice}
+              </p>
+            </div>
+          )}
 
           {/* Action buttons - full width, stacked */}
           <div className="flex flex-col gap-2">
