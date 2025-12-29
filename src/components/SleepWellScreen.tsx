@@ -15,6 +15,7 @@ interface SleepWellScreenProps {
   adventureSummary?: string;
   nextOptions?: string[];
   existingLifeSummary?: string | null;
+  storyThemes?: string[];
 }
 
 export default function SleepWellScreen({ 
@@ -23,7 +24,8 @@ export default function SleepWellScreen({
   storyId,
   adventureSummary, 
   nextOptions,
-  existingLifeSummary
+  existingLifeSummary,
+  storyThemes = []
 }: SleepWellScreenProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -54,6 +56,32 @@ export default function SleepWellScreen({
     }
     
     return combined;
+  };
+
+  // Learn from this story - add themes to preferred list
+  const updatePreferredThemes = async () => {
+    if (storyThemes.length === 0) return;
+    
+    try {
+      // Fetch current preferences
+      const { data: character } = await supabase
+        .from('characters')
+        .select('preferred_themes')
+        .eq('id', characterId)
+        .single();
+      
+      const currentPreferred = (character?.preferred_themes as string[]) || [];
+      
+      // Merge themes, keeping unique and limiting to last 10
+      const updatedPreferred = [...new Set([...currentPreferred, ...storyThemes])].slice(-10);
+      
+      await supabase
+        .from('characters')
+        .update({ preferred_themes: updatedPreferred })
+        .eq('id', characterId);
+    } catch (error) {
+      console.error('Error updating preferred themes:', error);
+    }
   };
 
   const handleRatingChange = async (value: number) => {
@@ -118,24 +146,24 @@ export default function SleepWellScreen({
         ? buildCumulativeLifeSummary(adventureSummary)
         : existingLifeSummary;
 
-      // Update character with pending_choice AND cumulative life summary
+      // Update character with pending_choice
       const { error } = await supabase
         .from('characters')
         .update({ 
           pending_choice: option,
-          // Store cumulative summary on the character (not story)
-          // Note: We need to add this column if it doesn't exist
-          // For now, we piggyback on stories.last_summary pattern
         })
         .eq('id', characterId);
 
       if (error) throw error;
 
+      // Learn from this story's themes
+      await updatePreferredThemes();
+
       // Also update the story's last_summary for this adventure
       if (newLifeSummary) {
         await supabase
           .from('stories')
-          .update({ last_summary: newLifeSummary })
+          .update({ last_summary: newLifeSummary, chosen_option: option })
           .eq('id', storyId);
       }
 
@@ -174,11 +202,14 @@ export default function SleepWellScreen({
 
       if (error) throw error;
 
-      // Update story with cumulative summary
+      // Learn from this story's themes
+      await updatePreferredThemes();
+
+      // Update story with cumulative summary and chosen option
       if (newLifeSummary) {
         await supabase
           .from('stories')
-          .update({ last_summary: newLifeSummary })
+          .update({ last_summary: newLifeSummary, chosen_option: randomOption })
           .eq('id', storyId);
       }
 

@@ -37,8 +37,9 @@ SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary 
 - Character naturally grows sleepy, finds a cozy spot.
 - Wrap up warmly—character falls asleep feeling safe and loved.
 - MUST set is_ending=true and provide adventure_summary.
+- MUST provide story_themes: array of 2-3 theme keywords from this story (e.g., ["friendship", "exploration", "magic"]).
 - MUST provide exactly 3 next_options for tomorrow's adventure.
-- The adventure_summary should be ONE sentence about what happened in THIS adventure only.
+- These options should be VARIED and DIFFERENT from past adventures based on preferred_themes and avoided_themes.
 
 ## 2. AGE-SPECIFIC RULES
 
@@ -77,6 +78,7 @@ You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
   "page_text": "The beautifully crafted story text in the specified language...",
   "is_ending": false,
   "adventure_summary": "One-sentence summary of THIS adventure (ONLY when is_ending is true, else null)",
+  "story_themes": ["theme1", "theme2"] (ONLY when is_ending is true - 2-3 keywords describing this story's themes),
   "next_options": ["Option A", "Option B", "Option C"] (ONLY when is_ending is true, else null),
   "plot_outline": ["Beat 1", "Beat 2", "Beat 3"] (ONLY on page 1 if generating new outline),
   "new_location": "Location name if character traveled",
@@ -380,6 +382,11 @@ serve(async (req) => {
     // This is stored on the character and grows with each adventure
     const character = story.characters;
     const lifeSummary = character.last_summary || null;
+    
+    // PREFERENCE LEARNING: Get themes this child likes/dislikes
+    const preferredThemes = character.preferred_themes || [];
+    const avoidedThemes = character.avoided_themes || [];
+    const storyCount = character.story_count || 0;
 
     // Build character DNA
     const ageBand = character.age_band || "6-8";
@@ -467,7 +474,15 @@ This is the FINAL page. You MUST:
 2. Character must fall asleep feeling safe and loved
 3. Set is_ending=true
 4. Provide adventure_summary - ONE sentence about what happened in THIS adventure ONLY
-5. Provide exactly 3 next_options in ${languageName} - exciting choices for TOMORROW's adventure (e.g., "Explore the crystal cave", "Visit the friendly dragon", "Find the hidden treasure")`;
+5. Provide story_themes - 2-3 keyword themes from this adventure (e.g., ["friendship", "underwater", "treasure"])
+6. Provide exactly 3 next_options in ${languageName} - exciting choices for TOMORROW's adventure
+
+## PERSONALIZATION (PREFERENCE LEARNING)
+This child has completed ${storyCount} stories with this character.
+${preferredThemes.length > 0 ? `✅ THEMES THEY LOVE: ${preferredThemes.join(", ")} - Include more of these!` : ""}
+${avoidedThemes.length > 0 ? `❌ THEMES TO AVOID: ${avoidedThemes.join(", ")} - Do NOT suggest these in next_options.` : ""}
+${storyCount > 3 ? "They're a returning reader! Make next_options feel fresh and different from past adventures." : ""}
+Make next_options VARIED - mix locations, activities, and companions.`;
     }
 
     // Build the system prompt with variables replaced
@@ -608,7 +623,7 @@ This is the FINAL page. You MUST:
       story_state: newState,
     };
 
-    // If ending, save summary to STORY, options, and mark inactive
+    // If ending, save summary, themes, options, and mark inactive
     // Note: The cumulative life_summary update happens in the client when user confirms
     if (parsedContent.is_ending) {
       const cumulativeSummary = parsedContent.adventure_summary
@@ -620,11 +635,18 @@ This is the FINAL page. You MUST:
       }
       storyUpdate.generated_options = parsedContent.next_options || [];
       storyUpdate.is_active = false;
+      storyUpdate.themes = parsedContent.story_themes || [];
       
       // Generate title if not set
       if (!story.title) {
         storyUpdate.title = `${character.name}'s Bedtime Adventure`;
       }
+      
+      // Increment story count on character
+      await supabase
+        .from("characters")
+        .update({ story_count: storyCount + 1 })
+        .eq("id", character.id);
     }
 
     const { error: updateError } = await supabase
@@ -657,6 +679,7 @@ This is the FINAL page. You MUST:
       is_ending: parsedContent.is_ending || false,
       adventure_summary: parsedContent.adventure_summary || null,
       next_options: parsedContent.next_options || null,
+      story_themes: parsedContent.story_themes || null,
       page_number: currentPage,
       total_pages: targetPages,
       image_url: pageImageUrl,

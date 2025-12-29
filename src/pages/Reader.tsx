@@ -72,6 +72,7 @@ export default function Reader() {
   const [direction, setDirection] = useState(0);
   const [adventureSummary, setAdventureSummary] = useState<string | undefined>();
   const [nextOptions, setNextOptions] = useState<string[] | undefined>();
+  const [storyThemes, setStoryThemes] = useState<string[]>([]);
   const [prefetchingNext, setPrefetchingNext] = useState(false);
   const [existingLifeSummary, setExistingLifeSummary] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>('day');
@@ -162,6 +163,9 @@ export default function Reader() {
         }
         if (data?.next_options) {
           setNextOptions(data.next_options);
+        }
+        if (data?.story_themes) {
+          setStoryThemes(data.story_themes);
         }
       }
 
@@ -278,14 +282,40 @@ export default function Reader() {
       storyId: storyId ?? undefined,
       pageNumber,
     });
+    const [imageLoaded, setImageLoaded] = useState(false);
 
-    if (!url || error) {
+    // Show skeleton while loading
+    if (loading || (!url && !error)) {
+      return (
+        <div className="overflow-hidden rounded-xl shadow-lg">
+          <div className="aspect-[16/9] relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+              animate={{ x: ['-100%', '100%'] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div 
+                className="flex items-center gap-2 text-muted-foreground"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-sm">Creating illustration...</span>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
       return (
         <div className="overflow-hidden rounded-xl shadow-lg">
           <div className="aspect-[16/9] bg-black/5 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span>{error ? 'Illustration unavailable' : 'Loading illustration...'}</span>
-            <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
-              {loading ? 'Refreshing...' : 'Retry image'}
+            <span>Illustration unavailable</span>
+            <Button variant="outline" size="sm" onClick={refresh}>
+              Retry
             </Button>
           </div>
         </div>
@@ -300,14 +330,18 @@ export default function Reader() {
         transition={{ duration: 0.4 }}
         className="overflow-hidden rounded-xl shadow-lg"
       >
-        <div className="aspect-[16/9] bg-black/5">
+        <div className="aspect-[16/9] bg-black/5 relative">
+          {!imageLoaded && (
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
+          )}
           <motion.img
-            src={url}
+            src={url!}
             alt="Story scene"
             className="h-full w-full object-cover"
-            initial={{ scale: 1.02, opacity: 0.85 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ scale: 1.02, opacity: 0 }}
+            animate={{ scale: 1, opacity: imageLoaded ? 1 : 0 }}
             transition={{ duration: 0.6 }}
+            onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               e.preventDefault();
               handleError();
@@ -356,6 +390,7 @@ export default function Reader() {
         adventureSummary={adventureSummary}
         nextOptions={nextOptions}
         existingLifeSummary={existingLifeSummary}
+        storyThemes={storyThemes}
       />
     );
   }

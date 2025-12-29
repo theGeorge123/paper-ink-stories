@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           age_band: string
           archetype: string
+          avoided_themes: string[] | null
           created_at: string
           hero_image_prompt: string | null
           hero_image_style: string | null
@@ -27,8 +28,10 @@ export type Database = {
           last_summary: string | null
           name: string
           pending_choice: string | null
+          preferred_themes: string[] | null
           sidekick_archetype: string | null
           sidekick_name: string | null
+          story_count: number | null
           traits: string[]
           updated_at: string
           user_id: string
@@ -36,6 +39,7 @@ export type Database = {
         Insert: {
           age_band?: string
           archetype: string
+          avoided_themes?: string[] | null
           created_at?: string
           hero_image_prompt?: string | null
           hero_image_style?: string | null
@@ -45,8 +49,10 @@ export type Database = {
           last_summary?: string | null
           name: string
           pending_choice?: string | null
+          preferred_themes?: string[] | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
+          story_count?: number | null
           traits?: string[]
           updated_at?: string
           user_id: string
@@ -54,6 +60,7 @@ export type Database = {
         Update: {
           age_band?: string
           archetype?: string
+          avoided_themes?: string[] | null
           created_at?: string
           hero_image_prompt?: string | null
           hero_image_style?: string | null
@@ -63,8 +70,10 @@ export type Database = {
           last_summary?: string | null
           name?: string
           pending_choice?: string | null
+          preferred_themes?: string[] | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
+          story_count?: number | null
           traits?: string[]
           updated_at?: string
           user_id?: string
@@ -208,6 +217,7 @@ export type Database = {
       stories: {
         Row: {
           character_id: string
+          chosen_option: string | null
           created_at: string
           current_page: number
           generated_options: Json | null
@@ -216,11 +226,13 @@ export type Database = {
           last_summary: string | null
           length_setting: string
           story_state: Json
+          themes: string[] | null
           title: string | null
           updated_at: string
         }
         Insert: {
           character_id: string
+          chosen_option?: string | null
           created_at?: string
           current_page?: number
           generated_options?: Json | null
@@ -229,11 +241,13 @@ export type Database = {
           last_summary?: string | null
           length_setting?: string
           story_state?: Json
+          themes?: string[] | null
           title?: string | null
           updated_at?: string
         }
         Update: {
           character_id?: string
+          chosen_option?: string | null
           created_at?: string
           current_page?: number
           generated_options?: Json | null
@@ -242,6 +256,7 @@ export type Database = {
           last_summary?: string | null
           length_setting?: string
           story_state?: Json
+          themes?: string[] | null
           title?: string | null
           updated_at?: string
         }
