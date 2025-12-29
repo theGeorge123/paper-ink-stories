@@ -34,6 +34,7 @@ export default function Dashboard() {
             id,
             is_active,
             current_page,
+            last_summary,
             created_at
           )
         `)
@@ -44,6 +45,7 @@ export default function Dashboard() {
       return data;
     },
     enabled: !!user,
+    refetchInterval: 10000, // Refetch every 10s to pick up portrait updates
   });
 
   const handleCharacterUpdated = () => {

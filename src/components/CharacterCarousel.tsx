@@ -50,6 +50,7 @@ interface Character {
   sidekick_name: string | null;
   sidekick_archetype: string | null;
   pending_choice?: string | null;
+  hero_image_url?: string | null;
   stories?: { id: string; is_active: boolean; current_page?: number; last_summary?: string | null }[];
 }
 
@@ -230,16 +231,31 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                   {/* Decorative top border */}
                   <div className="absolute top-0 left-4 right-4 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-                  {/* Character icon */}
+                  {/* Character icon or portrait */}
                   <div className="flex-1 flex flex-col items-center justify-center pt-4">
-                    <motion.div 
-                      className={`w-20 h-20 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3`}
-                      whileHover={{ scale: 1.05 }}
-                      animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <Icon className={`w-10 h-10 ${colors.accent}`} />
-                    </motion.div>
+                    {character.hero_image_url ? (
+                      <motion.div 
+                        className={`w-20 h-20 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3`}
+                        whileHover={{ scale: 1.05 }}
+                        animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <img 
+                          src={character.hero_image_url} 
+                          alt={character.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </motion.div>
+                    ) : (
+                      <motion.div 
+                        className={`w-20 h-20 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3`}
+                        whileHover={{ scale: 1.05 }}
+                        animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        <Icon className={`w-10 h-10 ${colors.accent}`} />
+                      </motion.div>
+                    )}
 
                     {/* Character info */}
                     <h3 className="font-serif text-xl text-foreground text-center mb-0.5">{character.name}</h3>
