@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
 import LengthSelectModal from './LengthSelectModal';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -40,6 +41,61 @@ const ARCHETYPE_COLORS: Record<string, { bg: string; accent: string; glow: strin
   bunny: { bg: 'from-rose-100 to-rose-200/50', accent: 'text-rose-600', glow: 'shadow-rose-400/40' },
   bear: { bg: 'from-yellow-100 to-yellow-200/50', accent: 'text-yellow-600', glow: 'shadow-yellow-400/40' },
 };
+
+function HeroPortrait({
+  character,
+  size = 'w-14 h-14',
+  rounded = 'rounded-full',
+  className = '',
+}: {
+  character: Character;
+  size?: string;
+  rounded?: string;
+  className?: string;
+}) {
+  const { url, error, refresh, handleError, loading } = useSignedImageUrl({
+    initialUrl: character.hero_image_url,
+    heroId: character.id,
+  });
+
+  const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
+  const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
+
+  if (!url || error) {
+    return (
+      <div className={`${size} ${rounded} bg-gradient-to-br ${colors.bg} border-2 border-background shadow-md flex items-center justify-center flex-shrink-0 ${className}`}>
+        <div className="flex flex-col items-center gap-1">
+          <Icon className={`w-7 h-7 ${colors.accent}`} />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              refresh();
+            }}
+            className="text-[10px] text-muted-foreground underline"
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${size} ${rounded} border-2 border-background shadow-md ${colors.glow} overflow-hidden flex-shrink-0 ${className}`}>
+      <img
+        src={url}
+        alt={character.name}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.preventDefault();
+          handleError();
+        }}
+      />
+    </div>
+  );
+}
 
 interface Character {
   id: string;
@@ -167,19 +223,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           {/* Header row: avatar + name + action buttons */}
           <div className="flex items-center gap-3 mb-3">
             {/* Avatar */}
-            {character.hero_image_url ? (
-              <div className={`w-14 h-14 rounded-full border-2 border-background shadow-md ${colors.glow} overflow-hidden flex-shrink-0`}>
-                <img
-                  src={character.hero_image_url}
-                  alt={character.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${colors.bg} border-2 border-background shadow-md flex items-center justify-center flex-shrink-0`}>
-                <Icon className={`w-7 h-7 ${colors.accent}`} />
-              </div>
-            )}
+            <HeroPortrait character={character} />
 
             {/* Name and archetype */}
             <div className="flex-1 min-w-0">
@@ -293,25 +337,16 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
         {/* Character icon or portrait */}
         <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-1">
-          {character.hero_image_url ? (
-            <motion.div
-              className={`w-24 h-24 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
-              whileHover={{ scale: 1.05 }}
-            >
-              <img
-                src={character.hero_image_url}
-                alt={character.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              className={`w-24 h-24 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
-              whileHover={{ scale: 1.05 }}
-            >
-              <Icon className={`w-10 h-10 ${colors.accent}`} />
-            </motion.div>
-          )}
+          <motion.div
+            className="mb-3"
+            whileHover={{ scale: 1.05 }}
+          >
+            <HeroPortrait
+              character={character}
+              size="w-24 h-24"
+              className={`ring-2 ring-offset-2 ring-offset-background ring-white/50 ${colors.glow}`}
+            />
+          </motion.div>
 
           {/* Character info */}
           <h3 className="font-serif text-xl text-foreground text-center mb-0.5 tracking-tight">
