@@ -100,8 +100,13 @@ serve(async (req) => {
       sidekickDesc = `, accompanied by their companion ${sidekickArchetype} named ${character.sidekick_name}`;
     }
 
+    const anchor = character.visual_description_anchor?.trim();
+    const anchorPrompt = anchor
+      ? ` Maintain these exact visual anchors: ${anchor}. Keep facial features, colors, and accessories identical across renderings.`
+      : "";
+
     const characterPrompt = `A portrait of ${character.name}, ${archetypeDesc}${sidekickDesc}. ${traitsDesc}. ${ageModifier}.`;
-    const fullPrompt = `${characterPrompt} ${STORYBOOK_STYLE}`;
+    const fullPrompt = `${characterPrompt}${anchorPrompt} ${STORYBOOK_STYLE}`;
 
     console.log("Generated prompt:", fullPrompt);
 
@@ -147,7 +152,8 @@ serve(async (req) => {
     
     // Check if content is an array (multimodal response)
     if (Array.isArray(content)) {
-      const imageItem = content.find((item: any) => item.type === "image_url" || item.type === "image");
+      type ImageContent = { type?: string; image_url?: { url?: string }; url?: string };
+      const imageItem = (content as ImageContent[]).find((item) => item.type === "image_url" || item.type === "image");
       if (imageItem?.image_url?.url) {
         imageUrl = imageItem.image_url.url;
       } else if (imageItem?.url) {

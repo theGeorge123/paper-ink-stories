@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StarRating from './StarRating';
 
 interface SleepWellScreenProps {
   characterName: string;
@@ -29,6 +30,9 @@ export default function SleepWellScreen({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dimmed, setDimmed] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [ratingSaving, setRatingSaving] = useState(false);
+  const [ratingMessage, setRatingMessage] = useState<string | null>(null);
 
   // Build cumulative life summary from existing + new adventure
   const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
@@ -49,6 +53,38 @@ export default function SleepWellScreen({
     }
     
     return combined;
+  };
+
+  const handleRatingChange = async (value: number) => {
+    setRating(value);
+    setRatingSaving(true);
+    setRatingMessage(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Je moet ingelogd zijn om te beoordelen.');
+        setRatingSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('ratings')
+        .upsert({
+          user_id: user.id,
+          story_id: storyId,
+          score: value,
+        }, { onConflict: 'user_id,story_id' });
+
+      if (error) throw error;
+
+      setRatingMessage('Bedankt voor je beoordeling!');
+    } catch (error) {
+      console.error('Error saving rating:', error);
+      toast.error('Kon beoordeling niet opslaan.');
+    } finally {
+      setRatingSaving(false);
+    }
   };
 
   const handleSelectOption = async (option: string) => {
@@ -339,6 +375,23 @@ export default function SleepWellScreen({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Star rating */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className="w-full mb-6"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-white/80">Hoe vond je dit avontuur?</span>
+            {ratingMessage && <span className="text-xs text-emerald-200">{ratingMessage}</span>}
+          </div>
+          <StarRating value={rating} onChange={handleRatingChange} />
+          {ratingSaving && (
+            <p className="mt-2 text-xs text-white/70">Bezig met opslaan...</p>
+          )}
+        </motion.div>
 
         {/* Goodnight button */}
         <motion.div
