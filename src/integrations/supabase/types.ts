@@ -94,6 +94,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           page_number: number
           story_id: string
         }
@@ -101,6 +102,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           page_number: number
           story_id: string
         }
@@ -108,6 +110,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           page_number?: number
           story_id?: string
         }
