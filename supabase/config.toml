@@ -16,4 +16,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-image-url]
-verify_jwt = true
+verify_jwt = false
