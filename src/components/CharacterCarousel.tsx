@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Bookmark, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,11 +79,16 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     setSelectedIndex(emblaApi.selectedScrollSnap());
   }, [emblaApi]);
 
-  useState(() => {
-    if (emblaApi) {
-      emblaApi.on('select', onSelect);
-    }
-  });
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    onSelect();
+    emblaApi.on('select', onSelect);
+
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi, onSelect]);
 
   const handleEditCharacter = (character: Character, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -170,188 +175,177 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   return (
     <>
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4 pl-[10%]">
-          {characters.map((character, index) => {
-            const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
-            const activeStory = character.stories?.find((s) => s.is_active);
-            const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
-            const lastAdventure = getLastAdventure(character);
-            const isActive = index === selectedIndex;
+      <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-4 sm:p-6 shadow-inner">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex items-stretch justify-center gap-4 sm:gap-6 pl-3 sm:pl-6 md:pl-10">
+            {characters.map((character, index) => {
+              const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
+              const activeStory = character.stories?.find((s) => s.is_active);
+              const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
+              const lastAdventure = getLastAdventure(character);
+              const isActive = index === selectedIndex;
 
-            return (
-              <motion.div
-                key={character.id}
-                className="flex-shrink-0 w-[280px]"
-                animate={{
-                  scale: isActive ? 1 : 0.85,
-                  rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
-                  opacity: isActive ? 1 : 0.7,
-                }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                style={{ perspective: '1000px' }}
-              >
-                <div className="book-cover p-5 flex flex-col relative">
-                  {/* Physical Bookmark */}
-                  {lastAdventure && (
-                    <motion.div
-                      initial={{ y: -20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      className="absolute -top-2 right-6 z-20"
-                    >
-                      <div className="relative">
-                        <div className="w-8 h-16 bg-gradient-to-b from-amber-400 to-amber-500 rounded-b-sm shadow-lg" 
-                          style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%)' }}
-                        />
-                        <Bookmark className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 text-amber-800" />
-                      </div>
-                    </motion.div>
-                  )}
+              return (
+                <motion.div
+                  key={character.id}
+                  className="flex-shrink-0 basis-[88%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px]"
+                  animate={{
+                    scale: isActive ? 1 : 0.85,
+                    rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
+                    opacity: isActive ? 1 : 0.7,
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  style={{ perspective: '1000px' }}
+                >
+                  <div className="book-cover group relative flex h-full flex-col p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
 
-                  {/* Settings & Delete buttons */}
-                  <div className="absolute top-3 right-3 flex gap-1.5 z-10">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => handleDeleteClick(character, e)}
-                      className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1, rotate: 45 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => handleEditCharacter(character, e)}
-                      className="w-7 h-7 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      <Settings className="w-3.5 h-3.5" />
-                    </motion.button>
-                  </div>
-
-                  {/* Decorative top border */}
-                  <div className="absolute top-0 left-4 right-4 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
-                  {/* Character icon or portrait */}
-                  <div className="flex-1 flex flex-col items-center justify-center pt-4">
-                    {character.hero_image_url ? (
-                      <motion.div 
-                        className={`w-20 h-20 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3`}
-                        whileHover={{ scale: 1.05 }}
-                        animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
-                        transition={{ duration: 2, repeat: Infinity }}
+                    {/* Settings & Delete buttons */}
+                    <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => handleDeleteClick(character, e)}
+                        className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
                       >
-                        <img 
-                          src={character.hero_image_url} 
-                          alt={character.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        className={`w-20 h-20 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3`}
-                        whileHover={{ scale: 1.05 }}
-                        animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1, rotate: 45 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => handleEditCharacter(character, e)}
+                        className="w-7 h-7 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        <Icon className={`w-10 h-10 ${colors.accent}`} />
-                      </motion.div>
-                    )}
+                        <Settings className="w-3.5 h-3.5" />
+                      </motion.button>
+                    </div>
 
-                    {/* Character info */}
-                    <h3 className="font-serif text-xl text-foreground text-center mb-0.5">{character.name}</h3>
-                    <p className="text-xs text-muted-foreground capitalize font-medium mb-2">
-                      The {character.archetype}
-                    </p>
-                    
-                    {character.sidekick_name && (
-                      <p className="text-[10px] text-muted-foreground/80 mb-2">
-                        with {character.sidekick_name}
-                      </p>
-                    )}
+                    {/* Decorative top border */}
+                    <div className="absolute top-0 left-4 right-4 h-1 rounded-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
-                    {/* Traits */}
-                    <div className="flex flex-wrap justify-center gap-1 mb-3">
-                      {character.traits.slice(0, 3).map((trait) => (
-                        <span 
-                          key={trait} 
-                          className="text-[10px] px-2 py-0.5 rounded-full bg-muted/80 text-muted-foreground"
+                    {/* Character icon or portrait */}
+                    <div className="flex-1 flex flex-col items-center justify-center pt-4 gap-1">
+                      {character.hero_image_url ? (
+                        <motion.div
+                          className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-background shadow-xl ${colors.glow} overflow-hidden mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
+                          whileHover={{ scale: 1.05 }}
+                          animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
+                          transition={{ duration: 2, repeat: Infinity }}
                         >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                          <img
+                            src={character.hero_image_url}
+                            alt={character.name}
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br ${colors.bg} border-4 border-background shadow-xl ${colors.glow} flex items-center justify-center mb-3 ring-2 ring-offset-2 ring-offset-background ring-white/50`}
+                          whileHover={{ scale: 1.05 }}
+                          animate={isActive ? { boxShadow: ['0 0 20px rgba(0,0,0,0.1)', '0 0 30px rgba(0,0,0,0.2)', '0 0 20px rgba(0,0,0,0.1)'] } : {}}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Icon className={`w-10 h-10 ${colors.accent}`} />
+                        </motion.div>
+                      )}
 
-                  {/* Last adventure memory with bookmark styling */}
-                  {lastAdventure && (
-                    <div className="mb-3 px-2 py-1.5 rounded-lg bg-amber-50/50 border border-amber-200/50">
-                      <p className="text-[10px] text-muted-foreground italic line-clamp-2 font-serif">
-                        "{lastAdventure}"
+                      {/* Character info */}
+                      <h3 className="font-serif text-xl sm:text-2xl text-foreground text-center mb-0.5 tracking-tight">
+                        {character.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground capitalize font-medium mb-2">
+                        The {character.archetype}
                       </p>
-                    </div>
-                  )}
 
-                  {/* Pending choice indicator */}
-                  {character.pending_choice && (
-                    <div className="mb-3 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/20">
-                      <p className="text-[10px] text-primary font-medium">
-                        Tomorrow: {character.pending_choice}
-                      </p>
-                    </div>
-                  )}
+                      {character.sidekick_name && (
+                        <p className="text-[11px] text-muted-foreground/80 mb-3">
+                          with {character.sidekick_name}
+                        </p>
+                      )}
 
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2 mt-auto">
-                    {activeStory && (
+                      {/* Traits */}
+                      <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-4 px-2">
+                        {character.traits.slice(0, 3).map((trait) => (
+                          <span
+                            key={trait}
+                            className="text-[11px] sm:text-xs px-3 py-1 rounded-full bg-muted/70 text-muted-foreground border border-border/60 shadow-sm"
+                          >
+                            {trait}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Last adventure memory */}
+                    {lastAdventure && (
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-amber-50/70 border border-amber-200/70 shadow-sm">
+                        <p className="text-[11px] sm:text-xs text-muted-foreground italic line-clamp-2 font-serif">
+                          "{lastAdventure}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Pending choice indicator */}
+                    {character.pending_choice && (
+                      <div className="mb-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20 shadow-sm">
+                        <p className="text-[11px] sm:text-xs text-primary font-medium">
+                          Tomorrow: {character.pending_choice}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 mt-auto">
+                      {activeStory && (
+                        <motion.div whileTap={{ scale: 0.98 }}>
+                          <Button
+                            onClick={() => navigate(`/read/${activeStory.id}`)}
+                            className="w-full gap-2 shadow-sm"
+                            size="sm"
+                          >
+                            <Play className="w-4 h-4" />
+                            {t('continueStory')}
+                          </Button>
+                        </motion.div>
+                      )}
                       <motion.div whileTap={{ scale: 0.98 }}>
                         <Button
-                          onClick={() => navigate(`/read/${activeStory.id}`)}
-                          className="w-full gap-2"
+                          onClick={() => handleNewAdventure(character)}
+                          variant={activeStory ? 'outline' : 'default'}
+                          className={`w-full gap-2 shadow-sm transition-all ${!activeStory ? 'animate-pulse-subtle' : 'hover:-translate-y-0.5'} ${activeStory ? 'hover:border-primary/50' : ''}`}
                           size="sm"
+                          disabled={startingAdventure}
                         >
-                          <Play className="w-4 h-4" />
-                          {t('continueStory')}
+                          {startingAdventure ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <motion.div
+                              animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </motion.div>
+                          )}
+                          {startingAdventure ? 'Starting...' : t('newAdventure')}
                         </Button>
                       </motion.div>
-                    )}
-                    <motion.div whileTap={{ scale: 0.98 }}>
-                      <Button
-                        onClick={() => handleNewAdventure(character)}
-                        variant={activeStory ? 'outline' : 'default'}
-                        className={`w-full gap-2 ${!activeStory ? 'animate-pulse-subtle' : ''}`}
-                        size="sm"
-                        disabled={startingAdventure}
-                      >
-                        {startingAdventure ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <motion.div
-                            animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          >
-                            <Sparkles className="w-4 h-4" />
-                          </motion.div>
-                        )}
-                        {startingAdventure ? 'Starting...' : t('newAdventure')}
-                      </Button>
-                    </motion.div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Navigation dots */}
       {characters.length > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-3 mt-6">
           {characters.map((_, index) => (
             <button
               key={index}
               onClick={() => emblaApi?.scrollTo(index)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === selectedIndex ? 'w-6 bg-primary' : 'bg-muted hover:bg-muted-foreground/30'
+              className={`h-2.5 rounded-full transition-all duration-300 shadow-sm ${
+                index === selectedIndex ? 'w-8 bg-primary' : 'w-2.5 bg-muted hover:bg-muted-foreground/40'
               }`}
             />
           ))}
