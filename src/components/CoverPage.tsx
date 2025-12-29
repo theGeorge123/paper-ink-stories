@@ -10,7 +10,7 @@ interface CoverPageProps {
 
 export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProps) {
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white">
+    <div className="relative min-h-screen w-screen overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white p-0 m-0">
       {heroImageUrl && (
         <motion.img
           initial={{ scale: 1.05, opacity: 0 }}
