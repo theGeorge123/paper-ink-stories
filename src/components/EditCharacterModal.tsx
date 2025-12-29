@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Wand2, Cat, Bot, Crown, Flame, Sparkles } from 'lucide-react';
+import { Shield, Wand2, Cat, Bot, Crown, Flame, RefreshCw, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ interface Character {
   sidekick_name: string | null;
   sidekick_archetype: string | null;
   age_band?: string;
+  hero_image_url?: string | null;
 }
 
 interface EditCharacterModalProps {
@@ -51,6 +52,7 @@ export default function EditCharacterModal({
   const [ageBand, setAgeBand] = useState(character.age_band || '6-8');
   const [sidekickName, setSidekickName] = useState(character.sidekick_name || '');
   const [saving, setSaving] = useState(false);
+  const [regeneratingPortrait, setRegeneratingPortrait] = useState(false);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -82,6 +84,35 @@ export default function EditCharacterModal({
     }
   };
 
+  const handleRegeneratePortrait = async () => {
+    setRegeneratingPortrait(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-hero-portrait', {
+        body: { characterId: character.id, regenerate: true },
+      });
+
+      if (error) {
+        console.error('Portrait regeneration error:', error);
+        toast.error('Failed to regenerate portrait');
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      toast.success('Portrait regenerated! It may take a moment to appear.');
+      onSaved?.();
+    } catch (err) {
+      console.error('Portrait regeneration exception:', err);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setRegeneratingPortrait(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="glass max-w-sm">
@@ -92,6 +123,33 @@ export default function EditCharacterModal({
         </DialogHeader>
         
         <div className="space-y-6 py-4">
+          {/* Portrait Preview & Regenerate */}
+          <div className="flex flex-col items-center gap-3">
+            {character.hero_image_url ? (
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 shadow-lg">
+                <img 
+                  src={character.hero_image_url} 
+                  alt={character.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-border">
+                <ImageIcon className="w-10 h-10 text-muted-foreground" />
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRegeneratePortrait}
+              disabled={regeneratingPortrait}
+              className="gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${regeneratingPortrait ? 'animate-spin' : ''}`} />
+              {regeneratingPortrait ? 'Generating...' : 'Regenerate Portrait'}
+            </Button>
+          </div>
+
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Hero Name</Label>

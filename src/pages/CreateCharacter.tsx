@@ -69,28 +69,54 @@ export default function CreateCharacter() {
     }
   };
 
+  const [limitReached, setLimitReached] = useState(false);
+  const [limitMessage, setLimitMessage] = useState('');
+
   const handleCreate = async () => {
     if (!user) return;
     setLoading(true);
 
-    const { error } = await supabase.from('characters').insert({
-      user_id: user.id,
-      name,
-      archetype,
-      age_band: ageBand,
-      traits,
-      icon: archetype,
-      sidekick_name: sidekickName || null,
-      sidekick_archetype: sidekickArchetype || null,
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('create-hero', {
+        body: {
+          name,
+          archetype,
+          age_band: ageBand,
+          traits,
+          icon: archetype,
+          sidekick_name: sidekickName || null,
+          sidekick_archetype: sidekickArchetype || null,
+        },
+      });
 
-    setLoading(false);
+      if (error) {
+        console.error('Create hero error:', error);
+        toast.error('Failed to create hero. Please try again.');
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(`${name} is ready for adventure!`);
+      if (data?.error === 'limit_reached') {
+        setLimitReached(true);
+        setLimitMessage(data.message || 'Je kunt maximaal 7 heroes per week maken.');
+        toast.error(data.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.message || data.error);
+        setLoading(false);
+        return;
+      }
+
+      toast.success(`${name} is ready for adventure! Portrait is being generated...`);
       navigate('/dashboard');
+    } catch (err) {
+      console.error('Create hero exception:', err);
+      toast.error('An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 

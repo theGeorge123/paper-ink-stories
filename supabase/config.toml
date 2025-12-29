@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.disable-reminders]
 verify_jwt = false
+
+[functions.create-hero]
+verify_jwt = false
+
+[functions.generate-hero-portrait]
+verify_jwt = false
