@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 async function signUrl(
-  client: ReturnType<typeof createClient>,
+  client: any,
   bucket: string,
   path: string,
   expiresInSeconds = 60 * 60 * 6

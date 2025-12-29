@@ -104,7 +104,7 @@ async function hashPrompt(prompt: string): Promise<string> {
 }
 
 async function createSignedUrl(
-  client: ReturnType<typeof createClient>,
+  client: any,
   bucket: string,
   path: string,
   expiresInSeconds = 60 * 60 * 6 // 6 hours for story pages to allow refresh

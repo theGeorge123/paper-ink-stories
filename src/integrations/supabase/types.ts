@@ -89,11 +89,36 @@ export type Database = {
         }
         Relationships: []
       }
+      image_assets: {
+        Row: {
+          created_at: string
+          id: string
+          prompt_hash: string
+          storage_bucket: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prompt_hash: string
+          storage_bucket: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prompt_hash?: string
+          storage_bucket?: string
+          storage_path?: string
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           content: string
           created_at: string
           id: string
+          image_url: string | null
           page_number: number
           story_id: string
         }
@@ -101,6 +126,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
           page_number: number
           story_id: string
         }
@@ -108,6 +134,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           page_number?: number
           story_id?: string
         }

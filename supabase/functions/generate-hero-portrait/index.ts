@@ -33,7 +33,7 @@ async function hashPrompt(prompt: string): Promise<string> {
 }
 
 async function createSignedUrl(
-  client: ReturnType<typeof createClient>,
+  client: any,
   bucket: string,
   path: string,
   expiresInSeconds = 60 * 60 * 24 * 7, // 7 days
