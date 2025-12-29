@@ -68,6 +68,18 @@ export default function SleepWellScreen({
         return;
       }
 
+      const { data: story, error: storyError } = await supabase
+        .from('stories')
+        .select('user_id')
+        .eq('id', storyId)
+        .single();
+
+      if (storyError || story?.user_id !== user.id) {
+        toast.error('Deze beoordeling kan alleen voor je eigen verhaal worden opgeslagen.');
+        setRatingSaving(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('ratings')
         .upsert({

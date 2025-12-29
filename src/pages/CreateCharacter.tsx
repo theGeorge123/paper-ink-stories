@@ -57,6 +57,9 @@ export default function CreateCharacter() {
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
   const [loading, setLoading] = useState(false);
+  const [generatingPortrait, setGeneratingPortrait] = useState(false);
+  const [portraitMessage, setPortraitMessage] = useState('');
+  const [createdCharacterId, setCreatedCharacterId] = useState<string | null>(null);
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -71,6 +74,41 @@ export default function CreateCharacter() {
 
   const [limitReached, setLimitReached] = useState(false);
   const [limitMessage, setLimitMessage] = useState('');
+
+  const pollForPortrait = async (characterId: string) => {
+    setGeneratingPortrait(true);
+    setCreatedCharacterId(characterId);
+    setPortraitMessage('We maken een betoverend portret voor je held...');
+
+    const maxAttempts = 25;
+    const delay = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const { data, error } = await supabase
+        .from('characters')
+        .select('hero_image_url')
+        .eq('id', characterId)
+        .single();
+
+      if (error) {
+        console.error('Portrait polling error:', error);
+      }
+
+      if (data?.hero_image_url) {
+        setPortraitMessage('Portret klaar! We brengen je naar het avontuur...');
+        toast.success(`${name || 'Je held'} heeft nu een portret!`);
+        navigate('/dashboard');
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    toast.message('Portret is bijna klaar', {
+      description: 'Het verschijnt zodra het genereren is voltooid.',
+    });
+    navigate('/dashboard');
+  };
 
   const handleCreate = async () => {
     if (!user) return;
@@ -110,8 +148,13 @@ export default function CreateCharacter() {
         return;
       }
 
-      toast.success(`${name} is ready for adventure! Portrait is being generated...`);
-      navigate('/dashboard');
+      if (data?.character?.id) {
+        toast.success(`${name} is ready for adventure! Het portret wordt nu gemaakt...`);
+        await pollForPortrait(data.character.id);
+      } else {
+        toast.success(`${name} is ready for adventure!`);
+        navigate('/dashboard');
+      }
     } catch (err) {
       console.error('Create hero exception:', err);
       toast.error('An unexpected error occurred.');
@@ -489,6 +532,39 @@ export default function CreateCharacter() {
           </Button>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {generatingPortrait && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md px-6"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-md w-full rounded-3xl bg-card/90 border border-border/80 shadow-2xl p-8 text-center space-y-4"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center"
+              >
+                <Sparkles className="w-7 h-7 text-primary" />
+              </motion.div>
+              <h2 className="font-serif text-2xl text-foreground">{t('generatingPortrait') || 'Portret wordt gemaakt'}</h2>
+              <p className="text-muted-foreground leading-relaxed">{portraitMessage}</p>
+              {createdCharacterId && (
+                <p className="text-xs text-muted-foreground/80">
+                  Character ID: {createdCharacterId}
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

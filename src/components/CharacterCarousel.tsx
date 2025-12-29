@@ -60,9 +60,10 @@ interface CharacterCarouselProps {
 }
 
 export default function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
     loop: characters.length > 1,
+    draggable: true,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -185,18 +186,27 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
               const lastAdventure = getLastAdventure(character);
               const isActive = index === selectedIndex;
 
-              return (
-                <motion.div
-                  key={character.id}
-                  className="flex-shrink-0 basis-[88%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px]"
-                  animate={{
-                    scale: isActive ? 1 : 0.85,
-                    rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
-                    opacity: isActive ? 1 : 0.7,
-                  }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  style={{ perspective: '1000px' }}
-                >
+                return (
+                  <motion.div
+                    key={character.id}
+                    className="flex-shrink-0 basis-[88%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+                    animate={{
+                      scale: isActive ? 1 : 0.85,
+                      rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
+                      opacity: isActive ? 1 : 0.7,
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    style={{ perspective: '1000px' }}
+                    onClick={() => emblaApi?.scrollTo(index)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        emblaApi?.scrollTo(index);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
                   <div className="book-cover group relative flex h-full flex-col p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
 
                     {/* Settings & Delete buttons */}
