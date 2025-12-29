@@ -33,6 +33,7 @@ export default function SleepWellScreen({
   const [rating, setRating] = useState(0);
   const [ratingSaving, setRatingSaving] = useState(false);
   const [ratingMessage, setRatingMessage] = useState<string | null>(null);
+  const [ratingSaved, setRatingSaved] = useState(false);
 
   // Build cumulative life summary from existing + new adventure
   const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
@@ -59,11 +60,12 @@ export default function SleepWellScreen({
     setRating(value);
     setRatingSaving(true);
     setRatingMessage(null);
+    setRatingSaved(false);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast.error('Je moet ingelogd zijn om te beoordelen.');
+        toast.error(t('ratingLoginRequired'));
         setRatingSaving(false);
         return;
       }
@@ -77,28 +79,34 @@ export default function SleepWellScreen({
         .from('stories')
         .select('character_id, characters!inner(user_id)')
         .eq('id', storyId)
+        .eq('characters.user_id', user.id)
         .single<StoryWithOwner>();
 
-      if (storyError || story?.characters?.user_id !== user.id) {
-        toast.error('Deze beoordeling kan alleen voor je eigen verhaal worden opgeslagen.');
+      if (storyError || !story || story?.characters?.user_id !== user.id) {
+        toast.error(t('ratingOwnerOnly'));
         setRatingSaving(false);
         return;
       }
 
-      const { error } = await supabase
+      const { data: savedRating, error } = await supabase
         .from('ratings' as never)
         .upsert({
           user_id: user.id,
           story_id: storyId,
           score: value,
-        } as { user_id: string; story_id: string; score: number }, { onConflict: 'user_id,story_id' });
+        } as { user_id: string; story_id: string; score: number }, { onConflict: 'user_id,story_id' })
+        .select('id, score')
+        .single();
 
       if (error) throw error;
 
-      setRatingMessage('Bedankt voor je beoordeling!');
+      if (savedRating) {
+        setRatingMessage(t('ratingSaved'));
+        setRatingSaved(true);
+      }
     } catch (error) {
       console.error('Error saving rating:', error);
-      toast.error('Kon beoordeling niet opslaan.');
+      toast.error(t('ratingSaveFailed'));
     } finally {
       setRatingSaving(false);
     }
@@ -138,7 +146,7 @@ export default function SleepWellScreen({
       toast.success(t('choiceSaved').replace('{name}', characterName));
     } catch (error) {
       console.error('Error saving choice:', error);
-      toast.error('Failed to save choice');
+      toast.error(t('choiceSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -398,15 +406,20 @@ export default function SleepWellScreen({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2 }}
-          className="w-full mb-6"
+          className={`w-full mb-6 rounded-xl border ${ratingSaved ? 'border-emerald-300/60 bg-emerald-500/5 shadow-[0_10px_40px_-30px_rgba(16,185,129,0.8)]' : 'border-white/10 bg-white/5'} p-4`}
         >
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/80">Hoe vond je dit avontuur?</span>
-            {ratingMessage && <span className="text-xs text-emerald-200">{ratingMessage}</span>}
+            <span className="text-sm text-white/80">{t('ratingPrompt')}</span>
+            {ratingMessage && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-200" aria-live="polite">
+                <Check className="w-3 h-3" />
+                {ratingMessage}
+              </span>
+            )}
           </div>
           <StarRating value={rating} onChange={handleRatingChange} />
           {ratingSaving && (
-            <p className="mt-2 text-xs text-white/70">Bezig met opslaan...</p>
+            <p className="mt-2 text-xs text-white/70">{t('ratingSaving')}</p>
           )}
         </motion.div>
 

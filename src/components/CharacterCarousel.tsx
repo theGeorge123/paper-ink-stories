@@ -63,6 +63,8 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: 'center',
     loop: characters.length > 1,
+    inViewThreshold: 0.6,
+    dragFree: true,
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -177,7 +179,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     <>
       <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-4 sm:p-6 shadow-inner">
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex items-stretch justify-center gap-4 sm:gap-6 px-3 sm:px-6 md:px-10">
+          <div className="flex items-stretch justify-center gap-4 sm:gap-6 px-3 sm:px-6 md:px-10 touch-pan-y cursor-grab active:cursor-grabbing">
             {characters.map((character, index) => {
               const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
               const activeStory = character.stories?.find((s) => s.is_active);
@@ -190,9 +192,9 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                     key={character.id}
                     className="flex-shrink-0 basis-[92%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
                     animate={{
-                      scale: isActive ? 1 : 0.85,
+                      scale: isActive ? 1 : 0.92,
                       rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
-                      opacity: isActive ? 1 : 0.7,
+                      opacity: isActive ? 1 : 0.95,
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     style={{ perspective: '1000px' }}
@@ -209,24 +211,24 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                   <div className="book-cover group relative flex h-full flex-col p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
 
                     {/* Settings & Delete buttons */}
-                    <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+                    <div className="absolute top-3 right-3 flex gap-2 z-10">
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => handleDeleteClick(character, e)}
                         aria-label={`Delete ${character.name}`}
-                        className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
+                        className="w-11 h-11 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-5 h-5" />
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.1, rotate: 45 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => handleEditCharacter(character, e)}
                         aria-label={`Edit ${character.name}`}
-                        className="w-7 h-7 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="w-11 h-11 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        <Settings className="w-3.5 h-3.5" />
+                        <Settings className="w-5 h-5" />
                       </motion.button>
                     </div>
 
@@ -350,15 +352,22 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
       {/* Navigation dots */}
       {characters.length > 1 && (
-        <div className="flex justify-center gap-3 mt-6">
+        <div className="flex justify-center gap-4 mt-6">
           {characters.map((_, index) => (
             <button
               key={index}
               onClick={() => emblaApi?.scrollTo(index)}
-              className={`h-2.5 rounded-full transition-all duration-300 shadow-sm ${
-                index === selectedIndex ? 'w-8 bg-primary' : 'w-2.5 bg-muted hover:bg-muted-foreground/40'
-              }`}
-            />
+              aria-label={`Go to character ${index + 1}`}
+              className="h-11 w-11 rounded-full flex items-center justify-center transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              <span
+                className={`block rounded-full transition-all duration-300 shadow-sm ${
+                  index === selectedIndex
+                    ? 'w-4 h-4 bg-primary'
+                    : 'w-3 h-3 bg-muted hover:bg-muted-foreground/40'
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
