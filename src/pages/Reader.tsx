@@ -429,9 +429,29 @@ export default function Reader() {
                   opacity: { duration: 0.2 },
                   rotateY: { duration: 0.3 },
                 }}
-                className={`story-text text-lg leading-relaxed py-4 whitespace-pre-line ${activeTheme.text}`}
+                className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
               >
-                {currentPage.content}
+                {currentPage.image_url && (
+                  <motion.div
+                    key={currentPage.image_url}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="overflow-hidden rounded-xl shadow-lg"
+                  >
+                    <div className="aspect-[16/9] bg-black/5">
+                      <motion.img
+                        src={currentPage.image_url}
+                        alt="Story scene"
+                        className="h-full w-full object-cover"
+                        initial={{ scale: 1.02, opacity: 0.85 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.6 }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+                <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>
             ) : null}
           </AnimatePresence>
