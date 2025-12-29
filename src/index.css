@@ -187,7 +187,8 @@
 
   @media (max-width: 640px) {
     .book-cover {
-      aspect-ratio: 2.6 / 4;
+      aspect-ratio: auto;
+      min-height: 520px;
     }
   }
 
