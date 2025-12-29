@@ -149,7 +149,9 @@ async function generateStoryImage(params: {
   const openRouterImageKey =
     Deno.env.get("openrouterimage") ||
     Deno.env.get("openrouter_image") ||
-    Deno.env.get("openrouter");
+    Deno.env.get("openrouter") ||
+    Deno.env.get("OPENROUTER_API_KEY") ||
+    Deno.env.get("OPENROUTER");
 
   if (!params.description?.trim()) return null;
   if (!openRouterImageKey || !serviceRoleKey || !supabaseUrl) {
