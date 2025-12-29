@@ -18,19 +18,30 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.functions.invoke('get-image-url', {
-      body: { heroId, storyId, pageNumber },
-    });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error: invokeError } = await supabase.functions.invoke('get-image-url', {
+        body: { heroId, storyId, pageNumber },
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`,
+        } : undefined,
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if (error) {
-      console.error('Failed to refresh signed url', error);
-      setError(error.message);
-      return;
+      if (invokeError) {
+        console.error('Failed to refresh signed url', invokeError);
+        setError(invokeError.message);
+        return;
+      }
+
+      setUrl(data?.signedUrl ?? null);
+    } catch (err) {
+      console.error('Failed to refresh signed url', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      setLoading(false);
     }
-
-    setUrl(data?.signedUrl ?? null);
   }, [heroId, storyId, pageNumber]);
 
   useEffect(() => {
