@@ -188,22 +188,19 @@ async function generateStoryImage(params: {
   const prompt = `Illustrate this bedtime story scene in storybook_illustration_v1 watercolor style: ${params.description}. Use cozy lighting and cinematic framing.${anchorPrompt} ${STORYBOOK_IMAGE_STYLE}`;
   const promptHash = await hashPrompt(prompt);
 
+  // Check for existing cached image by prompt hash
   const { data: existingAsset } = await adminClient
     .from("image_assets")
     .select("storage_bucket,storage_path")
-    .eq("story_id", params.storyId)
-    .eq("type", "scene")
     .eq("prompt_hash", promptHash)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
   if (existingAsset) {
-    const cachedUrl = await createSignedUrl(adminClient, existingAsset.storage_bucket, existingAsset.storage_path);
-    if (cachedUrl) {
-      console.log("Reusing cached scene image for story", params.storyId);
-      return cachedUrl;
-    }
+    console.log("Reusing cached scene image for story", params.storyId);
+    // Return storage path marker instead of signed URL
+    return `storage://${existingAsset.storage_bucket}/${existingAsset.storage_path}`;
   }
 
   const imageResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -252,18 +249,15 @@ async function generateStoryImage(params: {
     return null;
   }
 
+  // Cache the asset with only valid columns
   await adminClient.from("image_assets").insert({
-    user_id: params.userId,
-    story_id: params.storyId,
-    type: "scene",
     prompt_hash: promptHash,
-    model: "sourceful/riverflow-v2-fast-preview",
     storage_bucket: "story-images",
     storage_path: storagePath,
-    is_public: false,
   });
 
-  return await createSignedUrl(adminClient, "story-images", storagePath);
+  // Return storage path marker (not signed URL) so client can generate fresh signed URLs
+  return `storage://story-images/${storagePath}`;
 }
 
 serve(async (req) => {
