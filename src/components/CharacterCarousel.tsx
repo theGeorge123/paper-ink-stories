@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
 import LengthSelectModal from './LengthSelectModal';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
+import { useBatchSignedUrls } from '@/hooks/useBatchSignedUrls';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -44,53 +44,61 @@ const ARCHETYPE_COLORS: Record<string, { bg: string; accent: string; glow: strin
 
 function HeroPortrait({
   character,
+  imageUrl,
   size = 'w-14 h-14',
   rounded = 'rounded-full',
   className = '',
+  onRetry,
 }: {
   character: Character;
+  imageUrl?: string | null;
   size?: string;
   rounded?: string;
   className?: string;
+  onRetry?: () => void;
 }) {
-  const { url, error, refresh, handleError, loading } = useSignedImageUrl({
-    initialUrl: character.hero_image_url,
-    heroId: character.id,
-  });
+  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
   const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
 
-  if (!url || error) {
+  if (!imageUrl || error) {
     return (
       <div className={`${size} ${rounded} bg-gradient-to-br ${colors.bg} border-2 border-background shadow-md flex items-center justify-center flex-shrink-0 ${className}`}>
         <div className="flex flex-col items-center gap-1">
           <Icon className={`w-7 h-7 ${colors.accent}`} />
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              refresh();
-            }}
-            className="text-[10px] text-muted-foreground underline"
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Retry'}
-          </button>
+          {onRetry && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setError(false);
+                onRetry();
+              }}
+              className="text-[10px] text-muted-foreground underline"
+            >
+              Retry
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`${size} ${rounded} border-2 border-background shadow-md ${colors.glow} overflow-hidden flex-shrink-0 ${className}`}>
+    <div className={`${size} ${rounded} border-2 border-background shadow-md ${colors.glow} overflow-hidden flex-shrink-0 ${className} relative`}>
+      {loading && (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-primary/10 animate-pulse" />
+      )}
       <img
-        src={url}
+        src={imageUrl}
         alt={character.name}
         className="w-full h-full object-cover"
-        onError={(e) => {
-          e.preventDefault();
-          handleError();
+        onLoad={() => setLoading(false)}
+        onError={() => {
+          setLoading(false);
+          setError(true);
         }}
       />
     </div>
@@ -126,6 +134,10 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const { t } = useLanguage();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+
+  // Batch fetch all hero portrait URLs in a single API call
+  const heroIds = useMemo(() => characters.map(c => c.id), [characters]);
+  const { urls: batchUrls, refresh: refreshUrls } = useBatchSignedUrls(heroIds);
 
   const handleEditCharacter = (character: Character, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -223,7 +235,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           {/* Header row: avatar + name + action buttons */}
           <div className="flex items-center gap-3 mb-3">
             {/* Avatar */}
-            <HeroPortrait character={character} />
+            <HeroPortrait character={character} imageUrl={batchUrls[character.id]} onRetry={refreshUrls} />
 
             {/* Name and archetype */}
             <div className="flex-1 min-w-0">
@@ -343,8 +355,10 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           >
             <HeroPortrait
               character={character}
+              imageUrl={batchUrls[character.id]}
               size="w-24 h-24"
               className={`ring-2 ring-offset-2 ring-offset-background ring-white/50 ${colors.glow}`}
+              onRetry={refreshUrls}
             />
           </motion.div>
 
