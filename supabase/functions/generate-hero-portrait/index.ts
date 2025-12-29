@@ -79,9 +79,9 @@ serve(async (req) => {
       });
     }
 
-    // Validate OpenRouter API key
-    const openRouterKey = Deno.env.get("openrouterimage");
-    if (!openRouterKey) {
+    // Validate OpenAI API key (stored as openrouterimage secret)
+    const openaiKey = Deno.env.get("openrouterimage");
+    if (!openaiKey) {
       console.error("CRITICAL: openrouterimage API key not configured");
       return new Response(JSON.stringify({ error: "Image generation not configured" }), {
         status: 500,
@@ -105,29 +105,27 @@ serve(async (req) => {
 
     console.log("Generated prompt:", fullPrompt);
 
-    // Call OpenRouter for image generation
-    console.log("Calling OpenRouter image generation...");
+    // Call OpenAI DALL-E API directly
+    console.log("Calling OpenAI DALL-E image generation...");
     
-    const imageResponse = await fetch("https://openrouter.ai/api/v1/images/generations", {
+    const imageResponse = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${openRouterKey}`,
+        "Authorization": `Bearer ${openaiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
       },
       body: JSON.stringify({
-        model: "openai/dall-e-3",
+        model: "gpt-image-1",
         prompt: fullPrompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard",
-        style: "vivid",
+        quality: "medium",
       }),
     });
 
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
-      console.error("OpenRouter image error:", imageResponse.status, errorText);
+      console.error("OpenAI image error:", imageResponse.status, errorText);
       return new Response(JSON.stringify({ error: "Image generation failed", details: errorText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -137,28 +135,24 @@ serve(async (req) => {
     const imageData = await imageResponse.json();
     console.log("Image generation response received");
 
-    const imageUrl = imageData.data?.[0]?.url;
-    if (!imageUrl) {
-      console.error("No image URL in response:", imageData);
+    // gpt-image-1 returns base64 data
+    const base64Image = imageData.data?.[0]?.b64_json;
+    if (!base64Image) {
+      console.error("No image data in response:", JSON.stringify(imageData).slice(0, 500));
       return new Response(JSON.stringify({ error: "No image generated" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Download the image
-    console.log("Downloading generated image...");
-    const imageDownload = await fetch(imageUrl);
-    if (!imageDownload.ok) {
-      console.error("Failed to download image:", imageDownload.status);
-      return new Response(JSON.stringify({ error: "Failed to download generated image" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Convert base64 to binary
+    console.log("Processing generated image...");
+    const binaryString = atob(base64Image);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
-
-    const imageBlob = await imageDownload.blob();
-    const imageBuffer = await imageBlob.arrayBuffer();
+    const imageBuffer = bytes.buffer;
 
     // Upload to Supabase Storage
     const storagePath = `${character.user_id}/${characterId}.png`;
