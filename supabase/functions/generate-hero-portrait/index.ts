@@ -79,10 +79,10 @@ serve(async (req) => {
       });
     }
 
-    // Validate Lovable AI API key
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!lovableApiKey) {
-      console.error("CRITICAL: LOVABLE_API_KEY not configured");
+    // Validate OpenRouter API key
+    const openRouterKey = Deno.env.get("openrouterimage");
+    if (!openRouterKey) {
+      console.error("CRITICAL: openrouterimage API key not configured");
       return new Response(JSON.stringify({ error: "Image generation not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -105,44 +105,30 @@ serve(async (req) => {
 
     console.log("Generated prompt:", fullPrompt);
 
-    // Call Lovable AI Gateway for image generation
-    console.log("Calling Lovable AI Gateway for image generation...");
+    // Call OpenRouter with Sourceful Riverflow V2 Fast Preview model
+    console.log("Calling OpenRouter Riverflow for image generation...");
     
-    const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const imageResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${lovableApiKey}`,
+        "Authorization": `Bearer ${openRouterKey}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": supabaseUrl,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
+        model: "sourceful/riverflow-v2-fast-preview",
         messages: [
           {
             role: "user",
-            content: `Generate this image: ${fullPrompt}`
+            content: fullPrompt
           }
         ],
-        modalities: ["image", "text"],
       }),
     });
 
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
-      console.error("Lovable AI image error:", imageResponse.status, errorText);
-      
-      if (imageResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (imageResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
+      console.error("OpenRouter Riverflow error:", imageResponse.status, errorText);
       return new Response(JSON.stringify({ error: "Image generation failed", details: errorText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -152,36 +138,82 @@ serve(async (req) => {
     const imageData = await imageResponse.json();
     console.log("Image generation response received");
 
-    // Extract base64 image from Lovable AI response
-    const imageUrlData = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (!imageUrlData || !imageUrlData.startsWith("data:image")) {
-      console.error("No image data in response:", JSON.stringify(imageData).slice(0, 500));
-      return new Response(JSON.stringify({ error: "No image generated" }), {
+    // Extract image URL from Riverflow response
+    // Riverflow returns image URLs in the content
+    const content = imageData.choices?.[0]?.message?.content;
+    console.log("Response content type:", typeof content);
+    
+    let imageUrl: string | null = null;
+    
+    // Check if content is an array (multimodal response)
+    if (Array.isArray(content)) {
+      const imageItem = content.find((item: any) => item.type === "image_url" || item.type === "image");
+      if (imageItem?.image_url?.url) {
+        imageUrl = imageItem.image_url.url;
+      } else if (imageItem?.url) {
+        imageUrl = imageItem.url;
+      }
+    } else if (typeof content === "string") {
+      // Try to extract URL from string content
+      const urlMatch = content.match(/https?:\/\/[^\s"'<>]+\.(png|jpg|jpeg|webp)/i);
+      if (urlMatch) {
+        imageUrl = urlMatch[0];
+      }
+    }
+    
+    // Also check for images array in message
+    if (!imageUrl && imageData.choices?.[0]?.message?.images) {
+      const images = imageData.choices[0].message.images;
+      if (images[0]?.url) {
+        imageUrl = images[0].url;
+      } else if (images[0]?.image_url?.url) {
+        imageUrl = images[0].image_url.url;
+      }
+    }
+
+    if (!imageUrl) {
+      console.error("No image URL in response:", JSON.stringify(imageData).slice(0, 1000));
+      return new Response(JSON.stringify({ error: "No image generated", response: JSON.stringify(imageData).slice(0, 500) }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Extract base64 from data URL (format: data:image/png;base64,...)
-    const base64Match = imageUrlData.match(/^data:image\/\w+;base64,(.+)$/);
-    if (!base64Match) {
-      console.error("Invalid image data format");
-      return new Response(JSON.stringify({ error: "Invalid image format" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.log("Image URL received:", imageUrl.slice(0, 100) + "...");
 
-    const base64Image = base64Match[1];
-
-    // Convert base64 to binary
-    console.log("Processing generated image...");
-    const binaryString = atob(base64Image);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    // Download the image
+    console.log("Downloading generated image...");
+    let imageBuffer: ArrayBuffer;
+    
+    if (imageUrl.startsWith("data:image")) {
+      // Handle base64 data URL
+      const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
+      if (!base64Match) {
+        console.error("Invalid base64 image format");
+        return new Response(JSON.stringify({ error: "Invalid image format" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const binaryString = atob(base64Match[1]);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      imageBuffer = bytes.buffer;
+    } else {
+      // Download from URL
+      const imageDownload = await fetch(imageUrl);
+      if (!imageDownload.ok) {
+        console.error("Failed to download image:", imageDownload.status);
+        return new Response(JSON.stringify({ error: "Failed to download generated image" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const imageBlob = await imageDownload.blob();
+      imageBuffer = await imageBlob.arrayBuffer();
     }
-    const imageBuffer = bytes.buffer;
 
     // Upload to Supabase Storage
     const storagePath = `${character.user_id}/${characterId}.png`;
