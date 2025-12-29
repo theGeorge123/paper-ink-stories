@@ -38,7 +38,7 @@ serve(async (req) => {
       });
     }
 
-    const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype } = await req.json();
+    const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype, preferred_language } = await req.json();
 
     // Validate required fields
     if (!name || !archetype || !traits || traits.length === 0) {
@@ -88,6 +88,14 @@ serve(async (req) => {
       });
     }
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("language")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const preferredLanguage = preferred_language || profile?.language || "en";
+
     // Create the character
     const { data: character, error: createError } = await supabase
       .from("characters")
@@ -100,6 +108,7 @@ serve(async (req) => {
         icon: icon || archetype,
         sidekick_name: sidekick_name || null,
         sidekick_archetype: sidekick_archetype || null,
+        preferred_language: preferredLanguage,
       })
       .select()
       .single();

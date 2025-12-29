@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface StarRatingProps {
   value: number;
@@ -13,11 +14,13 @@ const stars = [1, 2, 3, 4, 5];
 
 export default function StarRating({ value, onChange, readOnly, label }: StarRatingProps) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const { t } = useLanguage();
   const displayValue = hovered ?? value;
+  const labelText = label || t('ratingPrompt');
 
   return (
     <div className="w-full">
-      {label && <p className="text-sm font-medium text-white/80 mb-2">{label}</p>}
+      {labelText && <p className="text-sm font-medium text-white/80 mb-2">{labelText}</p>}
       <div className="flex items-center gap-2">
         {stars.map((star) => {
           const filled = displayValue >= star;
@@ -31,6 +34,7 @@ export default function StarRating({ value, onChange, readOnly, label }: StarRat
               onFocus={() => setHovered(star)}
               onBlur={() => setHovered(null)}
               onClick={() => onChange?.(star)}
+              aria-label={t('ratingStarLabel', { value: star })}
               className={cn(
                 "rounded-full p-1 transition-transform focus:outline-none focus:ring-2 focus:ring-amber-300 focus:ring-offset-2 focus:ring-offset-transparent",
                 readOnly ? "cursor-default" : "hover:scale-105"
@@ -46,7 +50,7 @@ export default function StarRating({ value, onChange, readOnly, label }: StarRat
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-white/70">{value > 0 ? `${value}/5 sterren` : "Jouw beoordeling"}</p>
+      <p className="mt-2 text-xs text-white/70">{value > 0 ? t('ratingValue', { value }) : t('ratingPlaceholder')}</p>
     </div>
   );
 }

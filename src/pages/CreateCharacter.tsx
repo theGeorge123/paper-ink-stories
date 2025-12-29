@@ -61,7 +61,7 @@ export default function CreateCharacter() {
   const [portraitMessage, setPortraitMessage] = useState('');
   const [createdCharacterId, setCreatedCharacterId] = useState<string | null>(null);
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const toggleTrait = (trait: string) => {
@@ -124,6 +124,7 @@ export default function CreateCharacter() {
           icon: archetype,
           sidekick_name: sidekickName || null,
           sidekick_archetype: sidekickArchetype || null,
+          preferred_language: language,
         },
       });
 
