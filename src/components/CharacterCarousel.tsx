@@ -177,9 +177,9 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   return (
     <>
-      <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-4 sm:p-6 shadow-inner">
+      <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-3 sm:p-6 shadow-inner">
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex items-stretch justify-center gap-4 sm:gap-6 px-3 sm:px-6 md:px-10 touch-pan-y cursor-grab active:cursor-grabbing">
+          <div className="flex items-stretch justify-center gap-3 sm:gap-6 px-1 sm:px-6 md:px-10 touch-pan-y cursor-grab active:cursor-grabbing">
             {characters.map((character, index) => {
               const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
               const activeStory = character.stories?.find((s) => s.is_active);
@@ -190,7 +190,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                 return (
                   <motion.div
                     key={character.id}
-                    className="flex-shrink-0 basis-[92%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+                    className="flex-shrink-0 basis-[85%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] min-w-[280px] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
                     animate={{
                       scale: isActive ? 1 : 0.92,
                       rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
@@ -307,35 +307,41 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                     )}
 
                     {/* Actions */}
-                    <div className="flex flex-col gap-2 mt-auto">
+                    <div className="flex flex-col gap-3 mt-auto pt-2">
                       {activeStory && (
                         <motion.div whileTap={{ scale: 0.98 }}>
                           <Button
-                            onClick={() => navigate(`/read/${activeStory.id}`)}
-                            className="w-full gap-2 shadow-sm"
-                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/read/${activeStory.id}`);
+                            }}
+                            className="w-full gap-2 shadow-sm min-h-[48px] text-base"
+                            size="lg"
                           >
-                            <Play className="w-4 h-4" />
+                            <Play className="w-5 h-5" />
                             {t('continueStory')}
                           </Button>
                         </motion.div>
                       )}
                       <motion.div whileTap={{ scale: 0.98 }}>
                         <Button
-                          onClick={() => handleNewAdventure(character)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleNewAdventure(character);
+                          }}
                           variant={activeStory ? 'outline' : 'default'}
-                          className={`w-full gap-2 shadow-sm transition-all ${!activeStory ? 'animate-pulse-subtle' : 'hover:-translate-y-0.5'} ${activeStory ? 'hover:border-primary/50' : ''}`}
-                          size="sm"
+                          className={`w-full gap-2 shadow-sm transition-all min-h-[48px] text-base ${!activeStory ? 'animate-pulse-subtle' : 'hover:-translate-y-0.5'} ${activeStory ? 'hover:border-primary/50' : ''}`}
+                          size="lg"
                           disabled={startingAdventure}
                         >
                           {startingAdventure ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-5 h-5 animate-spin" />
                           ) : (
                             <motion.div
                               animate={!activeStory ? { scale: [1, 1.2, 1] } : {}}
                               transition={{ duration: 2, repeat: Infinity }}
                             >
-                              <Sparkles className="w-4 h-4" />
+                              <Sparkles className="w-5 h-5" />
                             </motion.div>
                           )}
                           {startingAdventure ? 'Starting...' : t('newAdventure')}

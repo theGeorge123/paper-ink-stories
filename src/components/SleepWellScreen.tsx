@@ -88,22 +88,18 @@ export default function SleepWellScreen({
         return;
       }
 
-      const { data: savedRating, error } = await supabase
-        .from('ratings' as never)
-        .upsert({
-          user_id: user.id,
-          story_id: storyId,
-          score: value,
-        } as { user_id: string; story_id: string; score: number }, { onConflict: 'user_id,story_id' })
-        .select('id, score')
-        .single();
+      // Store rating in story metadata since ratings table doesn't exist
+      const { error } = await supabase
+        .from('stories')
+        .update({ 
+          story_state: { rating: value }
+        })
+        .eq('id', storyId);
 
       if (error) throw error;
 
-      if (savedRating) {
-        setRatingMessage(t('ratingSaved'));
-        setRatingSaved(true);
-      }
+      setRatingMessage(t('ratingSaved'));
+      setRatingSaved(true);
     } catch (error) {
       console.error('Error saving rating:', error);
       toast.error(t('ratingSaveFailed'));
