@@ -177,7 +177,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     <>
       <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-4 sm:p-6 shadow-inner">
         <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex items-stretch justify-center gap-4 sm:gap-6 pl-3 sm:pl-6 md:pl-10">
+          <div className="flex items-stretch justify-center gap-4 sm:gap-6 px-3 sm:px-6 md:px-10">
             {characters.map((character, index) => {
               const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
               const activeStory = character.stories?.find((s) => s.is_active);
@@ -188,7 +188,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                 return (
                   <motion.div
                     key={character.id}
-                    className="flex-shrink-0 basis-[88%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+                    className="flex-shrink-0 basis-[92%] sm:basis-[60%] md:basis-[45%] lg:basis-[32%] xl:basis-[28%] max-w-[360px] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:ring-offset-4 focus-visible:ring-offset-background"
                     animate={{
                       scale: isActive ? 1 : 0.85,
                       rotateY: isActive ? 0 : index < selectedIndex ? 5 : -5,
@@ -214,6 +214,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => handleDeleteClick(character, e)}
+                        aria-label={`Delete ${character.name}`}
                         className="w-7 h-7 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -222,6 +223,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                         whileHover={{ scale: 1.1, rotate: 45 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={(e) => handleEditCharacter(character, e)}
+                        aria-label={`Edit ${character.name}`}
                         className="w-7 h-7 rounded-full bg-background/80 border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <Settings className="w-3.5 h-3.5" />

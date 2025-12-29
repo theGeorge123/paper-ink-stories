@@ -185,6 +185,12 @@
     pointer-events: none;
   }
 
+  @media (max-width: 640px) {
+    .book-cover {
+      aspect-ratio: 2.6 / 4;
+    }
+  }
+
   .book-cover::after {
     content: '';
     position: absolute;

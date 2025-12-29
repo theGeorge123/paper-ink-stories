@@ -115,14 +115,14 @@ export default function EditCharacterModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass max-w-sm">
+      <DialogContent className="glass max-w-sm sm:max-w-md max-h-[90vh] overflow-y-auto p-5">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl text-center">
             Edit Character
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-6 py-4">
+
+        <div className="space-y-6 pb-4">
           {/* Portrait Preview & Regenerate */}
           <div className="flex flex-col items-center gap-3">
             {character.hero_image_url ? (
@@ -165,7 +165,7 @@ export default function EditCharacterModal({
           {/* Archetype */}
           <div className="space-y-2">
             <Label>Archetype</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {ARCHETYPES.map((arch) => {
                 const Icon = arch.icon;
                 const isSelected = archetype === arch.id;
@@ -194,7 +194,7 @@ export default function EditCharacterModal({
           {/* Age Band */}
           <div className="space-y-2">
             <Label>Child's Age</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {AGE_BANDS.map((age) => {
                 const isSelected = ageBand === age.id;
                 return (
@@ -232,7 +232,7 @@ export default function EditCharacterModal({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="sticky bottom-0 left-0 right-0 flex gap-3 pt-3 pb-1 bg-gradient-to-t from-background via-background/95 to-background/70">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
