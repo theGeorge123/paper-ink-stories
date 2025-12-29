@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Clock, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/useLanguage';
+import { TranslationKey } from '@/lib/i18n';
 
 interface LengthSelectModalProps {
   open: boolean;
@@ -12,24 +13,24 @@ interface LengthSelectModalProps {
 }
 
 const LENGTH_OPTIONS = [
-  { 
-    value: 'SHORT' as const, 
-    key: 'storyLengthShort', 
-    descKey: 'storyLengthShortDesc',
+  {
+    value: 'SHORT' as const,
+    key: 'storyLengthShort' as TranslationKey,
+    descKey: 'storyLengthShortDesc' as TranslationKey,
     pages: 5,
     icon: '🌙'
   },
-  { 
-    value: 'MEDIUM' as const, 
-    key: 'storyLengthMedium', 
-    descKey: 'storyLengthMediumDesc',
+  {
+    value: 'MEDIUM' as const,
+    key: 'storyLengthMedium' as TranslationKey,
+    descKey: 'storyLengthMediumDesc' as TranslationKey,
     pages: 8,
     icon: '✨'
   },
-  { 
-    value: 'LONG' as const, 
-    key: 'storyLengthLong', 
-    descKey: 'storyLengthLongDesc',
+  {
+    value: 'LONG' as const,
+    key: 'storyLengthLong' as TranslationKey,
+    descKey: 'storyLengthLongDesc' as TranslationKey,
     pages: 12,
     icon: '🌟'
   },
@@ -72,10 +73,10 @@ export default function LengthSelectModal({
               <div className="text-2xl">{option.icon}</div>
               <div className="flex-1 text-left">
                 <h4 className="font-medium text-foreground">
-                  {t(option.key as any)}
+                  {t(option.key)}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  {t(option.descKey as any)} • {option.pages} pages
+                  {t(option.descKey)} • {option.pages} pages
                 </p>
               </div>
               <Clock className="w-4 h-4 text-muted-foreground" />

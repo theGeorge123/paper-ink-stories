@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +9,7 @@ import { getTotalPages } from '@/lib/storyEngine';
 import { toast } from 'sonner';
 import SleepWellScreen from '@/components/SleepWellScreen';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import CoverPage from '@/components/CoverPage';
 
 // Page turn animation variants
 const pageVariants = {
@@ -29,6 +30,35 @@ const pageVariants = {
   }),
 };
 
+const themes = {
+  day: {
+    background: 'bg-white',
+    text: 'text-gray-900',
+    muted: 'text-gray-600',
+    footer: 'bg-white/95',
+  },
+  sepia: {
+    background: 'bg-[#f5e6c9]',
+    text: 'text-[#4b3b2b]',
+    muted: 'text-[#6b4c2a]',
+    footer: 'bg-[#f5e6c9]/95',
+  },
+  night: {
+    background: 'bg-[#1f2933]',
+    text: 'text-[#f0f4f8]',
+    muted: 'text-[#cbd2d9]',
+    footer: 'bg-[#1f2933]/95',
+  }
+} as const;
+
+const themeOptions = [
+  { key: 'day', label: 'Day', icon: Sun },
+  { key: 'sepia', label: 'Sepia', icon: Sunrise },
+  { key: 'night', label: 'Night', icon: Moon },
+] as const;
+
+type ThemeKey = typeof themeOptions[number]['key'];
+
 export default function Reader() {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
@@ -43,10 +73,14 @@ export default function Reader() {
   const [nextOptions, setNextOptions] = useState<string[] | undefined>();
   const [prefetchingNext, setPrefetchingNext] = useState(false);
   const [existingLifeSummary, setExistingLifeSummary] = useState<string | null>(null);
-  
+  const [theme, setTheme] = useState<ThemeKey>('day');
+  const [hasOpenedCover, setHasOpenedCover] = useState(false);
+
   // Track inflight requests by page number to prevent duplicates
   const inflightRequests = useRef<Set<number>>(new Set());
   const prefetchInProgress = useRef(false);
+
+  const activeTheme = themes[theme];
 
   const { data: story, refetch: refetchStory } = useQuery({
     queryKey: ['story', storyId],
@@ -152,9 +186,16 @@ export default function Reader() {
     if (story?.characters) {
       // The character's last_summary IS the cumulative life summary
       // We store it on the character, not on individual stories
-      setExistingLifeSummary(story.characters.pending_choice ? null : (story.characters as any).last_summary || null);
+      const characterDetails = story.characters as { last_summary?: string | null; pending_choice?: string | null };
+      setExistingLifeSummary(characterDetails.pending_choice ? null : characterDetails.last_summary ?? null);
     }
   }, [story?.characters]);
+
+  useEffect(() => {
+    if (story && !story.characters?.hero_image_url) {
+      setHasOpenedCover(true);
+    }
+  }, [story]);
 
   // Clear pending_choice after Page 1 loads successfully
   useEffect(() => {
@@ -223,6 +264,7 @@ export default function Reader() {
   const canGoNext = currentPageIndex < pages.length - 1;
   const canGenerate = !isLastPage && currentPageIndex === pages.length - 1;
   const isOnFinalPage = isLastPage && currentPageIndex === pages.length - 1;
+  const showCover = !!(story?.characters?.hero_image_url && !hasOpenedCover);
 
   const handleTapLeft = () => {
     if (currentPageIndex > 0) {
@@ -255,7 +297,7 @@ export default function Reader() {
   // Show ending screen
   if (showEnding && story?.characters) {
     return (
-      <SleepWellScreen 
+      <SleepWellScreen
         characterName={story.characters.name}
         characterId={story.characters.id}
         storyId={storyId!}
@@ -266,41 +308,73 @@ export default function Reader() {
     );
   }
 
+  if (showCover && story) {
+    const characterDetails = story.characters as { hero_image_url?: string | null };
+    return (
+      <CoverPage
+        title={story.title || `${story.characters.name}'s avontuur`}
+        heroImageUrl={characterDetails.hero_image_url}
+        onOpen={() => setHasOpenedCover(true)}
+      />
+    );
+  }
+
   return (
-    <div className="h-screen bg-background paper-texture flex flex-col overflow-hidden">
+    <div className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
       {/* Header */}
-      <header className="flex-shrink-0 p-4 flex justify-between items-center z-10">
+      <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
         <motion.div whileTap={{ scale: 0.95 }}>
           <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
             <Home className="w-5 h-5" />
           </Button>
         </motion.div>
-        
-        {/* Prefetching indicator */}
-        {prefetchingNext && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 text-xs text-muted-foreground"
-          >
+
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
+            {themeOptions.map(option => {
+              const Icon = option.icon;
+              return (
+                <Button
+                  key={option.key}
+                  size="sm"
+                  variant={theme === option.key ? 'secondary' : 'ghost'}
+                  onClick={() => setTheme(option.key)}
+                  className="h-8 px-3"
+                  aria-pressed={theme === option.key}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="ml-1 hidden md:inline">{option.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+
+          {/* Prefetching indicator */}
+          {prefetchingNext && (
             <motion.div
-              className="w-2 h-2 rounded-full bg-primary/50"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-            <span className="hidden sm:inline">Preparing next page...</span>
-          </motion.div>
-        )}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`flex items-center gap-2 text-xs ${activeTheme.muted}`}
+            >
+              <motion.div
+                className="w-2 h-2 rounded-full bg-primary/50"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1, repeat: Infinity }}
+              />
+              <span className="hidden sm:inline">Preparing next page...</span>
+            </motion.div>
+          )}
+        </div>
       </header>
 
       {/* Scrollable reading area */}
-      <main className="flex-1 overflow-y-auto px-6 pb-4">
+      <main className="flex-1 overflow-y-auto px-6 pb-28">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {story?.title && currentPageIndex === 0 && (
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-serif text-2xl text-center text-foreground mb-8 pt-4"
+              className={`font-serif text-2xl text-center mb-8 pt-4 ${activeTheme.text}`}
             >
               {story.title}
             </motion.h1>
@@ -322,17 +396,17 @@ export default function Reader() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center text-muted-foreground py-20"
+                className={`text-center py-20 ${activeTheme.muted}`}
               >
                 <div className="flex flex-col items-center gap-4">
-                  <motion.div 
+                  <motion.div
                     className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
-                    animate={{ 
+                    animate={{
                       scale: [1, 1.1, 1],
                       opacity: [0.5, 1, 0.5],
                     }}
-                    transition={{ 
-                      duration: 2, 
+                    transition={{
+                      duration: 2,
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
@@ -355,7 +429,7 @@ export default function Reader() {
                   opacity: { duration: 0.2 },
                   rotateY: { duration: 0.3 },
                 }}
-                className="story-text text-lg leading-relaxed py-4"
+                className={`story-text text-lg leading-relaxed py-4 whitespace-pre-line ${activeTheme.text}`}
               >
                 {currentPage.content}
               </motion.div>
@@ -370,8 +444,8 @@ export default function Reader() {
               transition={{ delay: 1 }}
               className="text-center mt-8 pb-8"
             >
-              <motion.p 
-                className="text-sm text-muted-foreground"
+              <motion.p
+                className={`text-sm ${activeTheme.muted}`}
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
@@ -383,7 +457,7 @@ export default function Reader() {
       </main>
 
       {/* Navigation touch areas - overlay */}
-      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '60px', bottom: '60px' }}>
+      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '96px' }}>
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapLeft}
@@ -396,12 +470,12 @@ export default function Reader() {
       </div>
 
       {/* Fixed page indicator footer - OUTSIDE scrollable area */}
-      <footer className="flex-shrink-0 p-4 text-center border-t border-border/50 bg-background">
-        <motion.span 
+      <footer className={`fixed bottom-0 left-0 right-0 p-4 text-center border-t border-border/50 backdrop-blur-md ${activeTheme.footer}`}>
+        <motion.span
           key={currentPageIndex}
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-sm text-muted-foreground font-medium"
+          className={`text-sm font-medium ${activeTheme.muted}`}
         >
           Page {currentPageIndex + 1} of {totalPages}
         </motion.span>

@@ -148,7 +148,9 @@ serve(async (req) => {
   }
 });
 
-async function generatePortrait(character: any, userId: string) {
+type CharacterIdentifier = { id: string };
+
+async function generatePortrait(character: CharacterIdentifier, userId: string) {
   try {
     console.log(`Starting portrait generation for character ${character.id}`);
     

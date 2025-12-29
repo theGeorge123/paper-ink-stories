@@ -27,10 +27,12 @@ export type Database = {
           last_summary: string | null
           name: string
           pending_choice: string | null
+          preferred_language: string | null
           sidekick_archetype: string | null
           sidekick_name: string | null
           traits: string[]
           updated_at: string
+          visual_description_anchor: string | null
           user_id: string
         }
         Insert: {
@@ -45,10 +47,12 @@ export type Database = {
           last_summary?: string | null
           name: string
           pending_choice?: string | null
+          preferred_language?: string | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
           traits?: string[]
           updated_at?: string
+          visual_description_anchor?: string | null
           user_id: string
         }
         Update: {
@@ -63,10 +67,12 @@ export type Database = {
           last_summary?: string | null
           name?: string
           pending_choice?: string | null
+          preferred_language?: string | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
           traits?: string[]
           updated_at?: string
+          visual_description_anchor?: string | null
           user_id?: string
         }
         Relationships: []
@@ -177,6 +183,48 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      ratings: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          score: number | null
+          story_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          score?: number | null
+          story_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          score?: number | null
+          story_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {

@@ -9,6 +9,8 @@ const corsHeaders = {
 const SYSTEM_PROMPT = `
 You are an expert children's author and sleep specialist.
 
+SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary themes.
+
 ## CONTEXT VARIABLES
 - Language: {language}
 - Age: {age_band}
@@ -142,13 +144,16 @@ serve(async (req) => {
       .select("language")
       .eq("id", user.id)
       .single();
-    
+
     const language = profile?.language || "en";
     const languageNames: Record<string, string> = {
       en: "English",
       nl: "Dutch (Nederlands)",
       sv: "Swedish (Svenska)"
     };
+
+    const characterLanguage = (story.characters as { preferred_language?: string }).preferred_language || language;
+    const languageName = languageNames[characterLanguage] || languageNames[language] || "English";
 
     // Fetch existing pages to determine state
     const { data: pagesData } = await supabase
@@ -218,7 +223,7 @@ ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the $
 ${characterDNA}
 
 ## LANGUAGE REQUIREMENT
-Write the entire story in ${languageNames[language] || "English"}. All text including next_options must be in this language.
+Write the entire story in ${languageName}. All text including next_options must be in this language.
 
 ## CURRENT STORY STATE
 - Location: ${storyState.location}
@@ -263,12 +268,12 @@ This is the FINAL page. You MUST:
 2. Character must fall asleep feeling safe and loved
 3. Set is_ending=true
 4. Provide adventure_summary - ONE sentence about what happened in THIS adventure ONLY
-5. Provide exactly 3 next_options in ${languageNames[language] || "English"} - exciting choices for TOMORROW's adventure (e.g., "Explore the crystal cave", "Visit the friendly dragon", "Find the hidden treasure")`;
+5. Provide exactly 3 next_options in ${languageName} - exciting choices for TOMORROW's adventure (e.g., "Explore the crystal cave", "Visit the friendly dragon", "Find the hidden treasure")`;
     }
 
     // Build the system prompt with variables replaced
     const finalSystemPrompt = SYSTEM_PROMPT
-      .replace("{language}", languageNames[language] || "English")
+      .replace("{language}", languageName)
       .replace("{age_band}", ageBand)
       .replace("{phase}", storyPhase);
 
@@ -378,7 +383,13 @@ This is the FINAL page. You MUST:
     // If ending, save summary to STORY, options, and mark inactive
     // Note: The cumulative life_summary update happens in the client when user confirms
     if (parsedContent.is_ending) {
-      storyUpdate.last_summary = parsedContent.adventure_summary;
+      const cumulativeSummary = parsedContent.adventure_summary
+        ? [lifeSummary, parsedContent.adventure_summary].filter(Boolean).join("\n")
+        : lifeSummary;
+
+      if (cumulativeSummary) {
+        storyUpdate.last_summary = cumulativeSummary;
+      }
       storyUpdate.generated_options = parsedContent.next_options || [];
       storyUpdate.is_active = false;
       
@@ -395,6 +406,19 @@ This is the FINAL page. You MUST:
 
     if (updateError) {
       console.error("Story update error:", updateError);
+    }
+
+    if (parsedContent.is_ending && parsedContent.adventure_summary) {
+      const cumulativeSummary = [lifeSummary, parsedContent.adventure_summary].filter(Boolean).join("\n");
+
+      const { error: characterUpdateError } = await supabase
+        .from("characters")
+        .update({ last_summary: cumulativeSummary })
+        .eq("id", character.id);
+
+      if (characterUpdateError) {
+        console.error("Character summary update error:", characterUpdateError);
+      }
     }
 
     console.log("Page generated successfully:", currentPage, "of", targetPages);
