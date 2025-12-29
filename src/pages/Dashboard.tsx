@@ -45,7 +45,7 @@ export default function Dashboard() {
       return data;
     },
     enabled: !!user,
-    refetchInterval: 10000, // Refetch every 10s to pick up portrait updates
+    refetchInterval: 30000, // Refetch every 30s to pick up portrait updates
   });
 
   const handleCharacterUpdated = () => {

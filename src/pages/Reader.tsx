@@ -483,7 +483,7 @@ export default function Reader() {
                 }}
                 className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
               >
-                <SceneImage imageUrl={currentPage.image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />
+                {(currentPage as any).image_url && <SceneImage imageUrl={(currentPage as any).image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />}
                 <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>
             ) : null}

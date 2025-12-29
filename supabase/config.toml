@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.generate-hero-portrait]
 verify_jwt = false
+
+[functions.get-image-url]
+verify_jwt = true
