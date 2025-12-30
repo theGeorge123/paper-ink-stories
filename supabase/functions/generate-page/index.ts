@@ -96,13 +96,8 @@ You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
 
 const LENGTH_PAGES = { SHORT: 5, MEDIUM: 8, LONG: 12 };
 
-const IMAGE_GENERATION_LOGIC = `
-If current_page is the midpoint:
-- Create a 'visual_scene_description'.
-- Choice: If the scene is intimate, include the character (using visual_description_anchor).
-- Choice: If the scene is vast, focus only on the landscape and lighting.
-- Style: MUST remain 'storybook_illustration_v1' (watercolor style).
-`;
+// Image generation disabled to speed up page generation
+const IMAGE_GENERATION_LOGIC = "";
 
 async function hashPrompt(prompt: string): Promise<string> {
   const buffer = new TextEncoder().encode(prompt.trim());
@@ -459,14 +454,7 @@ ${previousPagesText || "(This is the very beginning of the story - generate plot
 Keep the story calm and soothing, focusing on peaceful, gentle moments with sincere, heartfelt warmth.
     `.trim();
 
-    if (isMidpoint) {
-      userPrompt += `
-
-## MIDPOINT VISUAL SCENE (CRITICAL)
-The current page is the midpoint of the adventure. You must include visual_scene_description: one cinematic sentence describing the current scene for an illustrator.
-Use the hero's visual anchor for consistency: ${visualAnchor || "No anchor provided - focus purely on the environment and mood."}
-${IMAGE_GENERATION_LOGIC}`;
-    }
+    // Midpoint image generation disabled - skip visual scene prompt
 
     // CLIFFHANGER INJECTION: If first page and has pending choice, start there
     if (currentPage === 1 && pendingChoice) {
@@ -607,31 +595,8 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       });
     }
 
-    if (isMidpoint && pageImageDescription) {
-      try {
-        pageImageUrl = await generateStoryImage({
-          description: pageImageDescription,
-          visualAnchor,
-          storyId,
-          pageNumber: currentPage,
-          userId: user.id,
-        });
-
-        if (pageImageUrl) {
-          const { error: imageUpdateError } = await supabase
-            .from("pages")
-            .update({ image_url: pageImageUrl })
-            .eq("story_id", storyId)
-            .eq("page_number", currentPage);
-
-          if (imageUpdateError) {
-            console.error("Failed to attach image to page:", imageUpdateError);
-          }
-        }
-      } catch (imageError) {
-        console.error("Story image generation error:", imageError);
-      }
-    }
+    // Mid-story image generation disabled to speed up page generation
+    // Images were only generated at midpoint but added latency without much value
 
     // Update story state including plot_outline (always sync state for every page)
     const newState = {
