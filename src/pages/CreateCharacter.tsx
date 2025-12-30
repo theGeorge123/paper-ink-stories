@@ -71,7 +71,7 @@ export default function CreateCharacter() {
   const [generatingPortrait, setGeneratingPortrait] = useState(false);
   const [portraitMessage, setPortraitMessage] = useState('');
   const [createdCharacterId, setCreatedCharacterId] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
 
@@ -122,7 +122,10 @@ export default function CreateCharacter() {
   };
 
   const handleCreate = async () => {
-    if (!user) return;
+    if (!user || !session) {
+      toast.error('Please wait for authentication to complete.');
+      return;
+    }
     setLoading(true);
 
     try {
@@ -180,7 +183,7 @@ export default function CreateCharacter() {
     setStep(newStep);
   };
 
-  const canProceed = step === 1 ? name.trim().length > 0 : step === 2 ? archetype && ageBand : step === 3 ? traits.length > 0 : true;
+  const canProceed = step === 1 ? name.trim().length > 0 : step === 2 ? archetype && ageBand : step === 3 ? traits.length > 0 : !authLoading && !!session;
 
   const selectedArchetype = ARCHETYPES.find(a => a.id === archetype);
 
