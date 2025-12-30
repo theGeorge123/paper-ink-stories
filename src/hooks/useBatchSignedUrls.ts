@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CachedUrl {
   url: string;
   expiresAt: number; // timestamp
+}
+
+interface CharacterWithUrl {
+  id: string;
+  hero_image_url?: string | null;
 }
 
 const CACHE_KEY = 'hero-portrait-urls';
@@ -26,6 +31,16 @@ function setCache(cache: Record<string, CachedUrl>) {
   }
 }
 
+// Check if a URL is a valid signed URL (not expired based on simple heuristics)
+function isValidSignedUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  // Check if it's a supabase storage signed URL
+  if (url.includes('/storage/v1/object/sign/') && url.includes('token=')) {
+    return true;
+  }
+  return false;
+}
+
 interface BatchUrlResult {
   urls: Record<string, string | null>;
   loading: boolean;
@@ -34,15 +49,17 @@ interface BatchUrlResult {
 }
 
 /**
- * Batch-fetch signed URLs for multiple hero portraits in a single API call.
- * Caches URLs in localStorage for fast loading on page refresh.
+ * Batch-fetch signed URLs for multiple hero portraits.
+ * Uses existing valid URLs from characters first, only fetches from edge function when needed.
  */
-export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
+export function useBatchSignedUrls(characters: CharacterWithUrl[]): BatchUrlResult {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const fetchedRef = useRef<Set<string>>(new Set());
+
+  const heroIds = useMemo(() => characters.map(c => c.id), [characters]);
 
   // Wait for auth to be ready
   useEffect(() => {
@@ -57,7 +74,6 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
-        // Only mark ready if we have a session
         if (session) {
           setAuthReady(true);
         } else if (event === 'SIGNED_OUT') {
@@ -74,23 +90,32 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
     };
   }, []);
 
-  // Load cached URLs immediately on mount
+  // Use existing URLs from characters and cache
   useEffect(() => {
     const cache = getCache();
     const now = Date.now();
     const validUrls: Record<string, string | null> = {};
     
-    heroIds.forEach(id => {
-      if (cache[id] && cache[id].expiresAt > now) {
-        validUrls[id] = cache[id].url;
-        fetchedRef.current.add(id);
+    characters.forEach(character => {
+      // First check if character already has a valid signed URL
+      if (isValidSignedUrl(character.hero_image_url)) {
+        validUrls[character.id] = character.hero_image_url!;
+        fetchedRef.current.add(character.id);
+        // Also update cache
+        cache[character.id] = { url: character.hero_image_url!, expiresAt: now + CACHE_DURATION };
+      } 
+      // Then check localStorage cache
+      else if (cache[character.id] && cache[character.id].expiresAt > now) {
+        validUrls[character.id] = cache[character.id].url;
+        fetchedRef.current.add(character.id);
       }
     });
     
     if (Object.keys(validUrls).length > 0) {
+      setCache(cache);
       setUrls(validUrls);
     }
-  }, [heroIds]);
+  }, [characters]);
 
   const fetchUrls = useCallback(async () => {
     // Filter to only IDs we haven't fetched yet
@@ -112,9 +137,6 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
       
       const { data, error: fnError } = await supabase.functions.invoke('get-image-url', {
         body: { heroIds: idsToFetch },
-        headers: session?.access_token ? {
-          Authorization: `Bearer ${session.access_token}`,
-        } : undefined,
       });
 
       if (fnError) throw fnError;
@@ -123,7 +145,6 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
         const cache = getCache();
         const now = Date.now();
         
-        // Mark as fetched and update state
         idsToFetch.forEach(id => fetchedRef.current.add(id));
         
         const newUrls: Record<string, string | null> = {};
@@ -131,7 +152,6 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
           const signedUrl = (result as { signedUrl: string | null })?.signedUrl || null;
           newUrls[id] = signedUrl;
           
-          // Cache the URL
           if (signedUrl) {
             cache[id] = { url: signedUrl, expiresAt: now + CACHE_DURATION };
           }
@@ -150,7 +170,6 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
 
   // Force refresh all URLs (clear cache)
   const refresh = useCallback(async () => {
-    // Clear from localStorage cache too
     const cache = getCache();
     heroIds.forEach(id => delete cache[id]);
     setCache(cache);

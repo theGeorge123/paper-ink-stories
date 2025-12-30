@@ -135,9 +135,12 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  // Batch fetch all hero portrait URLs in a single API call
-  const heroIds = useMemo(() => characters.map(c => c.id), [characters]);
-  const { urls: batchUrls, refresh: refreshUrls } = useBatchSignedUrls(heroIds);
+  // Batch fetch all hero portrait URLs - pass character objects to use existing signed URLs
+  const charactersForUrls = useMemo(() => 
+    characters.map(c => ({ id: c.id, hero_image_url: c.hero_image_url })), 
+    [characters]
+  );
+  const { urls: batchUrls, refresh: refreshUrls } = useBatchSignedUrls(charactersForUrls);
 
   const handleEditCharacter = (character: Character, e: React.MouseEvent) => {
     e.stopPropagation();
