@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,18 @@ const corsHeaders = {
 
 const MAX_HEROES_PER_WEEK = 7;
 const DAYS_WINDOW = 7;
+
+// Input validation schema
+const createHeroSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters").trim(),
+  archetype: z.string().min(1, "Archetype is required").max(50, "Archetype must be less than 50 characters"),
+  age_band: z.enum(["3-5", "6-8", "9-12"]).optional().default("6-8"),
+  traits: z.array(z.string().max(50)).min(1, "At least one trait is required").max(5, "Maximum 5 traits allowed"),
+  icon: z.string().max(50).optional(),
+  sidekick_name: z.string().max(100).optional().nullable(),
+  sidekick_archetype: z.string().max(50).optional().nullable(),
+  preferred_language: z.string().max(10).optional(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -38,15 +51,22 @@ serve(async (req) => {
       });
     }
 
-    const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype, preferred_language } = await req.json();
-
-    // Validate required fields
-    if (!name || !archetype || !traits || traits.length === 0) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = createHeroSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: "Invalid input", 
+        details: parseResult.error.errors.map(e => e.message).join(", ")
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype, preferred_language } = parseResult.data;
 
     // Use service role client for rate limit check
     const adminClient = createClient(

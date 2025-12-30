@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const generatePageSchema = z.object({
+  storyId: z.string().uuid("Invalid story ID format"),
+  targetPage: z.number().int().min(1).max(20).optional(),
+});
 
 const STORYBOOK_IMAGE_STYLE = "Storybook illustration, hand-painted watercolor and gouache style, soft paper texture, warm cozy bedtime lighting, gentle edges, child-friendly proportions, simple light background, no text, no logos, no watermark, not photorealistic, not 3D, not anime.";
 
@@ -296,7 +303,22 @@ serve(async (req) => {
       });
     }
 
-    const { storyId, targetPage } = await req.json();
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = generatePageSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(JSON.stringify({ 
+        error: "Invalid input", 
+        details: parseResult.error.errors.map(e => e.message).join(", ")
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { storyId, targetPage } = parseResult.data;
     console.log("Generating page for story:", storyId, "target page:", targetPage);
 
     // Fetch story with character
