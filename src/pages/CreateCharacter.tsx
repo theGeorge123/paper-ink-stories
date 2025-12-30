@@ -142,23 +142,33 @@ export default function CreateCharacter() {
         },
       });
 
+      // Handle rate limit error (429 response puts JSON in error.context)
       if (error) {
         console.error('Create hero error:', error);
+        
+        // Check if it's a rate limit error from the edge function
+        const errorBody = error.context?.body;
+        if (errorBody?.error === 'limit_reached') {
+          setLimitReached(true);
+          setLimitMessage(errorBody.message || 'Je kunt maximaal 7 heroes per week maken.');
+          toast.error(errorBody.message);
+          setLoading(false);
+          return;
+        }
+        
         toast.error('Failed to create hero. Please try again.');
         setLoading(false);
         return;
       }
 
-      if (data?.error === 'limit_reached') {
-        setLimitReached(true);
-        setLimitMessage(data.message || 'Je kunt maximaal 7 heroes per week maken.');
-        toast.error(data.message);
-        setLoading(false);
-        return;
-      }
-
       if (data?.error) {
-        toast.error(data.message || data.error);
+        if (data.error === 'limit_reached') {
+          setLimitReached(true);
+          setLimitMessage(data.message || 'Je kunt maximaal 7 heroes per week maken.');
+          toast.error(data.message);
+        } else {
+          toast.error(data.message || data.error);
+        }
         setLoading(false);
         return;
       }
@@ -581,6 +591,38 @@ export default function CreateCharacter() {
                   Character ID: {createdCharacterId}
                 </p>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Limit Reached Modal */}
+      <AnimatePresence>
+        {limitReached && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md px-6"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-md w-full rounded-3xl bg-card/90 border border-border/80 shadow-2xl p-8 text-center space-y-4"
+            >
+              <div className="mx-auto w-14 h-14 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-amber-500" />
+              </div>
+              <h2 className="font-serif text-2xl text-foreground">Limiet bereikt</h2>
+              <p className="text-muted-foreground leading-relaxed">{limitMessage}</p>
+              <Button
+                onClick={() => navigate('/dashboard')}
+                size="lg"
+                className="w-full h-12 rounded-xl"
+              >
+                Terug naar dashboard
+              </Button>
             </motion.div>
           </motion.div>
         )}
