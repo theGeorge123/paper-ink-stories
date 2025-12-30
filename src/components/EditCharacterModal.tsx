@@ -22,7 +22,6 @@ const AGE_BANDS = [
   { id: '1-2', label: '1-2', emoji: '🍼' },
   { id: '3-5', label: '3-5', emoji: '🧸' },
   { id: '6-8', label: '6-8', emoji: '📚' },
-  { id: '9-12', label: '9-12', emoji: '🌟' },
 ];
 
 interface Character {
