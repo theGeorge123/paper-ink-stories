@@ -1,7 +1,7 @@
 project_id = "rtmcisfdtnmdytvnmptx"
 
 [functions.generate-page]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-reminders]
 verify_jwt = false
@@ -10,10 +10,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-hero]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-hero-portrait]
 verify_jwt = false
 
 [functions.get-image-url]
-verify_jwt = false
+verify_jwt = true
