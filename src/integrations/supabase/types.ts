@@ -28,6 +28,7 @@ export type Database = {
           last_summary: string | null
           name: string
           pending_choice: string | null
+          preferred_language: string | null
           preferred_themes: string[] | null
           sidekick_archetype: string | null
           sidekick_name: string | null
@@ -49,6 +50,7 @@ export type Database = {
           last_summary?: string | null
           name: string
           pending_choice?: string | null
+          preferred_language?: string | null
           preferred_themes?: string[] | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           last_summary?: string | null
           name?: string
           pending_choice?: string | null
+          preferred_language?: string | null
           preferred_themes?: string[] | null
           sidekick_archetype?: string | null
           sidekick_name?: string | null
