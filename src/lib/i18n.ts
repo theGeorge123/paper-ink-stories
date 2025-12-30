@@ -128,6 +128,12 @@ export const translations = {
     weavingStory: 'Weaving the story...',
     tapToContinue: 'Tap to continue...',
     generatingPortrait: 'Generating portrait...',
+    pageIndicator: 'Page {current} of {total}',
+    
+    // Cover Page
+    coverBrandName: 'Paper & Ink',
+    coverSubtitle: 'A magical cover for your hero. Ready to open the story?',
+    openBook: 'Open the book',
     
     // Sleep Well Screen
     sleepWell: 'Sleep well',
@@ -283,6 +289,12 @@ export const translations = {
     weavingStory: 'Het verhaal wordt geweven...',
     tapToContinue: 'Tik om verder te gaan...',
     generatingPortrait: 'Portret wordt gemaakt...',
+    pageIndicator: 'Pagina {current} van {total}',
+    
+    // Cover Page
+    coverBrandName: 'Papier & Inkt',
+    coverSubtitle: 'Een betoverende omslag voor jouw held. Klaar om het verhaal te openen?',
+    openBook: 'Sla het boek open',
     
     // Sleep Well Screen
     sleepWell: 'Slaap lekker',
@@ -438,6 +450,12 @@ export const translations = {
     weavingStory: 'Sagan vävs...',
     tapToContinue: 'Tryck för att fortsätta...',
     generatingPortrait: 'Genererar porträtt...',
+    pageIndicator: 'Sida {current} av {total}',
+    
+    // Cover Page
+    coverBrandName: 'Papper & Bläck',
+    coverSubtitle: 'Ett magiskt omslag för din hjälte. Redo att öppna berättelsen?',
+    openBook: 'Öppna boken',
     
     // Sleep Well Screen
     sleepWell: 'Sov gott',
