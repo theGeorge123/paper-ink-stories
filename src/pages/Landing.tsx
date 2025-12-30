@@ -63,11 +63,7 @@ export default function Landing() {
   const { language, setLanguage, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) {
-      navigate("/dashboard");
-    }
-  }, [user, loading, navigate]);
+  // Landing page is always shown - no auto-redirect to dashboard
 
   if (loading) {
     return (
