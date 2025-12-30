@@ -142,16 +142,20 @@ export default function CreateCharacter() {
         },
       });
 
-      // Handle rate limit error (429 response puts JSON in error.context)
+      // Handle rate limit error (429 response puts JSON in error object)
       if (error) {
         console.error('Create hero error:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         
-        // Check if it's a rate limit error from the edge function
-        const errorBody = error.context?.body;
-        if (errorBody?.error === 'limit_reached') {
+        // Try multiple paths where the error body might be
+        const errorBody = error.context?.json || error.context?.body || error.context || error;
+        const errorMessage = errorBody?.message || error.message;
+        const isLimitError = errorBody?.error === 'limit_reached' || errorMessage?.includes('maximaal');
+        
+        if (isLimitError) {
           setLimitReached(true);
-          setLimitMessage(errorBody.message || 'Je kunt maximaal 7 heroes per week maken.');
-          toast.error(errorBody.message);
+          setLimitMessage(errorMessage || 'Je kunt maximaal 7 heroes per week maken.');
+          toast.error(errorMessage || 'Limiet bereikt');
           setLoading(false);
           return;
         }
