@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 interface Options {
   initialUrl?: string | null;
@@ -8,9 +8,15 @@ interface Options {
 }
 
 export function useSignedImageUrl({ initialUrl }: Options) {
-  const [url] = useState<string | null>(initialUrl || null);
+  const [url, setUrl] = useState<string | null>(initialUrl || null);
   const [loading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update URL when initialUrl prop changes (e.g., when switching characters)
+  useEffect(() => {
+    setUrl(initialUrl || null);
+    setError(null);
+  }, [initialUrl]);
 
   // Just use the URL directly - it's already a signed URL from the database
   const refresh = useCallback(() => {
