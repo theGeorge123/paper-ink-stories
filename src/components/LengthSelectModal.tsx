@@ -18,21 +18,24 @@ const LENGTH_OPTIONS = [
     key: 'storyLengthShort' as TranslationKey,
     descKey: 'storyLengthShortDesc' as TranslationKey,
     pages: 5,
-    icon: '🌙'
+    icon: '🌙',
+    recommended: false
   },
   {
     value: 'MEDIUM' as const,
     key: 'storyLengthMedium' as TranslationKey,
     descKey: 'storyLengthMediumDesc' as TranslationKey,
     pages: 8,
-    icon: '✨'
+    icon: '✨',
+    recommended: true
   },
   {
     value: 'LONG' as const,
     key: 'storyLengthLong' as TranslationKey,
     descKey: 'storyLengthLongDesc' as TranslationKey,
     pages: 12,
-    icon: '🌟'
+    icon: '🌟',
+    recommended: false
   },
 ];
 
@@ -68,13 +71,24 @@ export default function LengthSelectModal({
               whileTap={{ scale: 0.98 }}
               onClick={() => !loading && onSelect(option.value)}
               disabled={loading}
-              className="w-full p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/50 hover:bg-muted transition-all flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed ${
+                option.recommended 
+                  ? 'bg-primary/10 border-primary/50 hover:border-primary hover:bg-primary/20' 
+                  : 'bg-muted/50 border-border hover:border-primary/50 hover:bg-muted'
+              }`}
             >
               <div className="text-2xl">{option.icon}</div>
               <div className="flex-1 text-left">
-                <h4 className="font-medium text-foreground">
-                  {t(option.key)}
-                </h4>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-medium text-foreground">
+                    {t(option.key)}
+                  </h4>
+                  {option.recommended && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                      Recommended
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {t(option.descKey)} • {option.pages} pages
                 </p>

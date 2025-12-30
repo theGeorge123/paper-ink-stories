@@ -229,6 +229,9 @@ export default function Reader() {
       if (story.generated_options && Array.isArray(story.generated_options)) {
         setNextOptions(story.generated_options as string[]);
       }
+      if (story.themes && Array.isArray(story.themes)) {
+        setStoryThemes(story.themes as string[]);
+      }
     }
   }, [story]);
 
