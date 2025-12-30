@@ -3,6 +3,7 @@ import { Clock, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TranslationKey } from '@/lib/i18n';
+import { getPageRangeLabel } from '@/lib/storyEngine';
 
 interface LengthSelectModalProps {
   open: boolean;
@@ -17,7 +18,7 @@ const LENGTH_OPTIONS = [
     value: 'SHORT' as const,
     key: 'storyLengthShort' as TranslationKey,
     descKey: 'storyLengthShortDesc' as TranslationKey,
-    pages: 5,
+    pages: getPageRangeLabel('SHORT'),
     icon: '🌙',
     recommended: false
   },
@@ -25,7 +26,7 @@ const LENGTH_OPTIONS = [
     value: 'MEDIUM' as const,
     key: 'storyLengthMedium' as TranslationKey,
     descKey: 'storyLengthMediumDesc' as TranslationKey,
-    pages: 8,
+    pages: getPageRangeLabel('MEDIUM'),
     icon: '✨',
     recommended: true
   },
@@ -33,7 +34,7 @@ const LENGTH_OPTIONS = [
     value: 'LONG' as const,
     key: 'storyLengthLong' as TranslationKey,
     descKey: 'storyLengthLongDesc' as TranslationKey,
-    pages: 12,
+    pages: getPageRangeLabel('LONG'),
     icon: '🌟',
     recommended: false
   },
@@ -90,7 +91,7 @@ export default function LengthSelectModal({
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {t(option.descKey)} • {option.pages} pages
+                  {t(option.descKey)} • around {option.pages} pages
                 </p>
               </div>
               <Clock className="w-4 h-4 text-muted-foreground" />

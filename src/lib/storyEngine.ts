@@ -9,12 +9,22 @@ export type StoryPhase = 'SETUP' | 'JOURNEY' | 'WINDDOWN';
 
 const LENGTH_PAGES = {
   SHORT: 5,
-  MEDIUM: 8,
+  MEDIUM: 9,
   LONG: 12,
+};
+
+const LENGTH_PAGE_RANGES = {
+  SHORT: '4-5',
+  MEDIUM: '6-9',
+  LONG: '9-12',
 };
 
 export function getTotalPages(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): number {
   return LENGTH_PAGES[lengthSetting];
+}
+
+export function getPageRangeLabel(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): string {
+  return LENGTH_PAGE_RANGES[lengthSetting];
 }
 
 export function getStoryPhase(currentPage: number, lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): StoryPhase {

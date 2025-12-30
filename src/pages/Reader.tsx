@@ -5,7 +5,7 @@ import { Home, MoonStar, Sun, Sunrise, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getTotalPages } from '@/lib/storyEngine';
+import { getPageRangeLabel, getTotalPages } from '@/lib/storyEngine';
 import { toast } from 'sonner';
 import SleepWellScreen from '@/components/SleepWellScreen';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -274,9 +274,14 @@ export default function Reader() {
 
   const currentPage = pages[currentPageIndex];
   const configuredPages = story ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 10;
-  // Use actual page count if story is finished, otherwise show configured total
+  const configuredRange = story ? getPageRangeLabel(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : undefined;
+  // Use actual page count if story is finished, otherwise show configured total range
   const isStoryFinished = story && !story.is_active;
-  const totalPages = isStoryFinished ? pages.length : configuredPages;
+  const totalPagesDisplay = isStoryFinished
+    ? pages.length.toString()
+    : configuredRange
+      ? `around ${configuredRange}`
+      : configuredPages.toString();
   const isLastPage = pages.length >= configuredPages || isStoryFinished;
   const canGoNext = currentPageIndex < pages.length - 1;
   const canGenerate = !isLastPage && currentPageIndex === pages.length - 1;
@@ -553,7 +558,7 @@ export default function Reader() {
           animate={{ opacity: 1, y: 0 }}
           className={`text-sm font-medium ${activeTheme.muted}`}
         >
-          {t('pageIndicator', { current: currentPageIndex + 1, total: totalPages })}
+          {t('pageIndicator', { current: currentPageIndex + 1, total: totalPagesDisplay })}
         </motion.span>
       </footer>
     </div>
