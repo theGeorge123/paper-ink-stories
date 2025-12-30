@@ -439,19 +439,18 @@ export default function Reader() {
             })}
           </div>
 
-          {/* Prefetching indicator */}
+          {/* Prefetching indicator - just a subtle dot, no text */}
           {prefetchingNext && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className={`flex items-center gap-2 text-xs ${activeTheme.muted}`}
+              className="flex items-center"
             >
               <motion.div
                 className="w-2 h-2 rounded-full bg-primary/50"
                 animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1, repeat: Infinity }}
               />
-              <span className="hidden sm:inline">Preparing next page...</span>
             </motion.div>
           )}
         </div>

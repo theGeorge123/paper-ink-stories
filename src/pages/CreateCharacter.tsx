@@ -465,13 +465,16 @@ export default function CreateCharacter() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSidekickArchetype(a.id)}
-                        className={`aspect-square rounded-xl border-2 flex items-center justify-center transition-all ${
+                        className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/10'
                             : 'border-border/50 bg-card/30 hover:border-border'
                         }`}
                       >
                         <a.icon className={`w-6 h-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={`text-[9px] font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                          {a.label}
+                        </span>
                       </motion.button>
                     );
                   })}
