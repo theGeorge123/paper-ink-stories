@@ -24,6 +24,23 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
   const [url, setUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to be ready
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setAuthReady(true);
+      }
+    });
+    
+    // Also check immediately in case auth is already ready
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setAuthReady(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const refresh = useCallback(async () => {
     // Determine if we need to fetch a signed URL
@@ -42,11 +59,17 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
+      if (!session?.access_token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
+      
       const { data, error: invokeError } = await supabase.functions.invoke('get-image-url', {
         body: { heroId, storyId, pageNumber },
-        headers: session?.access_token ? {
+        headers: {
           Authorization: `Bearer ${session.access_token}`,
-        } : undefined,
+        },
       });
 
       setLoading(false);
@@ -66,18 +89,18 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
   }, [heroId, storyId, pageNumber, initialUrl]);
 
   useEffect(() => {
+    if (!authReady) return;
+    
     const isStorageUrl = parseStorageUrl(initialUrl);
     
     if (heroId || (storyId && pageNumber)) {
       refresh();
     } else if (isStorageUrl) {
-      // Storage URL needs signing - but we need storyId/pageNumber context
-      // Fall back to showing we need to load it
       setUrl(null);
     } else if (initialUrl) {
       setUrl(initialUrl);
     }
-  }, [heroId, storyId, pageNumber, initialUrl, refresh]);
+  }, [authReady, heroId, storyId, pageNumber, initialUrl, refresh]);
 
   const handleError = useCallback(() => {
     setError('load_failed');

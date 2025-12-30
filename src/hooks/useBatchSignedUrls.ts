@@ -41,7 +41,24 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const fetchedRef = useRef<Set<string>>(new Set());
+
+  // Wait for auth to be ready
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setAuthReady(true);
+      }
+    });
+    
+    // Also check immediately in case auth is already ready
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setAuthReady(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load cached URLs immediately on mount
   useEffect(() => {
@@ -72,6 +89,12 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setError('Not authenticated');
+        setLoading(false);
+        return;
+      }
       
       const { data, error: fnError } = await supabase.functions.invoke('get-image-url', {
         body: { heroIds: idsToFetch },
@@ -124,10 +147,10 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
   }, [fetchUrls, heroIds]);
 
   useEffect(() => {
-    if (heroIds.length > 0) {
+    if (authReady && heroIds.length > 0) {
       fetchUrls();
     }
-  }, [heroIds, fetchUrls]);
+  }, [authReady, heroIds, fetchUrls]);
 
   return { urls, loading, error, refresh };
 }
