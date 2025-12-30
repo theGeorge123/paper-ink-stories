@@ -1,6 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Wand2, Cat, Bot, Crown, Flame, RefreshCw, ImageIcon } from 'lucide-react';
+import {
+  Shield,
+  Wand2,
+  Cat,
+  Bot,
+  Crown,
+  Flame,
+  Rocket,
+  Anchor,
+  Sparkles,
+  Bird,
+  Rabbit,
+  Heart,
+  RefreshCw,
+  ImageIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -16,12 +31,19 @@ const ARCHETYPES = [
   { id: 'robot', icon: Bot, label: 'Robot' },
   { id: 'princess', icon: Crown, label: 'Princess' },
   { id: 'dragon', icon: Flame, label: 'Dragon' },
+  { id: 'astronaut', icon: Rocket, label: 'Astronaut' },
+  { id: 'pirate', icon: Anchor, label: 'Pirate' },
+  { id: 'fairy', icon: Sparkles, label: 'Fairy' },
+  { id: 'owl', icon: Bird, label: 'Owl' },
+  { id: 'bunny', icon: Rabbit, label: 'Bunny' },
+  { id: 'bear', icon: Heart, label: 'Bear' },
 ];
 
 const AGE_BANDS = [
   { id: '1-2', label: '1-2', emoji: '🍼' },
   { id: '3-5', label: '3-5', emoji: '🧸' },
   { id: '6-8', label: '6-8', emoji: '📚' },
+  { id: '9-12', label: '9-12', emoji: '🌟' },
 ];
 
 interface Character {
@@ -42,11 +64,11 @@ interface EditCharacterModalProps {
   onSaved?: () => void;
 }
 
-export default function EditCharacterModal({ 
-  character, 
-  open, 
-  onOpenChange, 
-  onSaved 
+export default function EditCharacterModal({
+  character,
+  open,
+  onOpenChange,
+  onSaved
 }: EditCharacterModalProps) {
   const [name, setName] = useState(character.name);
   const [archetype, setArchetype] = useState(character.archetype);
@@ -58,6 +80,14 @@ export default function EditCharacterModal({
     initialUrl: character.hero_image_url,
     heroId: character.id,
   });
+
+  // Keep form state in sync when switching between characters
+  useEffect(() => {
+    setName(character.name);
+    setArchetype(character.archetype);
+    setAgeBand(character.age_band || '6-8');
+    setSidekickName(character.sidekick_name || '');
+  }, [character]);
 
   const handleSave = async () => {
     if (!name.trim()) {
