@@ -93,12 +93,12 @@ export const translations = {
     selectTraits: 'Select Traits',
     
     // Age Bands
-    ageBand35: '3-5 years',
-    ageBand35Desc: 'Simple words, cozy stories',
-    ageBand68: '6-8 years',
-    ageBand68Desc: 'Richer vocabulary, small adventures',
-    ageBand912: '9-12 years',
-    ageBand912Desc: 'Complex tales, deeper themes',
+    ageBand12: '1-2 yrs • For the littlest ones',
+    ageBand12Desc: 'Focus on sounds and rhythm',
+    ageBand35: '3-5 yrs • For toddlers & preschoolers',
+    ageBand35Desc: 'Focus on calm routine and repetition',
+    ageBand68: '6-8 yrs • For young explorers',
+    ageBand68Desc: 'Focus on gentle magic and new words',
     
     // Archetypes
     knight: 'Knight',
@@ -271,12 +271,12 @@ export const translations = {
     selectTraits: 'Selecteer Eigenschappen',
     
     // Age Bands
-    ageBand35: '3-5 jaar',
-    ageBand35Desc: 'Eenvoudige woorden, gezellige verhalen',
-    ageBand68: '6-8 jaar',
-    ageBand68Desc: 'Rijkere woordenschat, kleine avonturen',
-    ageBand912: '9-12 jaar',
-    ageBand912Desc: 'Complexe verhalen, diepere thema\'s',
+    ageBand12: '1-2 jaar • Voor de allerkleinsten',
+    ageBand12Desc: 'Focus op klanken en ritme',
+    ageBand35: '3-5 jaar • Voor peuters & kleuters',
+    ageBand35Desc: 'Focus op rust en herhaling',
+    ageBand68: '6-8 jaar • Voor jonge ontdekkers',
+    ageBand68Desc: 'Focus op milde magie en nieuwe woorden',
     
     // Archetypes
     knight: 'Ridder',
@@ -449,12 +449,12 @@ export const translations = {
     selectTraits: 'Välj Egenskaper',
     
     // Age Bands
-    ageBand35: '3-5 år',
-    ageBand35Desc: 'Enkla ord, mysiga sagor',
-    ageBand68: '6-8 år',
-    ageBand68Desc: 'Rikare ordförråd, små äventyr',
-    ageBand912: '9-12 år',
-    ageBand912Desc: 'Komplexa berättelser, djupare teman',
+    ageBand12: '1-2 år • För de allra minsta',
+    ageBand12Desc: 'Fokus på ljud och rytm',
+    ageBand35: '3-5 år • För småbarn & förskolebarn',
+    ageBand35Desc: 'Fokus på lugn och upprepning',
+    ageBand68: '6-8 år • För unga upptäckare',
+    ageBand68Desc: 'Fokus på mild magi och nya ord',
     
     // Archetypes
     knight: 'Riddare',

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +34,7 @@ async function hashPrompt(prompt: string): Promise<string> {
 }
 
 async function createSignedUrl(
-  client: any,
+  client: SupabaseClient,
   bucket: string,
   path: string,
   expiresInSeconds = 60 * 60 * 24 * 7, // 7 days
@@ -51,9 +52,9 @@ async function createSignedUrl(
 }
 
 const AGE_MODIFIERS: Record<string, string> = {
+  "1-2": "ultra-simple, baby-safe softness, pastel colors, rounded baby features",
   "3-5": "very cute and simple, extra rounded features, bright cheerful colors",
   "6-8": "whimsical and magical, balanced proportions, vibrant warm colors",
-  "9-12": "slightly more detailed, graceful features, rich atmospheric colors",
 };
 
 serve(async (req) => {
