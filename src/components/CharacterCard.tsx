@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
@@ -118,6 +118,9 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             <DialogTitle className="font-serif text-xl text-center">
               How long is tonight's story?
             </DialogTitle>
+            <DialogDescription className="text-center text-muted-foreground">
+              Choose a story length for {character.name}'s adventure
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-4">
             {[

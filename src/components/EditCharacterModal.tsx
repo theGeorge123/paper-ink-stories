@@ -17,7 +17,7 @@ import {
   ImageIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
@@ -155,6 +155,9 @@ export default function EditCharacterModal({
           <DialogTitle className="font-serif text-xl text-center">
             Edit Character
           </DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
+            Update {character.name}'s details and portrait
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 pb-4">

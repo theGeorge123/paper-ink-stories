@@ -46,18 +46,32 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
 
   // Wait for auth to be ready
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+    let mounted = true;
+    
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (mounted && session) {
         setAuthReady(true);
+      }
+    };
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted) {
+        // Only mark ready if we have a session
+        if (session) {
+          setAuthReady(true);
+        } else if (event === 'SIGNED_OUT') {
+          setAuthReady(false);
+        }
       }
     });
     
-    // Also check immediately in case auth is already ready
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setAuthReady(true);
-    });
+    checkAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Load cached URLs immediately on mount

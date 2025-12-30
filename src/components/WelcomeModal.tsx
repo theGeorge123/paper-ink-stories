@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, BookOpen, Clock, Heart, X } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
 
@@ -30,6 +31,10 @@ export default function WelcomeModal() {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-gradient-to-b from-background to-muted/30">
+        <VisuallyHidden.Root>
+          <DialogTitle>Welcome to PaperInk</DialogTitle>
+          <DialogDescription>Magical bedtime stories, personalized for your child</DialogDescription>
+        </VisuallyHidden.Root>
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground z-10"

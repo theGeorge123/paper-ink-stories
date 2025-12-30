@@ -28,18 +28,27 @@ export function useSignedImageUrl({ initialUrl, heroId, storyId, pageNumber }: O
 
   // Wait for auth to be ready
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+    let mounted = true;
+    
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (mounted) {
+        setAuthReady(true);
+      }
+    };
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted) {
         setAuthReady(true);
       }
     });
     
-    // Also check immediately in case auth is already ready
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setAuthReady(true);
-    });
+    checkAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const refresh = useCallback(async () => {
