@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -16,7 +17,7 @@ const generatePageSchema = z.object({
 const STORYBOOK_IMAGE_STYLE = "Storybook illustration, hand-painted watercolor and gouache style, soft paper texture, warm cozy bedtime lighting, gentle edges, child-friendly proportions, simple light background, no text, no logos, no watermark, not photorealistic, not 3D, not anime.";
 
 const SYSTEM_PROMPT = `
-You are an expert children's author and sleep specialist.
+You are an expert children's author and sleep specialist applying the "Sleep Engineer" method.
 
 SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary themes.
 
@@ -24,6 +25,10 @@ SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary 
 - Language: {language}
 - Age: {age_band}
 - StoryPhase: {phase}
+
+## SLEEP ENGINEER METHOD
+- Mental Tiring: In the JOURNEY phase, use heavy sensory details (textures, smells, soft sounds) so the mind gently tires.
+- Drift Off Flow: In the WIND-DOWN phase, use long, rhythmic sentences with soft consonants to lull the listener toward sleep.
 
 ## 1. STORY STRUCTURE
 
@@ -35,12 +40,12 @@ SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary 
 
 **JOURNEY (Middle Pages):**
 - Follow the plot_outline beats.
-- Use "Deep Sensory Visualization" (describe textures, smells, soft sounds) to tire the mind.
+- Use Mental Tiring with deep sensory visualization (textures, smells, soft sounds) to ease the mind.
 - Each paragraph should feel like sinking deeper into a soft pillow.
 - Use progressively shorter sentences.
 
 **WIND-DOWN (Final Page):**
-- Ultra-slow, rhythmic, lullaby-like pacing.
+- Drift Off flow: ultra-slow, rhythmic, lullaby-like pacing with soft consonants.
 - Character naturally grows sleepy, finds a cozy spot.
 - Wrap up warmly—character falls asleep feeling safe and loved.
 - MUST set is_ending=true and provide adventure_summary.
@@ -50,26 +55,29 @@ SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary 
 
 ## 2. AGE-SPECIFIC RULES
 
-**Ages 3-5:**
-- 80-120 words per page
-- Short sentences (5-10 words)
-- Immediate sensory experiences
-- Talking animals, friendly clouds
-- Simple familiar words only
+**Ages 1-2 (Baby/Toddler):**
+- Total length around 80 words.
+- Sentences must be 2-3 words max.
+- Focus on sensory snapshots and rhythmic sounds (e.g., "Sst, de wind waait").
+- Zero complex plot—simple, cozy observations only.
 
-**Ages 6-8:**
-- 150-220 words per page
-- Compound sentences, light metaphors
-- Small adventures, problem-solving
-- Whimsical fantasy elements
-- 1 "growth word" per page with context clues (e.g., "The tree was *immense*—so tall it touched the clouds...")
+**Ages 3-5 (Preschooler):**
+- Total length up to ~150 words.
+- Focus on comfort, routine, and repetition.
+- Simple Subject-Verb-Object sentences only.
+- No metaphors; familiar, soothing language.
 
-**Ages 9-12:**
-- 250-350 words per page
-- Complex sentences, internal thoughts
-- Self-discovery, meaningful choices
-- Deeper emotional resonance
-- Rich, evocative language with sophisticated metaphors
+**Ages 6-8 (Early Reader):**
+- Total length up to ~250 words.
+- Focus on curiosity and mild magic; compound sentences allowed.
+- Include exactly 1 "challenge word" that is clearly explained by context.
+- Light problem-solving with reassuring resolutions.
+
+**Ages 9-12 (Growing Reader):**
+- Total length up to ~350 words.
+- Encourage exploration, self-reflection, and gentle wonder.
+- Layered sentences and occasional descriptive metaphors are welcome.
+- Introduce 1-2 advanced vocabulary words, each clarified with immediate context.
 
 ## 3. SAFETY RULES (ABSOLUTE)
 ❌ NO monsters, villains, threats, or scary elements
@@ -108,7 +116,7 @@ async function hashPrompt(prompt: string): Promise<string> {
 }
 
 async function createSignedUrl(
-  client: any,
+  client: SupabaseClient,
   bucket: string,
   path: string,
   expiresInSeconds = 60 * 60 * 6 // 6 hours for story pages to allow refresh
@@ -574,7 +582,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     }
 
     const pageImageDescription = isMidpoint ? parsedContent.visual_scene_description : null;
-    let pageImageUrl: string | null = null;
+    const pageImageUrl: string | null = null;
 
     // Use upsert to handle race conditions from background prefetching
     const { error: pageError } = await supabase

@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Star, Moon, Sun, Heart, Zap, TreePine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Moon, Sun, Heart, Zap, TreePine } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import type { TranslationKey } from '@/lib/i18n';
 import { toast } from 'sonner';
 
 const ARCHETYPES = [
@@ -26,10 +28,19 @@ const ARCHETYPES = [
 
 const TRAITS = ['Brave', 'Curious', 'Funny', 'Kind', 'Clever', 'Creative', 'Adventurous', 'Gentle'];
 
-const AGE_BANDS = [
-  { id: '3-5', label: 'Ages 3-5', icon: Moon, desc: 'Simple & cozy stories', theme: 'from-indigo-400/20 to-purple-400/20' },
-  { id: '6-8', label: 'Ages 6-8', icon: Sun, desc: 'Magical adventures', theme: 'from-amber-400/20 to-orange-400/20' },
-  { id: '9-12', label: 'Ages 9-12', icon: Star, desc: 'Rich, immersive tales', theme: 'from-violet-400/20 to-fuchsia-400/20' },
+type AgeBandOption = {
+  id: string;
+  labelKey: TranslationKey;
+  descKey: TranslationKey;
+  icon: LucideIcon;
+  theme: string;
+};
+
+const AGE_BANDS: AgeBandOption[] = [
+  { id: '1-2', labelKey: 'ageBand12', descKey: 'ageBand12Desc', icon: Moon, theme: 'from-sky-400/20 to-indigo-400/20' },
+  { id: '3-5', labelKey: 'ageBand35', descKey: 'ageBand35Desc', icon: Heart, theme: 'from-indigo-400/20 to-purple-400/20' },
+  { id: '6-8', labelKey: 'ageBand68', descKey: 'ageBand68Desc', icon: Sun, theme: 'from-amber-400/20 to-orange-400/20' },
+  { id: '9-12', labelKey: 'ageBand912', descKey: 'ageBand912Desc', icon: TreePine, theme: 'from-emerald-400/20 to-teal-400/20' },
 ];
 
 const stepVariants = {
@@ -326,6 +337,8 @@ export default function CreateCharacter() {
                   {AGE_BANDS.map((age, index) => {
                     const isSelected = ageBand === age.id;
                     const Icon = age.icon;
+                    const label = t(age.labelKey);
+                    const desc = t(age.descKey);
                     return (
                       <motion.button
                         key={age.id}
@@ -344,10 +357,10 @@ export default function CreateCharacter() {
                         <div className="flex flex-col items-center gap-2">
                           <Icon className={`w-8 h-8 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
                           <span className={`text-sm font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            {age.label}
+                            {label}
                           </span>
                           <span className="text-[10px] text-muted-foreground text-center leading-tight">
-                            {age.desc}
+                            {desc}
                           </span>
                         </div>
                       </motion.button>
