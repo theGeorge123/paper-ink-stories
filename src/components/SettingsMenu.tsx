@@ -38,8 +38,8 @@ export default function SettingsMenu() {
         <div className="mt-6">
           <Tabs defaultValue="language" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="language">Language</TabsTrigger>
-              <TabsTrigger value="reminders">Reminders</TabsTrigger>
+              <TabsTrigger value="language">{t('language')}</TabsTrigger>
+              <TabsTrigger value="reminders">{t('reminders')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="language" className="mt-4">
