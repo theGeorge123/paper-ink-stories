@@ -273,14 +273,18 @@ export default function Reader() {
   }, [pages.length, story, storyId, prefetchingNext, generating, generatePage, currentPageIndex]);
 
   const currentPage = pages[currentPageIndex];
-  const totalPages = story ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 10;
-  const isLastPage = pages.length >= totalPages || (story && !story.is_active);
+  const configuredPages = story ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 10;
+  // Use actual page count if story is finished, otherwise show configured total
+  const isStoryFinished = story && !story.is_active;
+  const totalPages = isStoryFinished ? pages.length : configuredPages;
+  const isLastPage = pages.length >= configuredPages || isStoryFinished;
   const canGoNext = currentPageIndex < pages.length - 1;
   const canGenerate = !isLastPage && currentPageIndex === pages.length - 1;
   const isOnFinalPage = isLastPage && currentPageIndex === pages.length - 1;
   const showCover = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
 
-  const SceneImage = ({ imageUrl, pageNumber }: { imageUrl?: string | null; pageNumber: number }) => {
+  // Only render SceneImage if there's actually an image URL stored
+  const SceneImage = ({ imageUrl, pageNumber }: { imageUrl: string; pageNumber: number }) => {
     const { url, error, refresh, handleError, loading } = useSignedImageUrl({
       initialUrl: imageUrl,
       storyId: storyId ?? undefined,
@@ -288,42 +292,23 @@ export default function Reader() {
     });
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    // Show skeleton while loading
-    if (loading || (!url && !error)) {
+    // Show skeleton while loading signed URL
+    if (loading) {
       return (
         <div className="overflow-hidden rounded-xl shadow-lg">
           <div className="aspect-[16/9] relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
-            <motion.div 
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              animate={{ x: ['-100%', '100%'] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-            />
             <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div 
-                className="flex items-center gap-2 text-muted-foreground"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <span className="text-sm">Creating illustration...</span>
-              </motion.div>
+              <span className="text-sm text-muted-foreground">Loading illustration...</span>
             </div>
           </div>
         </div>
       );
     }
 
-    if (error) {
-      return (
-        <div className="overflow-hidden rounded-xl shadow-lg">
-          <div className="aspect-[16/9] bg-black/5 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <span>Illustration unavailable</span>
-            <Button variant="outline" size="sm" onClick={refresh}>
-              Retry
-            </Button>
-          </div>
-        </div>
-      );
+    // Don't render anything if no URL or error
+    if (!url || error) {
+      return null;
     }
 
     return (
@@ -339,7 +324,7 @@ export default function Reader() {
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
           )}
           <motion.img
-            src={url!}
+            src={url}
             alt="Story scene"
             className="h-full w-full object-cover"
             initial={{ scale: 1.02, opacity: 0 }}
@@ -521,7 +506,7 @@ export default function Reader() {
                 }}
                 className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
               >
-                {(currentPage as any).image_url && <SceneImage imageUrl={(currentPage as any).image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />}
+                {currentPage.image_url && <SceneImage imageUrl={currentPage.image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />}
                 <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>
             ) : null}
