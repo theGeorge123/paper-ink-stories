@@ -448,7 +448,7 @@ export default function Reader() {
       </header>
 
       {/* Scrollable reading area */}
-      <main className="flex-1 overflow-y-auto px-6 pb-28">
+      <main className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {story?.title && currentPageIndex === 0 && (
             <motion.h1
@@ -550,17 +550,6 @@ export default function Reader() {
         />
       </div>
 
-      {/* Fixed page indicator footer - OUTSIDE scrollable area */}
-      <footer className={`fixed bottom-0 left-0 right-0 p-4 text-center border-t border-border/50 backdrop-blur-md ${activeTheme.footer}`}>
-        <motion.span
-          key={currentPageIndex}
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`text-sm font-medium ${activeTheme.muted}`}
-        >
-          {t('pageIndicator', { current: currentPageIndex + 1, total: totalPagesDisplay })}
-        </motion.span>
-      </footer>
     </div>
   );
 }
