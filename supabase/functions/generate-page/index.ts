@@ -524,6 +524,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       });
     }
 
+    const openRouterModel = Deno.env.get("OPENROUTER_STORY_PRESET")?.trim() || "@preset/story-teller";
     const aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -532,7 +533,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
         "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "",
       },
       body: JSON.stringify({
-        model: "deepseek/deepseek-chat",
+        model: openRouterModel,
         messages: [
           { role: "system", content: finalSystemPrompt },
           { role: "user", content: userPrompt }
