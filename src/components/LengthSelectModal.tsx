@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Clock, Sparkles } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TranslationKey } from '@/lib/i18n';
 import { getPageRangeLabel } from '@/lib/storyEngine';
@@ -59,6 +59,9 @@ export default function LengthSelectModal({
           <DialogTitle className="font-serif text-xl text-center">
             {t('storyLengthTitle')}
           </DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
+            Choose how long {characterName}'s adventure will be tonight
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 pt-4">
