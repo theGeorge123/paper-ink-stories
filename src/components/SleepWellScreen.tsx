@@ -331,25 +331,6 @@ export default function SleepWellScreen({
           {t('sleepWell')}, {characterName}
         </motion.p>
 
-        {/* Memory box - shows THIS adventure's summary */}
-        {adventureSummary && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.9 }}
-            className="w-full mb-6 p-4 rounded-xl bg-white/10 border border-white/20 backdrop-blur-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Bookmark className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-medium text-amber-400 uppercase tracking-wide">
-                {t('memorySaved')}
-              </span>
-            </div>
-            <p className="text-sm text-white/80 italic leading-relaxed">
-              "{adventureSummary}"
-            </p>
-          </motion.div>
-        )}
 
         {/* Tomorrow's Adventure - Cliffhanger Options */}
         {nextOptions && nextOptions.length > 0 && !selectedOption && (
