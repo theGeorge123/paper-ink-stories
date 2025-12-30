@@ -1,6 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface CachedUrl {
+  url: string;
+  expiresAt: number; // timestamp
+}
+
+const CACHE_KEY = 'hero-portrait-urls';
+const CACHE_DURATION = 5 * 60 * 60 * 1000; // 5 hours (signed URLs valid for 6h)
+
+function getCache(): Record<string, CachedUrl> {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    return cached ? JSON.parse(cached) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setCache(cache: Record<string, CachedUrl>) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // localStorage might be full or unavailable
+  }
+}
+
 interface BatchUrlResult {
   urls: Record<string, string | null>;
   loading: boolean;
@@ -10,13 +35,31 @@ interface BatchUrlResult {
 
 /**
  * Batch-fetch signed URLs for multiple hero portraits in a single API call.
- * Much faster than individual calls when displaying multiple characters.
+ * Caches URLs in localStorage for fast loading on page refresh.
  */
 export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
   const [urls, setUrls] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fetchedRef = useRef<Set<string>>(new Set());
+
+  // Load cached URLs immediately on mount
+  useEffect(() => {
+    const cache = getCache();
+    const now = Date.now();
+    const validUrls: Record<string, string | null> = {};
+    
+    heroIds.forEach(id => {
+      if (cache[id] && cache[id].expiresAt > now) {
+        validUrls[id] = cache[id].url;
+        fetchedRef.current.add(id);
+      }
+    });
+    
+    if (Object.keys(validUrls).length > 0) {
+      setUrls(validUrls);
+    }
+  }, [heroIds]);
 
   const fetchUrls = useCallback(async () => {
     // Filter to only IDs we haven't fetched yet
@@ -35,14 +78,24 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
       if (fnError) throw fnError;
 
       if (data?.urls) {
+        const cache = getCache();
+        const now = Date.now();
+        
         // Mark as fetched and update state
         idsToFetch.forEach(id => fetchedRef.current.add(id));
         
         const newUrls: Record<string, string | null> = {};
         for (const [id, result] of Object.entries(data.urls)) {
-          newUrls[id] = (result as { signedUrl: string | null })?.signedUrl || null;
+          const signedUrl = (result as { signedUrl: string | null })?.signedUrl || null;
+          newUrls[id] = signedUrl;
+          
+          // Cache the URL
+          if (signedUrl) {
+            cache[id] = { url: signedUrl, expiresAt: now + CACHE_DURATION };
+          }
         }
         
+        setCache(cache);
         setUrls(prev => ({ ...prev, ...newUrls }));
       }
     } catch (err) {
@@ -55,10 +108,15 @@ export function useBatchSignedUrls(heroIds: string[]): BatchUrlResult {
 
   // Force refresh all URLs (clear cache)
   const refresh = useCallback(async () => {
+    // Clear from localStorage cache too
+    const cache = getCache();
+    heroIds.forEach(id => delete cache[id]);
+    setCache(cache);
+    
     fetchedRef.current.clear();
     setUrls({});
     await fetchUrls();
-  }, [fetchUrls]);
+  }, [fetchUrls, heroIds]);
 
   useEffect(() => {
     if (heroIds.length > 0) {
