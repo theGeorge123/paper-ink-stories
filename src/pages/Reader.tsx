@@ -11,7 +11,7 @@ import SleepWellScreen from '@/components/SleepWellScreen';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import CoverPage from '@/components/CoverPage';
 import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
-
+import { useLanguage } from '@/hooks/useLanguage';
 // Page turn animation variants
 const pageVariants = {
   enter: (direction: number) => ({
@@ -64,6 +64,7 @@ export default function Reader() {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
   
   // CRITICAL: currentPageIndex is user-controlled, not auto-updated
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -536,10 +537,10 @@ export default function Reader() {
             >
               <motion.p
                 className={`text-sm ${activeTheme.muted}`}
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                Tap to continue...
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              {t('tapToContinue')}
               </motion.p>
             </motion.div>
           )}
@@ -567,7 +568,7 @@ export default function Reader() {
           animate={{ opacity: 1, y: 0 }}
           className={`text-sm font-medium ${activeTheme.muted}`}
         >
-          Page {currentPageIndex + 1} of {totalPages}
+          {t('pageIndicator', { current: currentPageIndex + 1, total: totalPages })}
         </motion.span>
       </footer>
     </div>

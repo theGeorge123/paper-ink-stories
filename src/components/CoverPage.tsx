@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface CoverPageProps {
   title: string;
@@ -9,6 +10,8 @@ interface CoverPageProps {
 }
 
 export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProps) {
+  const { t } = useLanguage();
+
   return (
     <div className="relative min-h-screen w-screen overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white p-0 m-0">
       {heroImageUrl && (
@@ -32,7 +35,7 @@ export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProp
           className="flex items-center gap-3 rounded-full bg-white/10 px-4 py-2 text-sm"
         >
           <BookOpen className="h-4 w-4" />
-          <span>Papier &amp; Inkt</span>
+          <span>{t('coverBrandName')}</span>
         </motion.div>
 
         <motion.h1
@@ -50,7 +53,7 @@ export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProp
           transition={{ delay: 0.35, duration: 0.8 }}
           className="mt-4 max-w-xl text-base text-white/80"
         >
-          Een betoverende omslag voor jouw held. Klaar om het verhaal te openen?
+          {t('coverSubtitle')}
         </motion.p>
 
         <motion.div
@@ -60,7 +63,7 @@ export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProp
           className="mt-10"
         >
           <Button size="lg" onClick={onOpen} className="bg-amber-400 text-amber-950 hover:bg-amber-300">
-            Sla het boek open
+            {t('openBook')}
           </Button>
         </motion.div>
       </div>
