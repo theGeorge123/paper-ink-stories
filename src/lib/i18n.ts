@@ -99,6 +99,8 @@ export const translations = {
     ageBand35Desc: 'Focus on calm routine and repetition',
     ageBand68: '6-8 yrs • For young explorers',
     ageBand68Desc: 'Focus on gentle magic and new words',
+    ageBand912: '9-12 yrs • For growing dreamers',
+    ageBand912Desc: 'Focus on adventurous ideas and richer words',
     
     // Archetypes
     knight: 'Knight',
@@ -277,6 +279,8 @@ export const translations = {
     ageBand35Desc: 'Focus op rust en herhaling',
     ageBand68: '6-8 jaar • Voor jonge ontdekkers',
     ageBand68Desc: 'Focus op milde magie en nieuwe woorden',
+    ageBand912: '9-12 jaar • Voor grote dromers',
+    ageBand912Desc: 'Focus op avontuur en rijkere woorden',
     
     // Archetypes
     knight: 'Ridder',
@@ -455,6 +459,8 @@ export const translations = {
     ageBand35Desc: 'Fokus på lugn och upprepning',
     ageBand68: '6-8 år • För unga upptäckare',
     ageBand68Desc: 'Fokus på mild magi och nya ord',
+    ageBand912: '9-12 år • För stora drömmare',
+    ageBand912Desc: 'Fokus på äventyr och rikare ord',
     
     // Archetypes
     knight: 'Riddare',

@@ -73,6 +73,12 @@ SYSTEM SAFETY: Strictly child-friendly, cozy bedtime tone, no violence or scary 
 - Include exactly 1 "challenge word" that is clearly explained by context.
 - Light problem-solving with reassuring resolutions.
 
+**Ages 9-12 (Growing Reader):**
+- Total length up to ~350 words.
+- Encourage exploration, self-reflection, and gentle wonder.
+- Layered sentences and occasional descriptive metaphors are welcome.
+- Introduce 1-2 advanced vocabulary words, each clarified with immediate context.
+
 ## 3. SAFETY RULES (ABSOLUTE)
 ❌ NO monsters, villains, threats, or scary elements
 ❌ NO violence, conflict, or danger

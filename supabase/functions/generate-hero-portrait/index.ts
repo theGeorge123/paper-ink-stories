@@ -55,6 +55,7 @@ const AGE_MODIFIERS: Record<string, string> = {
   "1-2": "ultra-simple, baby-safe softness, pastel colors, rounded baby features",
   "3-5": "very cute and simple, extra rounded features, bright cheerful colors",
   "6-8": "whimsical and magical, balanced proportions, vibrant warm colors",
+  "9-12": "storybook realism with gentle detail, confident posture, rich jewel tones",
 };
 
 serve(async (req) => {

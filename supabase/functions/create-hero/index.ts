@@ -14,7 +14,7 @@ const DAYS_WINDOW = 7;
 const createHeroSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters").trim(),
   archetype: z.string().min(1, "Archetype is required").max(50, "Archetype must be less than 50 characters"),
-  age_band: z.enum(["1-2", "3-5", "6-8"]).optional().default("6-8"),
+  age_band: z.enum(["1-2", "3-5", "6-8", "9-12"]).optional().default("6-8"),
   traits: z.array(z.string().max(50)).min(1, "At least one trait is required").max(5, "Maximum 5 traits allowed"),
   icon: z.string().max(50).optional(),
   sidekick_name: z.string().max(100).optional().nullable(),

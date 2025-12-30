@@ -40,6 +40,7 @@ const AGE_BANDS: AgeBandOption[] = [
   { id: '1-2', labelKey: 'ageBand12', descKey: 'ageBand12Desc', icon: Moon, theme: 'from-sky-400/20 to-indigo-400/20' },
   { id: '3-5', labelKey: 'ageBand35', descKey: 'ageBand35Desc', icon: Heart, theme: 'from-indigo-400/20 to-purple-400/20' },
   { id: '6-8', labelKey: 'ageBand68', descKey: 'ageBand68Desc', icon: Sun, theme: 'from-amber-400/20 to-orange-400/20' },
+  { id: '9-12', labelKey: 'ageBand912', descKey: 'ageBand912Desc', icon: TreePine, theme: 'from-emerald-400/20 to-teal-400/20' },
 ];
 
 const stepVariants = {
