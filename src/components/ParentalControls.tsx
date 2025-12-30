@@ -108,7 +108,7 @@ export default function ParentalControls({ trigger }: ParentalControlsProps) {
           <SheetHeader>
             <SheetTitle className="font-serif flex items-center gap-2">
               <Lock className="w-5 h-5 text-primary" />
-              Parental Controls
+              {t('parentalControlsTitle')}
             </SheetTitle>
           </SheetHeader>
 
@@ -153,14 +153,14 @@ export default function ParentalControls({ trigger }: ParentalControlsProps) {
               </div>
               
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                Changes apply to UI and story generation
+                {t('languageAppliesNote')}
               </p>
             </div>
 
             {/* Info */}
             <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
               <p className="text-sm text-muted-foreground text-center">
-                More parental controls coming soon: reading time limits, content filters, and progress reports.
+                {t('parentalControlsComingSoon')}
               </p>
             </div>
           </div>

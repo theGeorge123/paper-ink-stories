@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useLanguage } from '@/hooks/useLanguage';
 
 interface ReminderSettingsData {
   email_opt_in: boolean;
@@ -20,6 +21,7 @@ interface ReminderSettingsData {
 
 export default function ReminderSettings() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<ReminderSettingsData>({
@@ -85,9 +87,9 @@ export default function ReminderSettings() {
 
     if (error) {
       console.error('Failed to save reminder settings:', error);
-      toast.error('Failed to save settings');
+      toast.error(t('saveSettingsError'));
     } else {
-      toast.success('Reminder settings saved');
+      toast.success(t('saveSettingsSuccess'));
     }
   };
 
@@ -106,8 +108,8 @@ export default function ReminderSettings() {
           <Bell className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h3 className="font-serif text-lg text-foreground">Bedtime Reminders</h3>
-          <p className="text-sm text-muted-foreground">Get gentle reminders for story time</p>
+          <h3 className="font-serif text-lg text-foreground">{t('reminderSettingsTitle')}</h3>
+          <p className="text-sm text-muted-foreground">{t('reminderSettingsSubtitle')}</p>
         </div>
       </div>
 
@@ -121,8 +123,8 @@ export default function ReminderSettings() {
           <div className="flex items-center gap-3">
             <Mail className="w-5 h-5 text-muted-foreground" />
             <div>
-              <Label className="text-sm font-medium">Email Reminders</Label>
-              <p className="text-xs text-muted-foreground">Receive gentle email reminders</p>
+              <Label className="text-sm font-medium">{t('emailReminders')}</Label>
+              <p className="text-xs text-muted-foreground">{t('emailRemindersDescription')}</p>
             </div>
           </div>
           <Switch
@@ -140,7 +142,7 @@ export default function ReminderSettings() {
             {/* Timezone display */}
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
-              <span>Timezone: {settings.timezone}</span>
+              <span>{t('timezoneLabel', { timezone: settings.timezone || '' })}</span>
             </div>
 
             {/* Bedtime Reminder */}
@@ -148,8 +150,8 @@ export default function ReminderSettings() {
               <div className="flex items-center gap-3 flex-1">
                 <Moon className="w-4 h-4 text-muted-foreground" />
                 <div className="flex-1">
-                  <Label className="text-sm">Bedtime Reminder</Label>
-                  <p className="text-xs text-muted-foreground">Time to wind down</p>
+                  <Label className="text-sm">{t('bedtimeReminder')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('bedtimeReminderDescription')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -172,8 +174,8 @@ export default function ReminderSettings() {
               <div className="flex items-center gap-3 flex-1">
                 <BookOpen className="w-4 h-4 text-muted-foreground" />
                 <div className="flex-1">
-                  <Label className="text-sm">Story Time Reminder</Label>
-                  <p className="text-xs text-muted-foreground">Start your adventure</p>
+                  <Label className="text-sm">{t('storyTimeReminder')}</Label>
+                  <p className="text-xs text-muted-foreground">{t('storyTimeReminderDescription')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -198,10 +200,10 @@ export default function ReminderSettings() {
         {saving ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Saving...
+            {t('saving')}
           </>
         ) : (
-          'Save Settings'
+          t('saveSettings')
         )}
       </Button>
     </div>
