@@ -271,10 +271,11 @@ export const translations = {
     finishCreating: 'Personage Maken',
     selectAgeBand: 'Selecteer Leeftijdsgroep',
     selectTraits: 'Selecteer Eigenschappen',
-    
+
     // Age Bands
     ageBand12: '1-2 jaar • Voor de allerkleinsten',
-    ageBand12Desc: 'Focus op klanken en ritme',
+    ageBand12Desc:
+      'Voor de allerkleinsten maken we altijd een extra kort en rustig verhaaltje. Geen keuzes nodig — het verhaal is speciaal ontworpen als één zacht slaapmoment 🌙',
     ageBand35: '3-5 jaar • Voor peuters & kleuters',
     ageBand35Desc: 'Focus op rust en herhaling',
     ageBand68: '6-8 jaar • Voor jonge ontdekkers',
@@ -305,15 +306,15 @@ export const translations = {
     creative: 'Creatief',
     adventurous: 'Avontuurlijk',
     gentle: 'Zachtaardig',
-    
+
     // Story Length
-    storyLengthTitle: 'Hoe lang is het verhaal vanavond?',
+    storyLengthTitle: 'Kies zelf hoe lang het verhaal mag zijn',
     storyLengthShort: 'Kort',
-    storyLengthShortDesc: '5 minuten',
-    storyLengthMedium: 'Middel',
-    storyLengthMediumDesc: '10 minuten',
+    storyLengthShortDesc: 'een paar pagina’s',
+    storyLengthMedium: 'Normaal',
+    storyLengthMediumDesc: 'een volledig avontuur',
     storyLengthLong: 'Lang',
-    storyLengthLongDesc: '15+ minuten',
+    storyLengthLongDesc: 'een uitgebreid verhaal om rustig in te verdwijnen',
     
     // Reader
     pageOf: 'Pagina {current} van {total}',
