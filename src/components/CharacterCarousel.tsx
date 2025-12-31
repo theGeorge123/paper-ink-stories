@@ -175,21 +175,15 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  const handleNewAdventure = (character: Character) => {
-    setSelectedCharacter(character);
-    setShowLengthModal(true);
-  };
-
-  const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
-    if (!selectedCharacter) return;
+  const startAdventure = async (character: Character, length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     setStartingAdventure(true);
-    setLoadingCharacterId(selectedCharacter.id);
-    
+    setLoadingCharacterId(character.id);
+
     try {
       const { data: newStory, error: storyError } = await supabase
         .from('stories')
         .insert({
-          character_id: selectedCharacter.id,
+          character_id: character.id,
           length_setting: length,
           story_state: { location: 'Home', inventory: [], plot_outline: [] },
         })
@@ -215,6 +209,22 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
       setStartingAdventure(false);
       setLoadingCharacterId(null);
     }
+  };
+
+  const handleNewAdventure = (character: Character) => {
+    setSelectedCharacter(character);
+
+    if (character.age_band === '1-2') {
+      startAdventure(character, 'SHORT');
+      return;
+    }
+
+    setShowLengthModal(true);
+  };
+
+  const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
+    if (!selectedCharacter) return;
+    await startAdventure(selectedCharacter, length);
   };
 
   const handleContinueStory = (storyId: string) => {

@@ -3,7 +3,6 @@ import { Clock, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TranslationKey } from '@/lib/i18n';
-import { getPageRangeLabel } from '@/lib/storyEngine';
 
 interface LengthSelectModalProps {
   open: boolean;
@@ -18,25 +17,22 @@ const LENGTH_OPTIONS = [
     value: 'SHORT' as const,
     key: 'storyLengthShort' as TranslationKey,
     descKey: 'storyLengthShortDesc' as TranslationKey,
-    pages: getPageRangeLabel('SHORT'),
     icon: '🌙',
-    recommended: false
+    recommended: false,
   },
   {
     value: 'MEDIUM' as const,
     key: 'storyLengthMedium' as TranslationKey,
     descKey: 'storyLengthMediumDesc' as TranslationKey,
-    pages: getPageRangeLabel('MEDIUM'),
     icon: '✨',
-    recommended: true
+    recommended: true,
   },
   {
     value: 'LONG' as const,
     key: 'storyLengthLong' as TranslationKey,
     descKey: 'storyLengthLongDesc' as TranslationKey,
-    pages: getPageRangeLabel('LONG'),
     icon: '🌟',
-    recommended: false
+    recommended: false,
   },
 ];
 
@@ -60,7 +56,7 @@ export default function LengthSelectModal({
             {t('storyLengthTitle')}
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
-            Choose how long {characterName}'s adventure will be tonight
+            {t('storyLengthDescription', { name: characterName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -89,12 +85,12 @@ export default function LengthSelectModal({
                   </h4>
                   {option.recommended && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                      Recommended
+                      {t('storyLengthRecommended')}
                     </span>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {t(option.descKey)} • around {option.pages} pages
+                  {t(option.descKey)}
                 </p>
               </div>
               <Clock className="w-4 h-4 text-muted-foreground" />
