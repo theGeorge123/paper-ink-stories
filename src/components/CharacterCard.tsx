@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import LengthSelectModal from '@/components/LengthSelectModal';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -22,6 +22,7 @@ interface CharacterCardProps {
     archetype: string;
     traits: string[];
     sidekick_name: string | null;
+    age_band?: string;
     stories?: { id: string; is_active: boolean }[];
   };
 }
@@ -112,38 +113,14 @@ export default function CharacterCard({ character }: CharacterCardProps) {
         </div>
       </motion.div>
 
-      <Dialog open={showLengthModal} onOpenChange={setShowLengthModal}>
-        <DialogContent className="glass">
-          <DialogHeader>
-            <DialogTitle className="font-serif text-xl text-center">
-              How long is tonight's story?
-            </DialogTitle>
-            <DialogDescription className="text-center text-muted-foreground">
-              Choose a story length for {character.name}'s adventure
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-4">
-            {[
-              { key: 'SHORT', emoji: '🧸', label: 'Short', desc: '~5 minutes' },
-              { key: 'MEDIUM', emoji: '📖', label: 'Medium', desc: '~10 minutes' },
-              { key: 'LONG', emoji: '💤', label: 'Long', desc: '~15 minutes' },
-            ].map((option) => (
-              <button
-                key={option.key}
-                onClick={() => startNewStory(option.key as 'SHORT' | 'MEDIUM' | 'LONG')}
-                disabled={loading}
-                className="length-pill hover:border-primary/50"
-              >
-                <span className="text-2xl">{option.emoji}</span>
-                <div className="text-left">
-                  <div className="font-medium text-foreground">{option.label}</div>
-                  <div className="text-sm text-muted-foreground">{option.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <LengthSelectModal
+        open={showLengthModal}
+        onOpenChange={setShowLengthModal}
+        onSelect={startNewStory}
+        characterName={character.name}
+        ageBand={character.age_band}
+        loading={loading}
+      />
     </>
   );
 }

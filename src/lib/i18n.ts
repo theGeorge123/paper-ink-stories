@@ -129,13 +129,16 @@ export const translations = {
     // Story Length
     storyLengthTitle: 'How long is tonight\'s story?',
     storyLengthDescription: "Choose how long {name}'s adventure will be tonight",
-    storyLengthRecommended: 'Recommended',
+    storyLengthRecommended: 'Popular',
     storyLengthShort: 'Short',
     storyLengthShortDesc: '5 minutes',
+    storyLengthShortDescFun: 'A few pages • Perfect for sleepy eyes',
     storyLengthMedium: 'Medium',
     storyLengthMediumDesc: '10 minutes',
+    storyLengthMediumDescFun: 'A full adventure • Just right!',
     storyLengthLong: 'Long',
     storyLengthLongDesc: '15+ minutes',
+    storyLengthLongDescFun: 'An epic tale to get lost in',
     
     // Reader
     pageOf: 'Page {current} of {total}',
@@ -312,13 +315,16 @@ export const translations = {
     // Story Length
     storyLengthTitle: 'Kies zelf hoe lang het verhaal mag zijn',
     storyLengthDescription: 'Kies hoe lang het avontuur van {name} mag zijn',
-    storyLengthRecommended: 'Aanbevolen',
+    storyLengthRecommended: 'Favoriet',
     storyLengthShort: 'Kort',
-    storyLengthShortDesc: 'een paar pagina’s',
+    storyLengthShortDesc: 'een paar pagina\'s',
+    storyLengthShortDescFun: 'Een paar pagina\'s 🌙',
     storyLengthMedium: 'Normaal',
     storyLengthMediumDesc: 'een volledig avontuur',
+    storyLengthMediumDescFun: 'Een volledig avontuur ✨',
     storyLengthLong: 'Lang',
     storyLengthLongDesc: 'een uitgebreid verhaal om rustig in te verdwijnen',
+    storyLengthLongDescFun: 'Een uitgebreid verhaal om rustig in te verdwijnen 🌟',
     
     // Reader
     pageOf: 'Pagina {current} van {total}',
@@ -494,13 +500,16 @@ export const translations = {
     // Story Length
     storyLengthTitle: 'Hur lång är kvällens saga?',
     storyLengthDescription: 'Välj hur långt {name}s äventyr ska vara ikväll',
-    storyLengthRecommended: 'Rekommenderad',
+    storyLengthRecommended: 'Favorit',
     storyLengthShort: 'Kort',
     storyLengthShortDesc: '5 minuter',
+    storyLengthShortDescFun: 'Några sidor • Perfekt för sömniga ögon',
     storyLengthMedium: 'Medium',
     storyLengthMediumDesc: '10 minuter',
+    storyLengthMediumDescFun: 'Ett helt äventyr • Lagom!',
     storyLengthLong: 'Lång',
     storyLengthLongDesc: '15+ minuter',
+    storyLengthLongDescFun: 'En episk saga att försvinna i',
     
     // Reader
     pageOf: 'Sida {current} av {total}',
