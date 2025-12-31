@@ -159,7 +159,6 @@
   /* Book cover card styling */
   .book-cover {
     @apply relative overflow-hidden rounded-lg;
-    aspect-ratio: 3 / 4;
     background: hsl(var(--book-paper));
     box-shadow: 
       -4px 0 0 0 hsl(var(--book-spine)),
