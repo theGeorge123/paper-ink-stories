@@ -333,7 +333,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.1 }}
-        className="book-cover group relative flex flex-col p-6 min-w-[300px] max-w-[340px]"
+        className="book-cover group relative flex flex-col p-6 min-w-[280px] max-w-[300px] h-auto min-h-[420px]"
       >
         {/* Settings & Delete buttons */}
         <div className="absolute top-3 right-3 flex gap-2 z-10">
