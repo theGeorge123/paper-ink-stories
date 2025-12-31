@@ -128,6 +128,8 @@ export const translations = {
     
     // Story Length
     storyLengthTitle: 'How long is tonight\'s story?',
+    storyLengthDescription: "Choose how long {name}'s adventure will be tonight",
+    storyLengthRecommended: 'Recommended',
     storyLengthShort: 'Short',
     storyLengthShortDesc: '5 minutes',
     storyLengthMedium: 'Medium',
@@ -309,6 +311,8 @@ export const translations = {
 
     // Story Length
     storyLengthTitle: 'Kies zelf hoe lang het verhaal mag zijn',
+    storyLengthDescription: 'Kies hoe lang het avontuur van {name} mag zijn',
+    storyLengthRecommended: 'Aanbevolen',
     storyLengthShort: 'Kort',
     storyLengthShortDesc: 'een paar pagina’s',
     storyLengthMedium: 'Normaal',
@@ -489,6 +493,8 @@ export const translations = {
     
     // Story Length
     storyLengthTitle: 'Hur lång är kvällens saga?',
+    storyLengthDescription: 'Välj hur långt {name}s äventyr ska vara ikväll',
+    storyLengthRecommended: 'Rekommenderad',
     storyLengthShort: 'Kort',
     storyLengthShortDesc: '5 minuter',
     storyLengthMedium: 'Medium',
