@@ -5,6 +5,7 @@ import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import LengthSelectModal from '@/components/LengthSelectModal';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -31,6 +32,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
   const [showLengthModal, setShowLengthModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
   const activeStory = character.stories?.find((s) => s.is_active);
@@ -82,6 +84,14 @@ export default function CharacterCard({ character }: CharacterCardProps) {
               {character.archetype}
               {character.sidekick_name && ` & ${character.sidekick_name}`}
             </p>
+            <div className="inline-flex items-center gap-2 text-xs text-primary font-medium mb-2">
+              <span className="px-2 py-1 rounded-full bg-primary/10 text-primary">
+                {t('ageBadge').replace('{range}', character.age_band || '1-2')}
+              </span>
+              {character.age_band === '1-2' && (
+                <span className="text-muted-foreground">{t('ageShortSublabel')}</span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {character.traits.map((trait) => (
                 <span key={trait} className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
