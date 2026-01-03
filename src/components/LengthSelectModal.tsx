@@ -49,7 +49,7 @@ export default function LengthSelectModal({
   const { t } = useLanguage();
   const hasAutoSelectedRef = useRef(false);
 
-  // For ages 1-2, auto-select SHORT immediately (shouldn't reach here but just in case)
+  // For ages 1-2, auto-select SHORT immediately
   useEffect(() => {
     if (ageBand === '1-2' && open && !loading && !hasAutoSelectedRef.current) {
       hasAutoSelectedRef.current = true;
@@ -82,7 +82,7 @@ export default function LengthSelectModal({
             {t('storyLengthTitle')}
           </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground text-base">
-            {t('storyLengthDescription')}
+            {t('storyLengthDescription', { name: characterName })}
           </DialogDescription>
         </DialogHeader>
 
@@ -147,7 +147,7 @@ export default function LengthSelectModal({
               className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3"
             />
             <p className="text-sm text-muted-foreground font-medium">
-              {t('turningPage')}
+              ✨ {characterName}'s avontuur begint... ✨
             </p>
           </motion.div>
         )}

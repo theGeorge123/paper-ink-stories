@@ -17,6 +17,3 @@ verify_jwt = false
 
 [functions.get-image-url]
 verify_jwt = false
-
-[functions.start-story-generation]
-verify_jwt = false

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { MoonStar, Library, Check, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MoonStar, Library, Bookmark, Sparkles, Check, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -12,54 +12,76 @@ interface SleepWellScreenProps {
   characterName: string;
   characterId: string;
   storyId: string;
-  ageBand?: string | null;
+  adventureSummary?: string;
+  nextOptions?: string[];
+  existingLifeSummary?: string | null;
+  storyThemes?: string[];
 }
 
-export default function SleepWellScreen({
-  characterName,
+export default function SleepWellScreen({ 
+  characterName, 
   characterId,
   storyId,
-  ageBand,
+  adventureSummary, 
+  nextOptions,
+  existingLifeSummary,
+  storyThemes = []
 }: SleepWellScreenProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [dimmed, setDimmed] = useState(false);
   const [rating, setRating] = useState(0);
   const [ratingSaving, setRatingSaving] = useState(false);
   const [ratingMessage, setRatingMessage] = useState<string | null>(null);
   const [ratingSaved, setRatingSaved] = useState(false);
 
-  // Determine age-based copy
-  const isAge12 = ageBand === '1-2';
-  const isAge35 = ageBand === '3-5';
-  const isAgeOlder = ageBand === '6-8' || ageBand === '7-9' || ageBand === '9-12';
-
-  const getEndTitle = () => {
-    if (isAge12) return t('endTitle12');
-    if (isAge35) return t('endTitle35');
-    return t('endTitle79');
+  // Build cumulative life summary from existing + new adventure
+  const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
+    if (!existingLifeSummary) {
+      // First adventure - just use this summary
+      return newAdventureSummary;
+    }
+    
+    // Combine: keep it concise (2 sentences max for the life summary)
+    // The AI will craft this better, but we do a simple merge here
+    const combined = `${existingLifeSummary} ${newAdventureSummary}`;
+    
+    // If it's getting too long, we just append and let it grow
+    // In production, you might want AI to summarize this
+    if (combined.length > 300) {
+      // Just keep the last 2 adventure summaries worth
+      return combined.slice(-300);
+    }
+    
+    return combined;
   };
 
-  const getEndBodyLines = () => {
-    if (isAge12) {
-      return [
-        t('endBody12Line1'),
-        t('endBody12Line2').replace('{name}', characterName),
-        t('endBody12Line3'),
-      ];
+  // Learn from this story - add themes to preferred list
+  const updatePreferredThemes = async () => {
+    if (storyThemes.length === 0) return;
+    
+    try {
+      // Fetch current preferences
+      const { data: character } = await supabase
+        .from('characters')
+        .select('preferred_themes')
+        .eq('id', characterId)
+        .single();
+      
+      const currentPreferred = (character?.preferred_themes as string[]) || [];
+      
+      // Merge themes, keeping unique and limiting to last 10
+      const updatedPreferred = [...new Set([...currentPreferred, ...storyThemes])].slice(-10);
+      
+      await supabase
+        .from('characters')
+        .update({ preferred_themes: updatedPreferred })
+        .eq('id', characterId);
+    } catch (error) {
+      console.error('Error updating preferred themes:', error);
     }
-    if (isAge35) {
-      return [
-        t('endBody35Line1'),
-        t('endBody35Line2'),
-        t('endBody35Line3'),
-      ];
-    }
-    return [
-      t('endBody79Line1'),
-      t('endBody79Line2'),
-      t('endBody79Line3'),
-    ];
   };
 
   const handleRatingChange = async (value: number) => {
@@ -94,6 +116,7 @@ export default function SleepWellScreen({
         return;
       }
 
+      // Store rating in story metadata since ratings table doesn't exist
       const { error } = await supabase
         .from('stories')
         .update({ 
@@ -113,7 +136,108 @@ export default function SleepWellScreen({
     }
   };
 
+  const handleSelectOption = async (option: string) => {
+    setSelectedOption(option);
+    setSaving(true);
+
+    try {
+      // Build cumulative life summary
+      const newLifeSummary = adventureSummary 
+        ? buildCumulativeLifeSummary(adventureSummary)
+        : existingLifeSummary;
+
+      // Update character with pending_choice
+      const { error } = await supabase
+        .from('characters')
+        .update({ 
+          pending_choice: option,
+        })
+        .eq('id', characterId);
+
+      if (error) throw error;
+
+      // Learn from this story's themes
+      await updatePreferredThemes();
+
+      // Also update the story's last_summary for this adventure
+      if (newLifeSummary) {
+        await supabase
+          .from('stories')
+          .update({ last_summary: newLifeSummary, chosen_option: option })
+          .eq('id', storyId);
+      }
+
+      toast.success(t('choiceSaved').replace('{name}', characterName));
+    } catch (error) {
+      console.error('Error saving choice:', error);
+      toast.error(t('choiceSaveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // "Child is asleep" - pick random option, save cumulative summary, and dim screen
+  const handlePickForMe = async () => {
+    if (!nextOptions || nextOptions.length === 0) {
+      navigate('/dashboard');
+      return;
+    }
+
+    setSaving(true);
+    
+    // Pick random option
+    const randomOption = nextOptions[Math.floor(Math.random() * nextOptions.length)];
+    
+    try {
+      // Build cumulative life summary
+      const newLifeSummary = adventureSummary 
+        ? buildCumulativeLifeSummary(adventureSummary)
+        : existingLifeSummary;
+
+      // Update character with random choice
+      const { error } = await supabase
+        .from('characters')
+        .update({ pending_choice: randomOption })
+        .eq('id', characterId);
+
+      if (error) throw error;
+
+      // Learn from this story's themes
+      await updatePreferredThemes();
+
+      // Update story with cumulative summary and chosen option
+      if (newLifeSummary) {
+        await supabase
+          .from('stories')
+          .update({ last_summary: newLifeSummary, chosen_option: randomOption })
+          .eq('id', storyId);
+      }
+
+      // Dim screen to black (Goodnight mode)
+      setDimmed(true);
+      
+      // Wait a moment then navigate silently
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (error) {
+      console.error('Error saving choice:', error);
+      setSaving(false);
+      navigate('/dashboard');
+    }
+  };
+
+  // Handle goodnight without option selection
   const handleGoodnight = async () => {
+    // Save cumulative summary even if no option selected
+    if (adventureSummary) {
+      const newLifeSummary = buildCumulativeLifeSummary(adventureSummary);
+      await supabase
+        .from('stories')
+        .update({ last_summary: newLifeSummary })
+        .eq('id', storyId);
+    }
+    
     navigate('/dashboard');
   };
 
@@ -138,14 +262,12 @@ export default function SleepWellScreen({
             transition={{ delay: 0.5 }}
             className="text-white/20 font-serif text-xl"
           >
-            {t('sleepWell')}
+            {t('sleepWell')}, {characterName}
           </motion.p>
         </motion.div>
       </motion.div>
     );
   }
-
-  const endBodyLines = getEndBodyLines();
 
   return (
     <motion.div
@@ -194,55 +316,126 @@ export default function SleepWellScreen({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="font-serif text-4xl text-white mb-6 text-center"
+          className="font-serif text-4xl text-white mb-2 text-center"
         >
-          {getEndTitle()}
+          {t('theEnd')}
         </motion.h1>
 
-        {/* Age-based body lines */}
-        <div className="space-y-2 mb-6 text-center">
-          {endBodyLines.map((line, index) => (
-            <motion.p
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 + index * 0.15 }}
-              className={`text-white/80 ${isAge12 ? 'text-2xl font-serif' : 'text-lg'}`}
-            >
-              {line}
-            </motion.p>
-          ))}
-        </div>
+        {/* Subtext */}
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="text-lg text-white/70 mb-6 text-center"
+        >
+          {t('sleepWell')}, {characterName}
+        </motion.p>
 
-        {/* Star rating - only for older ages */}
-        {!isAge12 && !isAge35 && (
+
+        {/* Tomorrow's Adventure - Cliffhanger Options */}
+        {nextOptions && nextOptions.length > 0 && !selectedOption && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
-            className={`w-full mb-6 rounded-xl border ${ratingSaved ? 'border-emerald-300/60 bg-emerald-500/5 shadow-[0_10px_40px_-30px_rgba(16,185,129,0.8)]' : 'border-white/10 bg-white/5'} p-4`}
+            transition={{ delay: 1.1 }}
+            className="w-full mb-6"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-white/80">{t('ratingPrompt')}</span>
-              {ratingMessage && (
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-200" aria-live="polite">
-                  <Check className="w-3 h-3" />
-                  {ratingMessage}
-                </span>
-              )}
+            <div className="flex items-center gap-2 mb-4 justify-center">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-medium text-amber-400 uppercase tracking-wide">
+                {t('tomorrowsAdventure')}
+              </span>
             </div>
-            <StarRating value={rating} onChange={handleRatingChange} label="" />
-            {ratingSaving && (
-              <p className="mt-2 text-xs text-white/70">{t('ratingSaving')}</p>
-            )}
+            <p className="text-center text-white/70 text-sm mb-4">
+              {t('chooseNextAdventure').replace('{name}', characterName)}
+            </p>
+            <div className="space-y-3">
+              {nextOptions.map((option, index) => (
+                <motion.button
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.2 + index * 0.1 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleSelectOption(option)}
+                  disabled={saving}
+                  className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white text-left hover:bg-white/20 hover:border-amber-400/50 transition-all disabled:opacity-50"
+                >
+                  <span className="text-amber-400 font-bold mr-2">{index + 1}.</span>
+                  {option}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Pick for me button */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+              className="mt-4"
+            >
+              <Button
+                onClick={handlePickForMe}
+                variant="ghost"
+                size="sm"
+                disabled={saving}
+                className="w-full text-white/50 hover:text-white hover:bg-white/10 border border-white/10"
+              >
+                <Moon className="w-4 h-4 mr-2" />
+                {t('pickForMe')}
+              </Button>
+            </motion.div>
           </motion.div>
         )}
+
+        {/* Choice Saved Confirmation */}
+        <AnimatePresence>
+          {selectedOption && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full mb-6 p-4 rounded-xl bg-emerald-500/20 border border-emerald-400/50"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-medium text-emerald-400 uppercase tracking-wide">
+                  {t('choiceSaved').replace('{name}', characterName).split('!')[0]}!
+                </span>
+              </div>
+              <p className="text-sm text-white/80 italic leading-relaxed">
+                "{selectedOption}"
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Star rating */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
+          className={`w-full mb-6 rounded-xl border ${ratingSaved ? 'border-emerald-300/60 bg-emerald-500/5 shadow-[0_10px_40px_-30px_rgba(16,185,129,0.8)]' : 'border-white/10 bg-white/5'} p-4`}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-white/80">{t('ratingPrompt')}</span>
+            {ratingMessage && (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-200" aria-live="polite">
+                <Check className="w-3 h-3" />
+                {ratingMessage}
+              </span>
+            )}
+          </div>
+          <StarRating value={rating} onChange={handleRatingChange} label="" />
+          {ratingSaving && (
+            <p className="mt-2 text-xs text-white/70">{t('ratingSaving')}</p>
+          )}
+        </motion.div>
 
         {/* Goodnight button */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.3 }}
+          transition={{ delay: nextOptions?.length ? 1.5 : 1.1 }}
           className="flex flex-col gap-3 w-full"
         >
           <motion.div whileTap={{ scale: 0.98 }}>
@@ -255,16 +448,6 @@ export default function SleepWellScreen({
               {t('goodnight')}
             </Button>
           </motion.div>
-
-          {/* Parent note */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.5 }}
-            className="text-center text-white/50 text-sm"
-          >
-            {t('parentCloseNote')}
-          </motion.p>
 
           <Button
             onClick={() => navigate('/dashboard')}

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/hooks/useLanguage';
 import { Separator } from '@/components/ui/separator';
 
 type AuthMode = 'email' | 'phone';
@@ -24,7 +23,6 @@ export default function Auth() {
   const { signIn, signUp, signInWithGoogle, signInWithPhone, verifyOtp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useLanguage();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,12 +102,9 @@ export default function Auth() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <BookOpen className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="font-serif text-3xl text-foreground mb-2">{t('appName')}</h1>
-          <p className="text-lg font-medium text-foreground mb-1">
-            {isSignUp ? t('createAccount') : t('welcomeBack')}
-          </p>
-          <p className="text-muted-foreground text-sm">
-            {t('welcomeBackSubtitle')}
+          <h1 className="font-serif text-3xl text-foreground mb-2">Paper & Ink</h1>
+          <p className="text-muted-foreground">
+            {isSignUp ? 'Create your story space' : 'Welcome back'}
           </p>
         </div>
 
@@ -155,7 +150,7 @@ export default function Auth() {
             onClick={() => { setAuthMode('email'); setOtpSent(false); }}
           >
             <Mail className="w-4 h-4" />
-            {t('email')}
+            Email
           </Button>
           <Button
             variant={authMode === 'phone' ? 'default' : 'outline'}
@@ -173,7 +168,7 @@ export default function Auth() {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="email"
-                placeholder={t('email')}
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10 h-12 bg-card"
@@ -184,7 +179,7 @@ export default function Auth() {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="password"
-                placeholder={t('password')}
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 h-12 bg-card"
@@ -193,7 +188,7 @@ export default function Auth() {
               />
             </div>
             <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? t('loading') : t('signIn')}
+              {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
             </Button>
           </form>
         ) : (
@@ -226,7 +221,7 @@ export default function Auth() {
               </div>
             )}
             <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? t('loading') : otpSent ? 'Verify Code' : 'Send Code'}
+              {loading ? 'Loading...' : otpSent ? 'Verify Code' : 'Send Code'}
             </Button>
             {otpSent && (
               <Button
@@ -243,12 +238,12 @@ export default function Auth() {
 
         {authMode === 'email' && (
           <p className="text-center mt-6 text-muted-foreground">
-            {isSignUp ? t('hasAccount') : t('noAccount')}{' '}
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-primary hover:underline"
             >
-              {isSignUp ? t('signIn') : t('signUp')}
+              {isSignUp ? 'Sign In' : 'Create Account'}
             </button>
           </p>
         )}

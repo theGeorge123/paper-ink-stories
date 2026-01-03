@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
@@ -41,8 +41,6 @@ const ARCHETYPE_COLORS: Record<string, { bg: string; accent: string; glow: strin
   bunny: { bg: 'from-rose-100 to-rose-200/50', accent: 'text-rose-600', glow: 'shadow-rose-400/40' },
   bear: { bg: 'from-yellow-100 to-yellow-200/50', accent: 'text-yellow-600', glow: 'shadow-yellow-400/40' },
 };
-
-// Removed route options - simplified flow
 
 function HeroPortrait({
   character,
@@ -177,25 +175,33 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  const startAdventure = async (
-    character: Character,
-    length: 'SHORT' | 'MEDIUM' | 'LONG'
-  ) => {
+  const startAdventure = async (character: Character, length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     setStartingAdventure(true);
     setLoadingCharacterId(character.id);
 
     try {
-      // Always use route 'A' - simplified flow
-      const { data, error } = await supabase.functions.invoke('start-story-generation', {
-        body: { characterId: character.id, length, storyRoute: 'A' },
+      const { data: newStory, error: storyError } = await supabase
+        .from('stories')
+        .insert({
+          character_id: character.id,
+          length_setting: length,
+          story_state: { location: 'Home', inventory: [], plot_outline: [] },
+        })
+        .select()
+        .single();
+
+      if (storyError) throw storyError;
+
+      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
+        body: { storyId: newStory.id, targetPage: 1 },
       });
 
-      if (error || !data?.storyId) {
-        throw error || new Error('Could not start story');
+      if (pageError) {
+        console.error('Page 1 generation failed:', pageError);
       }
 
       setShowLengthModal(false);
-      navigate(`/read/${data.storyId}`);
+      navigate(`/read/${newStory.id}`);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast.error('Failed to start adventure');
@@ -207,14 +213,12 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   const handleNewAdventure = (character: Character) => {
     setSelectedCharacter(character);
-    
-    // For ages 1-2, auto-start with SHORT length
+
     if (character.age_band === '1-2') {
       startAdventure(character, 'SHORT');
       return;
     }
-    
-    // For other ages, show length selection
+
     setShowLengthModal(true);
   };
 
@@ -255,14 +259,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                 The {character.archetype}
                 {character.sidekick_name && ` • ${character.sidekick_name}`}
               </p>
-              <div className="mt-1 inline-flex items-center gap-2 text-[11px] text-primary font-medium">
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                  {t('ageBadge').replace('{range}', character.age_band || '1-2')}
-                </span>
-                {character.age_band === '1-2' && (
-                  <span className="text-muted-foreground">{t('ageShortSublabel')}</span>
-                )}
-              </div>
             </div>
 
           {/* Edit/Delete buttons */}
@@ -386,14 +382,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           <p className="text-sm text-muted-foreground capitalize font-medium mb-2">
             The {character.archetype}
           </p>
-          <div className="flex items-center justify-center gap-2 text-xs mb-3">
-            <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold">
-              {t('ageBadge').replace('{range}', character.age_band || '1-2')}
-            </span>
-            {character.age_band === '1-2' && (
-              <span className="text-muted-foreground">{t('ageShortSublabel')}</span>
-            )}
-          </div>
 
           {character.sidekick_name && (
             <p className="text-xs text-muted-foreground/80 mb-3">
@@ -518,7 +506,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
         />
       )}
 
-
       {/* Length Selection Modal */}
       {selectedCharacter && (
         <LengthSelectModal
@@ -526,7 +513,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           onOpenChange={setShowLengthModal}
           onSelect={handleLengthSelect}
           characterName={selectedCharacter.name}
-          ageBand={selectedCharacter.age_band}
           loading={startingAdventure}
         />
       )}
