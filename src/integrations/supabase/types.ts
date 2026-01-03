@@ -257,70 +257,49 @@ export type Database = {
       }
       stories: {
         Row: {
-          age_band: string | null
           character_id: string
           chosen_option: string | null
           created_at: string
           current_page: number
-          error_reason: string | null
           generated_options: Json | null
           id: string
           is_active: boolean
           last_summary: string | null
-          length: string | null
           length_setting: string
-          story_route: string
-          status: string | null
           story_state: Json
           themes: string[] | null
           title: string | null
-          total_pages: number
           updated_at: string
-          user_id: string | null
         }
         Insert: {
-          age_band?: string | null
           character_id: string
           chosen_option?: string | null
           created_at?: string
           current_page?: number
-          error_reason?: string | null
           generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null
-          length?: string | null
           length_setting?: string
-          story_route?: string
-          status?: string | null
           story_state?: Json
           themes?: string[] | null
           title?: string | null
-          total_pages?: number
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
-          age_band?: string | null
           character_id?: string
           chosen_option?: string | null
           created_at?: string
           current_page?: number
-          error_reason?: string | null
           generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null
-          length?: string | null
           length_setting?: string
-          story_route?: string
-          status?: string | null
           story_state?: Json
           themes?: string[] | null
           title?: string | null
-          total_pages?: number
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: [
           {
@@ -328,42 +307,6 @@ export type Database = {
             columns: ["character_id"]
             isOneToOne: false
             referencedRelation: "characters"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stories_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      story_pages: {
-        Row: {
-          created_at: string
-          page_index: number
-          story_id: string
-          text: string | null
-        }
-        Insert: {
-          created_at?: string
-          page_index: number
-          story_id: string
-          text?: string | null
-        }
-        Update: {
-          created_at?: string
-          page_index?: number
-          story_id?: string
-          text?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "story_pages_story_id_fkey"
-            columns: ["story_id"]
-            isOneToOne: false
-            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]

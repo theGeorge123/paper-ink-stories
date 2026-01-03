@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { Book, Brain, Sparkles, Moon, ChevronRight, Globe } from "lucide-react";
+import { Book, Moon, Heart, Sparkles, ChevronRight, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Language } from "@/lib/i18n";
 
 const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className?: string }) => (
@@ -25,15 +25,17 @@ const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className
   </motion.div>
 );
 
-const ValueProp = ({
+const HowItWorksStep = ({
   icon: Icon,
   title,
   description,
+  step,
   delay,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
+  step: number;
   delay: number;
 }) => (
   <motion.div
@@ -43,6 +45,9 @@ const ValueProp = ({
     transition={{ duration: 0.6, delay }}
     className="flex flex-col items-center text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50"
   >
+    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-4 text-primary font-bold">
+      {step}
+    </div>
     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
       <Icon className="w-8 h-8 text-primary" />
     </div>
@@ -59,11 +64,9 @@ const LANGUAGES: { code: Language; flag: string; name: string }[] = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { loading } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [showLangMenu, setShowLangMenu] = useState(false);
-
-  // Landing page is always shown - no auto-redirect to dashboard
 
   if (loading) {
     return (
@@ -154,7 +157,7 @@ export default function Landing() {
 
           <h1 className="font-serif text-4xl md:text-6xl font-bold text-foreground leading-tight mb-6">
             {t('heroTitle')}{" "}
-            <span className="text-primary">{t('heroTitleHighlight')}</span>{" "}
+            <span className="text-primary">{t('heroTitleHighlight')}</span>
             {t('heroTitleEnd')}
           </h1>
 
@@ -199,7 +202,7 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* Value Props Section */}
+      {/* Why we made this Section */}
       <section className="relative py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -217,22 +220,25 @@ export default function Landing() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <ValueProp
-              icon={Moon}
+            <HowItWorksStep
+              icon={Heart}
               title={t('sleepEngineered')}
               description={t('sleepEngineeredDesc')}
+              step={1}
               delay={0.1}
             />
-            <ValueProp
-              icon={Brain}
+            <HowItWorksStep
+              icon={Moon}
               title={t('infiniteMemory')}
               description={t('infiniteMemoryDesc')}
+              step={2}
               delay={0.2}
             />
-            <ValueProp
+            <HowItWorksStep
               icon={Sparkles}
               title={t('stealthEducation')}
               description={t('stealthEducationDesc')}
+              step={3}
               delay={0.3}
             />
           </div>
@@ -247,7 +253,7 @@ export default function Landing() {
           viewport={{ once: true }}
           className="max-w-4xl mx-auto text-center p-12 rounded-3xl bg-gradient-to-br from-primary/10 via-card to-secondary/10 border border-border/50"
         >
-          <Book className="w-16 h-16 text-primary mx-auto mb-6" />
+          <Moon className="w-16 h-16 text-primary mx-auto mb-6" />
           <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
             {t('readyForDreams')}
           </h2>
@@ -272,7 +278,7 @@ export default function Landing() {
             <Book className="w-4 h-4 text-primary" />
             <span className="font-serif font-bold">{t('appName')}</span>
           </div>
-          <p>© {new Date().getFullYear()} {t('appName')}. {t('madeWithLove')}</p>
+          <p>{t('madeWithLove')}</p>
         </div>
       </footer>
     </div>

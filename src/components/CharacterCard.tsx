@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
+import { Play, Moon, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import LengthSelectModal from '@/components/LengthSelectModal';
@@ -34,7 +34,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
+  const Icon = ARCHETYPE_ICONS[character.archetype] || Moon;
   const activeStory = character.stories?.find((s) => s.is_active);
 
   const startNewStory = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
@@ -109,7 +109,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
               className="flex-1 gap-2"
             >
               <Play className="w-4 h-4" />
-              Continue
+              {t('continueStory')}
             </Button>
           )}
           <Button
@@ -117,8 +117,8 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             variant={activeStory ? 'outline' : 'default'}
             className="flex-1 gap-2"
           >
-            <Sparkles className="w-4 h-4" />
-            New Adventure
+            <Moon className="w-4 h-4" />
+            {t('newAdventure')}
           </Button>
         </div>
       </motion.div>

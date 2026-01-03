@@ -62,8 +62,8 @@ const themeOptions = [
 export type ThemeKey = typeof themeOptions[number]['key'];
 
 type StoryPage = {
-  page_index: number;
-  text: string | null;
+  page_number: number;
+  content: string | null;
 };
 
 export default function Reader() {
@@ -84,11 +84,12 @@ export default function Reader() {
     if (!storyId) return null;
     const { data, error } = await supabase
       .from('stories')
-      .select('id, title, total_pages, length_setting, status, age_band, story_route, generated_options, themes, characters(id, name, hero_image_url)')
+      .select('id, title, length_setting, current_page, is_active, generated_options, themes, characters(id, name, hero_image_url, age_band)')
       .eq('id', storyId)
       .single();
 
     if (error) {
+      toast.error('Failed to load story');
       throw error;
     }
 
@@ -101,8 +102,10 @@ export default function Reader() {
     enabled: !!storyId,
     staleTime: Infinity,
     gcTime: Infinity,
-    onError: () => toast.error('Failed to load story'),
   });
+
+  // Get age_band from character
+  const ageBand = story?.characters?.age_band;
 
   useEffect(() => {
     if (story && !story?.characters?.hero_image_url) {
@@ -115,16 +118,17 @@ export default function Reader() {
     heroId: story?.characters?.id,
   });
 
-  const fetchPage = useCallback(async (pageIndex: number) => {
+  const fetchPage = useCallback(async (pageIndex: number): Promise<StoryPage | null> => {
     if (!storyId) return null;
     const { data, error } = await supabase
-      .from('story_pages')
+      .from('pages')
       .select('*')
       .eq('story_id', storyId)
-      .eq('page_index', pageIndex)
+      .eq('page_number', pageIndex)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
+      toast.error('Could not load this page');
       throw error;
     }
 
@@ -139,16 +143,12 @@ export default function Reader() {
     staleTime: Infinity,
     gcTime: Infinity,
     refetchInterval: (query) => (query.state.data ? false : 1200),
-    onError: () => toast.error('Could not load this page'),
   });
 
-  const totalPages = story?.total_pages || (story?.length_setting ? getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') : 0);
-  const configuredRange = story ? getPageRangeLabel((story.length_setting || 'SHORT') as 'SHORT' | 'MEDIUM' | 'LONG') : undefined;
-  const totalPagesDisplay = story?.status === 'ready'
-    ? totalPages.toString()
-    : configuredRange
-      ? `around ${configuredRange}`
-      : totalPages.toString();
+  const lengthSetting = story?.length_setting as 'SHORT' | 'MEDIUM' | 'LONG' | undefined;
+  const totalPages = lengthSetting ? getTotalPages(lengthSetting) : 0;
+  const configuredRange = lengthSetting ? getPageRangeLabel(lengthSetting) : undefined;
+  const totalPagesDisplay = configuredRange ? `~${configuredRange}` : totalPages.toString();
 
   useEffect(() => {
     if (!storyId || !totalPages) return;
@@ -187,7 +187,7 @@ export default function Reader() {
         characterName={story.characters.name}
         characterId={story.characters.id}
         storyId={storyId!}
-        ageBand={story.age_band}
+        ageBand={ageBand}
       />
     );
   }
@@ -195,11 +195,10 @@ export default function Reader() {
   const isCoverVisible = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
 
   if (isCoverVisible && story) {
-    const characterDetails = story.characters as { hero_image_url?: string | null };
     return (
       <CoverPage
-        title={story.title || `${story.characters.name}'s avontuur`}
-        heroImageUrl={heroPortrait.url || characterDetails.hero_image_url}
+        title={story.title || `${story.characters.name}'s story`}
+        heroImageUrl={heroPortrait.url || story.characters.hero_image_url}
         onOpen={() => setHasOpenedCover(true)}
       />
     );
@@ -271,10 +270,10 @@ export default function Reader() {
                   opacity: { duration: 0.2 },
                   rotateY: { duration: 0.3 },
                 }}
-                className={`story-text py-4 ${activeTheme.text} ${story?.age_band === '1-2' ? 'text-2xl sm:text-[28px] leading-[1.9] space-y-8' : 'text-lg leading-relaxed space-y-6'}`}
+                className={`story-text py-4 ${activeTheme.text} ${ageBand === '1-2' ? 'text-2xl sm:text-[28px] leading-[1.9] space-y-8' : 'text-lg leading-relaxed space-y-6'}`}
               >
-                <div className={`${story?.age_band === '1-2' ? 'whitespace-pre-wrap' : 'whitespace-pre-line'}`}>
-                  {sanitizeStoryText(currentPage.text)}
+                <div className={`${ageBand === '1-2' ? 'whitespace-pre-wrap' : 'whitespace-pre-line'}`}>
+                  {sanitizeStoryText(currentPage.content)}
                 </div>
               </motion.div>
             ) : (
@@ -293,7 +292,7 @@ export default function Reader() {
                   >
                     <MoonStar className="w-6 h-6 text-primary" />
                   </motion.div>
-                  <p className="font-serif">Turning the page...</p>
+                  <p className="font-serif">{t('turningPage')}</p>
                 </div>
               </motion.div>
             )}
