@@ -104,6 +104,8 @@ serve(async (req) => {
 
     const { storyId } = parsed.data;
 
+    console.log("Fetching story:", storyId);
+
     const { data: story, error: storyError } = await adminClient
       .from("stories")
       .select("id, character_id, user_id, age_band, length, length_setting, total_pages, status, story_route, characters!inner(user_id, name, age_band)")
@@ -118,7 +120,9 @@ serve(async (req) => {
       });
     }
 
-    const character = story.characters as CharacterRecord;
+    // Extract character from the join - Supabase returns it as a single object when using !inner
+    const characterData = story.characters as unknown as CharacterRecord;
+    const character: CharacterRecord = Array.isArray(characterData) ? characterData[0] : characterData;
 
     if (character.user_id !== userResult.data.user.id && story.user_id && story.user_id !== userResult.data.user.id) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -129,31 +133,36 @@ serve(async (req) => {
 
     const totalPages = story.total_pages || LENGTH_PAGES[(story.length_setting as keyof typeof LENGTH_PAGES) ?? "SHORT"] || 5;
 
-    // Fetch already generated pages
+    console.log("Generating pages for story:", storyId, "totalPages:", totalPages);
+
+    // Fetch already generated pages from the 'pages' table
     const { data: existingPages } = await adminClient
-      .from("story_pages")
-      .select("page_index")
+      .from("pages")
+      .select("page_number")
       .eq("story_id", storyId);
 
-    const generated = new Set((existingPages ?? []).map((p) => p.page_index));
-    const pagesToGenerate: { story_id: string; page_index: number; text: string }[] = [];
+    const generated = new Set((existingPages ?? []).map((p) => p.page_number));
+    const pagesToGenerate: { story_id: string; page_number: number; content: string }[] = [];
 
     for (let i = 0; i < totalPages; i++) {
-      if (generated.has(i)) continue;
+      const pageNumber = i + 1; // pages use 1-indexed page_number
+      if (generated.has(pageNumber)) continue;
       const text = buildPageText({ character, pageIndex: i, totalPages, route: (story.story_route as "A" | "B" | "C") ?? "A" });
-      pagesToGenerate.push({ story_id: storyId, page_index: i, text: sanitizeStoryText(text) });
+      pagesToGenerate.push({ story_id: storyId, page_number: pageNumber, content: sanitizeStoryText(text) });
     }
+
+    console.log("Pages to generate:", pagesToGenerate.length);
 
     if (pagesToGenerate.length > 0) {
       const { error: insertError } = await adminClient
-        .from("story_pages")
-        .upsert(pagesToGenerate, { onConflict: "story_id,page_index" });
+        .from("pages")
+        .upsert(pagesToGenerate, { onConflict: "story_id,page_number" });
 
       if (insertError) {
         console.error("Failed to persist story pages", insertError);
         await adminClient
           .from("stories")
-          .update({ status: "failed", error_reason: insertError.message })
+          .update({ status: "failed" })
           .eq("id", storyId);
 
         return new Response(JSON.stringify({ error: "Failed to save pages" }), {
@@ -167,6 +176,8 @@ serve(async (req) => {
       .from("stories")
       .update({ status: "ready", total_pages: totalPages, user_id: character.user_id, age_band: character.age_band, length: story.length ?? story.length_setting })
       .eq("id", storyId);
+
+    console.log("Story generation complete:", storyId);
 
     return new Response(
       JSON.stringify({ status: "ok", generatedPages: pagesToGenerate.length, totalPages }),
