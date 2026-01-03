@@ -101,6 +101,8 @@ export const translations = {
     ageBand68Desc: 'Focus on gentle magic and new words',
     ageBand912: '9-12 yrs • For growing dreamers',
     ageBand912Desc: 'Focus on adventurous ideas and richer words',
+    ageBadge: 'Age {range}',
+    ageShortSublabel: 'Short and soothing',
     
     // Archetypes
     knight: 'Knight',
@@ -139,6 +141,17 @@ export const translations = {
     storyLengthLong: 'Long',
     storyLengthLongDesc: '15+ minutes',
     storyLengthLongDescFun: 'An epic tale to get lost in',
+    shortAutomatic: 'Short (automatic for age 1-2)',
+    routeChoiceTitle: 'Choose tonight\'s gentle route',
+    routeChoiceDescription: '{name} can start in a calm place. Pick one to begin.',
+    routeAName: 'Route A • Cozy Home',
+    routeADesc: 'Stay indoors with soft, familiar comforts.',
+    routeBName: 'Route B • Quiet Nature',
+    routeBDesc: 'A peaceful stroll through calm nature.',
+    routeCName: 'Route C • Gentle Wonder',
+    routeCDesc: 'Soft stars and a little wonder in the sky.',
+    routeContinue: 'Continue to choose a length',
+    routeGentlePrompt: 'Pick a calm route to begin.',
     
     // Reader
     pageOf: 'Page {current} of {total}',
@@ -178,6 +191,7 @@ export const translations = {
     ratingPlaceholder: 'Your rating',
     ratingValue: '{value}/5 stars',
     ratingStarLabel: 'Rate {value} star(s)',
+    tomorrowCanWait: 'Tomorrow can wait. Tonight is for rest.',
     
     // Character Management
     editCharacter: 'Edit Character',
@@ -287,6 +301,8 @@ export const translations = {
     ageBand68Desc: 'Focus op milde magie en nieuwe woorden',
     ageBand912: '9-12 jaar • Voor grote dromers',
     ageBand912Desc: 'Focus op avontuur en rijkere woorden',
+    ageBadge: 'Leeftijd {range}',
+    ageShortSublabel: 'Kort en rustgevend',
     
     // Archetypes
     knight: 'Ridder',
@@ -325,6 +341,17 @@ export const translations = {
     storyLengthLong: 'Lang',
     storyLengthLongDesc: 'een uitgebreid verhaal om rustig in te verdwijnen',
     storyLengthLongDescFun: 'Een uitgebreid verhaal om rustig in te verdwijnen 🌟',
+    shortAutomatic: 'Kort (automatisch voor 1-2 jaar)',
+    routeChoiceTitle: 'Kies een rustige route voor vanavond',
+    routeChoiceDescription: '{name} kan starten op een kalme plek. Kies er één om te beginnen.',
+    routeAName: 'Route A • Knus Thuis',
+    routeADesc: 'Binnen blijven met vertrouwde rust.',
+    routeBName: 'Route B • Stille Natuur',
+    routeBDesc: 'Een rustige wandeling door de natuur.',
+    routeCName: 'Route C • Zachte Verwondering',
+    routeCDesc: 'Zachte sterren en stille verwondering.',
+    routeContinue: 'Ga verder om lengte te kiezen',
+    routeGentlePrompt: 'Kies een rustige route om te beginnen.',
     
     // Reader
     pageOf: 'Pagina {current} van {total}',
@@ -364,6 +391,7 @@ export const translations = {
     ratingPlaceholder: 'Jouw beoordeling',
     ratingValue: '{value}/5 sterren',
     ratingStarLabel: 'Geef {value} ster(ren)',
+    tomorrowCanWait: 'Morgen kan wachten. Vanavond is voor rust.',
     
     // Character Management
     editCharacter: 'Personage Bewerken',
@@ -472,6 +500,8 @@ export const translations = {
     ageBand68Desc: 'Fokus på mild magi och nya ord',
     ageBand912: '9-12 år • För stora drömmare',
     ageBand912Desc: 'Fokus på äventyr och rikare ord',
+    ageBadge: 'Ålder {range}',
+    ageShortSublabel: 'Kort och rogivande',
     
     // Archetypes
     knight: 'Riddare',
@@ -510,6 +540,17 @@ export const translations = {
     storyLengthLong: 'Lång',
     storyLengthLongDesc: '15+ minuter',
     storyLengthLongDescFun: 'En episk saga att försvinna i',
+    shortAutomatic: 'Kort (automatiskt för 1-2 år)',
+    routeChoiceTitle: 'Välj en lugn väg för kvällen',
+    routeChoiceDescription: '{name} kan börja på en lugn plats. Välj en för att starta.',
+    routeAName: 'Väg A • Mysigt Hemma',
+    routeADesc: 'Stanna inne med trygga rutiner.',
+    routeBName: 'Väg B • Still Natur',
+    routeBDesc: 'En tyst promenad i naturen.',
+    routeCName: 'Väg C • Mildt Under',
+    routeCDesc: 'Mjuka stjärnor och stilla förundran.',
+    routeContinue: 'Fortsätt för att välja längd',
+    routeGentlePrompt: 'Välj en lugn väg för att börja.',
     
     // Reader
     pageOf: 'Sida {current} av {total}',
@@ -549,6 +590,7 @@ export const translations = {
     ratingPlaceholder: 'Ditt betyg',
     ratingValue: '{value}/5 stjärnor',
     ratingStarLabel: 'Ge {value} stjärnor',
+    tomorrowCanWait: 'Morgondagen kan vänta. Kvällen är för vila.',
     
     // Character Management
     editCharacter: 'Redigera Karaktär',

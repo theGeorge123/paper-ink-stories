@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
+import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2, MoonStar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +11,7 @@ import EditCharacterModal from './EditCharacterModal';
 import LengthSelectModal from './LengthSelectModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBatchSignedUrls } from '@/hooks/useBatchSignedUrls';
+import { TranslationKey } from '@/lib/i18n';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -41,6 +42,12 @@ const ARCHETYPE_COLORS: Record<string, { bg: string; accent: string; glow: strin
   bunny: { bg: 'from-rose-100 to-rose-200/50', accent: 'text-rose-600', glow: 'shadow-rose-400/40' },
   bear: { bg: 'from-yellow-100 to-yellow-200/50', accent: 'text-yellow-600', glow: 'shadow-yellow-400/40' },
 };
+
+const ROUTE_OPTIONS: { value: 'A' | 'B' | 'C'; titleKey: TranslationKey; descKey: TranslationKey }[] = [
+  { value: 'A', titleKey: 'routeAName', descKey: 'routeADesc' },
+  { value: 'B', titleKey: 'routeBName', descKey: 'routeBDesc' },
+  { value: 'C', titleKey: 'routeCName', descKey: 'routeCDesc' },
+];
 
 function HeroPortrait({
   character,
@@ -127,6 +134,8 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLengthModal, setShowLengthModal] = useState(false);
+  const [showRouteModal, setShowRouteModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<'A' | 'B' | 'C' | null>(null);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [startingAdventure, setStartingAdventure] = useState(false);
@@ -175,33 +184,26 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     }
   };
 
-  const startAdventure = async (character: Character, length: 'SHORT' | 'MEDIUM' | 'LONG') => {
+  const startAdventure = async (
+    character: Character,
+    length: 'SHORT' | 'MEDIUM' | 'LONG',
+    route: 'A' | 'B' | 'C'
+  ) => {
     setStartingAdventure(true);
     setLoadingCharacterId(character.id);
 
     try {
-      const { data: newStory, error: storyError } = await supabase
-        .from('stories')
-        .insert({
-          character_id: character.id,
-          length_setting: length,
-          story_state: { location: 'Home', inventory: [], plot_outline: [] },
-        })
-        .select()
-        .single();
-
-      if (storyError) throw storyError;
-
-      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
-        body: { storyId: newStory.id, targetPage: 1 },
+      const { data, error } = await supabase.functions.invoke('start-story-generation', {
+        body: { characterId: character.id, length, storyRoute: route },
       });
 
-      if (pageError) {
-        console.error('Page 1 generation failed:', pageError);
+      if (error || !data?.storyId) {
+        throw error || new Error('Could not start story');
       }
 
       setShowLengthModal(false);
-      navigate(`/read/${newStory.id}`);
+      setShowRouteModal(false);
+      navigate(`/read/${data.storyId}`);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast.error('Failed to start adventure');
@@ -213,18 +215,29 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   const handleNewAdventure = (character: Character) => {
     setSelectedCharacter(character);
-
-    if (character.age_band === '1-2') {
-      startAdventure(character, 'SHORT');
-      return;
-    }
-
-    setShowLengthModal(true);
+    setSelectedRoute(null);
+    setShowRouteModal(true);
   };
 
   const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
+    if (!selectedCharacter || !selectedRoute) {
+      setShowRouteModal(true);
+      return;
+    }
+    await startAdventure(selectedCharacter, length, selectedRoute);
+  };
+
+  const handleRouteSelect = async (route: 'A' | 'B' | 'C') => {
+    setSelectedRoute(route);
     if (!selectedCharacter) return;
-    await startAdventure(selectedCharacter, length);
+
+    if (selectedCharacter.age_band === '1-2') {
+      await startAdventure(selectedCharacter, 'SHORT', route);
+      return;
+    }
+
+    setShowRouteModal(false);
+    setShowLengthModal(true);
   };
 
   const handleContinueStory = (storyId: string) => {
@@ -259,6 +272,14 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
                 The {character.archetype}
                 {character.sidekick_name && ` • ${character.sidekick_name}`}
               </p>
+              <div className="mt-1 inline-flex items-center gap-2 text-[11px] text-primary font-medium">
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {t('ageBadge').replace('{range}', character.age_band || '1-2')}
+                </span>
+                {character.age_band === '1-2' && (
+                  <span className="text-muted-foreground">{t('ageShortSublabel')}</span>
+                )}
+              </div>
             </div>
 
           {/* Edit/Delete buttons */}
@@ -382,6 +403,14 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           <p className="text-sm text-muted-foreground capitalize font-medium mb-2">
             The {character.archetype}
           </p>
+          <div className="flex items-center justify-center gap-2 text-xs mb-3">
+            <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold">
+              {t('ageBadge').replace('{range}', character.age_band || '1-2')}
+            </span>
+            {character.age_band === '1-2' && (
+              <span className="text-muted-foreground">{t('ageShortSublabel')}</span>
+            )}
+          </div>
 
           {character.sidekick_name && (
             <p className="text-xs text-muted-foreground/80 mb-3">
@@ -506,6 +535,60 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
         />
       )}
 
+      {/* Route Selection Modal */}
+      {selectedCharacter && (
+        <Dialog open={showRouteModal} onOpenChange={setShowRouteModal}>
+          <DialogContent className="glass max-w-md">
+            <DialogHeader>
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <MoonStar className="w-7 h-7 text-primary" />
+              </div>
+              <DialogTitle className="font-serif text-xl text-center">
+                {t('routeChoiceTitle')}
+              </DialogTitle>
+              <DialogDescription className="text-center text-base text-muted-foreground">
+                {t('routeChoiceDescription').replace('{name}', selectedCharacter.name)}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              {ROUTE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleRouteSelect(option.value)}
+                  className={`w-full text-left p-4 rounded-xl border transition-all ${
+                    selectedRoute === option.value
+                      ? 'border-primary/60 bg-primary/10 shadow-[0_10px_40px_-30px_rgba(59,130,246,0.8)]'
+                      : 'border-border bg-muted/40 hover:border-primary/40 hover:bg-muted'
+                  }`}
+                  disabled={startingAdventure}
+                  aria-pressed={selectedRoute === option.value}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-serif font-semibold text-foreground">{t(option.titleKey)}</p>
+                      <p className="text-sm text-muted-foreground">{t(option.descKey)}</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-semibold">
+                      {option.value}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="pt-2 text-center text-sm text-muted-foreground">
+              {selectedCharacter.age_band === '1-2'
+                ? t('shortAutomatic')
+                : selectedRoute
+                  ? t('routeContinue')
+                  : t('routeGentlePrompt')}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Length Selection Modal */}
       {selectedCharacter && (
         <LengthSelectModal
@@ -513,6 +596,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
           onOpenChange={setShowLengthModal}
           onSelect={handleLengthSelect}
           characterName={selectedCharacter.name}
+          ageBand={selectedCharacter.age_band}
           loading={startingAdventure}
         />
       )}
