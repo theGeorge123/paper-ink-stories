@@ -18,16 +18,19 @@ const LENGTH_PAGES = {
   LONG: 12,
 };
 
+type StoryState = {
+  location?: string;
+  inventory?: string[];
+  route?: string;
+  totalPages?: number;
+  ageBand?: string;
+};
+
 type StoryRecord = {
   id: string;
   character_id: string;
-  user_id: string | null;
-  age_band: string | null;
-  length: string | null;
   length_setting: string | null;
-  total_pages: number;
-  status: string | null;
-  story_route: string | null;
+  story_state: StoryState;
 };
 
 type CharacterRecord = {
@@ -108,7 +111,7 @@ serve(async (req) => {
 
     const { data: story, error: storyError } = await adminClient
       .from("stories")
-      .select("id, character_id, user_id, age_band, length, length_setting, total_pages, status, story_route, characters!inner(user_id, name, age_band)")
+      .select("id, character_id, length_setting, story_state, characters!inner(user_id, name, age_band)")
       .eq("id", storyId)
       .single();
 
@@ -124,14 +127,17 @@ serve(async (req) => {
     const characterData = story.characters as unknown as CharacterRecord;
     const character: CharacterRecord = Array.isArray(characterData) ? characterData[0] : characterData;
 
-    if (character.user_id !== userResult.data.user.id && story.user_id && story.user_id !== userResult.data.user.id) {
+    if (character.user_id !== userResult.data.user.id) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const totalPages = story.total_pages || LENGTH_PAGES[(story.length_setting as keyof typeof LENGTH_PAGES) ?? "SHORT"] || 5;
+    // Get route and totalPages from story_state
+    const storyState = story.story_state as StoryState;
+    const route = (storyState?.route as "A" | "B" | "C") ?? "A";
+    const totalPages = storyState?.totalPages || LENGTH_PAGES[(story.length_setting as keyof typeof LENGTH_PAGES) ?? "SHORT"] || 5;
 
     console.log("Generating pages for story:", storyId, "totalPages:", totalPages);
 
@@ -147,7 +153,7 @@ serve(async (req) => {
     for (let i = 0; i < totalPages; i++) {
       const pageNumber = i + 1; // pages use 1-indexed page_number
       if (generated.has(pageNumber)) continue;
-      const text = buildPageText({ character, pageIndex: i, totalPages, route: (story.story_route as "A" | "B" | "C") ?? "A" });
+      const text = buildPageText({ character, pageIndex: i, totalPages, route });
       pagesToGenerate.push({ story_id: storyId, page_number: pageNumber, content: sanitizeStoryText(text) });
     }
 
@@ -172,9 +178,16 @@ serve(async (req) => {
       }
     }
 
+    // Update story_state with completed info
+    const updatedState = {
+      ...storyState,
+      status: "ready",
+      totalPages: totalPages,
+    };
+
     await adminClient
       .from("stories")
-      .update({ status: "ready", total_pages: totalPages, user_id: character.user_id, age_band: character.age_band, length: story.length ?? story.length_setting })
+      .update({ story_state: updatedState })
       .eq("id", storyId);
 
     console.log("Story generation complete:", storyId);

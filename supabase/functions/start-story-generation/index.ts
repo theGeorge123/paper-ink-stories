@@ -60,6 +60,8 @@ serve(async (req) => {
 
     const { characterId, length, storyRoute } = parsed.data;
 
+    console.log("Starting story for character:", characterId, "length:", length, "route:", storyRoute);
+
     const { data: character, error: characterError } = await adminClient
       .from("characters")
       .select("id, user_id, age_band, name")
@@ -67,6 +69,7 @@ serve(async (req) => {
       .single();
 
     if (characterError || !character) {
+      console.error("Character lookup failed:", characterError);
       return new Response(JSON.stringify({ error: "Character not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -83,19 +86,22 @@ serve(async (req) => {
     const enforcedLength = character.age_band === "1-2" ? "SHORT" : length;
     const totalPages = LENGTH_PAGES[enforcedLength];
 
+    // Store route and total pages in story_state since those columns don't exist directly
+    const storyState = { 
+      location: "Home", 
+      inventory: [],
+      route: storyRoute,
+      totalPages: totalPages,
+      ageBand: character.age_band
+    };
+
     const { data: story, error: insertError } = await adminClient
       .from("stories")
       .insert({
         character_id: characterId,
-        user_id: character.user_id,
-        age_band: character.age_band,
         length_setting: enforcedLength,
-        length: enforcedLength,
-        total_pages: totalPages,
-        status: "generating",
-        story_state: { location: "Home", inventory: [] },
         is_active: true,
-        story_route: storyRoute,
+        story_state: storyState,
       })
       .select()
       .single();
@@ -107,6 +113,8 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    console.log("Story created:", story.id);
 
     // Kick off generation without blocking the response
     adminClient.functions
