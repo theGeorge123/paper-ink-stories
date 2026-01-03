@@ -29,6 +29,39 @@ export default function SleepWellScreen({
   const [ratingMessage, setRatingMessage] = useState<string | null>(null);
   const [ratingSaved, setRatingSaved] = useState(false);
 
+  // Determine age-based copy
+  const isAge12 = ageBand === '1-2';
+  const isAge35 = ageBand === '3-5';
+  const isAgeOlder = ageBand === '6-8' || ageBand === '7-9' || ageBand === '9-12';
+
+  const getEndTitle = () => {
+    if (isAge12) return t('endTitle12');
+    if (isAge35) return t('endTitle35');
+    return t('endTitle79');
+  };
+
+  const getEndBodyLines = () => {
+    if (isAge12) {
+      return [
+        t('endBody12Line1'),
+        t('endBody12Line2').replace('{name}', characterName),
+        t('endBody12Line3'),
+      ];
+    }
+    if (isAge35) {
+      return [
+        t('endBody35Line1'),
+        t('endBody35Line2'),
+        t('endBody35Line3'),
+      ];
+    }
+    return [
+      t('endBody79Line1'),
+      t('endBody79Line2'),
+      t('endBody79Line3'),
+    ];
+  };
+
   const handleRatingChange = async (value: number) => {
     setRating(value);
     setRatingSaving(true);
@@ -61,7 +94,6 @@ export default function SleepWellScreen({
         return;
       }
 
-      // Store rating in story metadata since ratings table doesn't exist
       const { error } = await supabase
         .from('stories')
         .update({ 
@@ -81,7 +113,6 @@ export default function SleepWellScreen({
     }
   };
 
-  // Handle goodnight without option selection
   const handleGoodnight = async () => {
     navigate('/dashboard');
   };
@@ -107,12 +138,14 @@ export default function SleepWellScreen({
             transition={{ delay: 0.5 }}
             className="text-white/20 font-serif text-xl"
           >
-            {t('sleepWell')}, {characterName}
+            {t('sleepWell')}
           </motion.p>
         </motion.div>
       </motion.div>
     );
   }
+
+  const endBodyLines = getEndBodyLines();
 
   return (
     <motion.div
@@ -161,24 +194,28 @@ export default function SleepWellScreen({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="font-serif text-4xl text-white mb-2 text-center"
+          className="font-serif text-4xl text-white mb-6 text-center"
         >
-          {t('theEnd')}
+          {getEndTitle()}
         </motion.h1>
 
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="text-lg text-white/70 mb-6 text-center"
-        >
-          {t('sleepWell')}, {characterName}
-        </motion.p>
+        {/* Age-based body lines */}
+        <div className="space-y-2 mb-6 text-center">
+          {endBodyLines.map((line, index) => (
+            <motion.p
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + index * 0.15 }}
+              className={`text-white/80 ${isAge12 ? 'text-2xl font-serif' : 'text-lg'}`}
+            >
+              {line}
+            </motion.p>
+          ))}
+        </div>
 
-
-        {/* Star rating */}
-        {ageBand !== '1-2' && (
+        {/* Star rating - only for older ages */}
+        {!isAge12 && !isAge35 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -201,24 +238,13 @@ export default function SleepWellScreen({
           </motion.div>
         )}
 
-        {ageBand === '7-9' && (
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.4 }}
-            className="text-center text-white/60 mb-4"
-          >
-            {t('tomorrowCanWait')}
-          </motion.p>
-        )}
-
-          {/* Goodnight button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="flex flex-col gap-3 w-full"
-          >
+        {/* Goodnight button */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.3 }}
+          className="flex flex-col gap-3 w-full"
+        >
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button
               onClick={handleGoodnight}
@@ -229,6 +255,16 @@ export default function SleepWellScreen({
               {t('goodnight')}
             </Button>
           </motion.div>
+
+          {/* Parent note */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            className="text-center text-white/50 text-sm"
+          >
+            {t('parentCloseNote')}
+          </motion.p>
 
           <Button
             onClick={() => navigate('/dashboard')}
