@@ -1,26 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Mail, Lock, Phone } from 'lucide-react';
+import { BookOpen, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
-type AuthMode = 'email' | 'phone';
-
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle, signInWithPhone, verifyOtp } = useAuth();
+  const { signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,40 +46,6 @@ export default function Auth() {
         description: error.message,
         variant: 'destructive',
       });
-    }
-    setLoading(false);
-  };
-
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (!otpSent) {
-      const { error } = await signInWithPhone(phone);
-      if (error) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        setOtpSent(true);
-        toast({
-          title: 'Code sent',
-          description: 'Check your phone for the verification code.',
-        });
-      }
-    } else {
-      const { error } = await verifyOtp(phone, otp);
-      if (error) {
-        toast({
-          title: 'Error',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        navigate('/dashboard');
-      }
     }
     setLoading(false);
   };
@@ -142,111 +101,44 @@ export default function Auth() {
           <Separator className="flex-1" />
         </div>
 
-        {/* Auth Mode Tabs */}
-        <div className="flex gap-2 mb-4">
-          <Button
-            variant={authMode === 'email' ? 'default' : 'outline'}
-            className="flex-1 gap-2"
-            onClick={() => { setAuthMode('email'); setOtpSent(false); }}
-          >
-            <Mail className="w-4 h-4" />
-            Email
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10 h-12 bg-card"
+              required
+            />
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10 h-12 bg-card"
+              required
+              minLength={6}
+            />
+          </div>
+          <Button type="submit" className="w-full h-12" disabled={loading}>
+            {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
-          <Button
-            variant={authMode === 'phone' ? 'default' : 'outline'}
-            className="flex-1 gap-2"
-            onClick={() => { setAuthMode('phone'); setOtpSent(false); }}
+        </form>
+
+        <p className="text-center mt-6 text-muted-foreground">
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-primary hover:underline"
           >
-            <Phone className="w-4 h-4" />
-            Phone
-          </Button>
-        </div>
-
-        {authMode === 'email' ? (
-          <form onSubmit={handleEmailSubmit} className="space-y-4">
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10 h-12 bg-card"
-                required
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 h-12 bg-card"
-                required
-                minLength={6}
-              />
-            </div>
-            <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={handlePhoneSubmit} className="space-y-4">
-            {!otpSent ? (
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="tel"
-                  placeholder="+1234567890"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="pl-10 h-12 bg-card"
-                  required
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <p className="text-sm text-muted-foreground">Enter the code sent to {phone}</p>
-                <InputOTP value={otp} onChange={setOtp} maxLength={6}>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-            )}
-            <Button type="submit" className="w-full h-12" disabled={loading}>
-              {loading ? 'Loading...' : otpSent ? 'Verify Code' : 'Send Code'}
-            </Button>
-            {otpSent && (
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => setOtpSent(false)}
-              >
-                Use different number
-              </Button>
-            )}
-          </form>
-        )}
-
-        {authMode === 'email' && (
-          <p className="text-center mt-6 text-muted-foreground">
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary hover:underline"
-            >
-              {isSignUp ? 'Sign In' : 'Create Account'}
-            </button>
-          </p>
-        )}
+            {isSignUp ? 'Sign In' : 'Create Account'}
+          </button>
+        </p>
       </motion.div>
     </div>
   );
