@@ -32,7 +32,10 @@ export default function SleepWellScreen({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dimmed, setDimmed] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(true);
+  const [showFeedback, setShowFeedback] = useState(false);
+  
+  // Show feedback after user selects an option or if there are no options
+  const shouldShowFeedback = showFeedback || (!nextOptions || nextOptions.length === 0 || selectedOption);
 
   // Build cumulative life summary from existing + new adventure
   const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
@@ -354,17 +357,17 @@ export default function SleepWellScreen({
           )}
         </AnimatePresence>
 
-        {/* Post-story feedback questionnaire */}
-        {showFeedback && (
+        {/* Post-story feedback questionnaire - shows after option selection */}
+        {shouldShowFeedback && !showFeedback && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2 }}
+            transition={{ delay: 0.3 }}
             className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
           >
             <PostStoryFeedback 
               storyId={storyId} 
-              onComplete={() => setShowFeedback(false)} 
+              onComplete={() => setShowFeedback(true)} 
             />
           </motion.div>
         )}
