@@ -258,14 +258,17 @@ export type Database = {
       stories: {
         Row: {
           character_id: string
+          child_state_after_story: string | null
           chosen_option: string | null
           created_at: string
           current_page: number
+          feedback_submitted_at: string | null
           generated_options: Json | null
           id: string
           is_active: boolean
           last_summary: string | null
           length_setting: string
+          reuse_intent_tomorrow: string | null
           story_state: Json
           themes: string[] | null
           title: string | null
@@ -273,14 +276,17 @@ export type Database = {
         }
         Insert: {
           character_id: string
+          child_state_after_story?: string | null
           chosen_option?: string | null
           created_at?: string
           current_page?: number
+          feedback_submitted_at?: string | null
           generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null
           length_setting?: string
+          reuse_intent_tomorrow?: string | null
           story_state?: Json
           themes?: string[] | null
           title?: string | null
@@ -288,14 +294,17 @@ export type Database = {
         }
         Update: {
           character_id?: string
+          child_state_after_story?: string | null
           chosen_option?: string | null
           created_at?: string
           current_page?: number
+          feedback_submitted_at?: string | null
           generated_options?: Json | null
           id?: string
           is_active?: boolean
           last_summary?: string | null
           length_setting?: string
+          reuse_intent_tomorrow?: string | null
           story_state?: Json
           themes?: string[] | null
           title?: string | null

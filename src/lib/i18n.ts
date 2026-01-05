@@ -184,6 +184,21 @@ export const translations = {
     deleteCharacter: 'Delete Character',
     deleteWarning: 'Delete {name}? All memories will be lost.',
     characterDeleted: 'Character deleted',
+    
+    // Post-Story Feedback
+    feedbackQuestion1: 'How did your child seem after this story?',
+    feedbackQuestion2: 'Would you use this again tomorrow if bedtime is difficult?',
+    feedbackCalmer: 'Calmer',
+    feedbackSame: 'About the same',
+    feedbackMoreEnergetic: 'More energetic',
+    feedbackYes: 'Yes',
+    feedbackMaybe: 'Maybe',
+    feedbackNo: 'No',
+    feedbackSkip: 'Skip',
+    feedbackThankYou: 'Thank you — this helps us build better bedtime stories.',
+    feedbackSaveError: 'Could not save feedback. Please try again.',
+    feedbackRetry: 'Retry',
+    feedbackClose: 'Close',
   },
   
   nl: {
@@ -370,6 +385,21 @@ export const translations = {
     deleteCharacter: 'Personage Verwijderen',
     deleteWarning: '{name} verwijderen? Alle herinneringen gaan verloren.',
     characterDeleted: 'Personage verwijderd',
+    
+    // Post-Story Feedback
+    feedbackQuestion1: 'Hoe leek je kind na dit verhaal?',
+    feedbackQuestion2: 'Zou je dit morgen opnieuw gebruiken als het slapengaan moeilijk is?',
+    feedbackCalmer: 'Rustiger',
+    feedbackSame: 'Ongeveer hetzelfde',
+    feedbackMoreEnergetic: 'Meer energie',
+    feedbackYes: 'Ja',
+    feedbackMaybe: 'Misschien',
+    feedbackNo: 'Nee',
+    feedbackSkip: 'Overslaan',
+    feedbackThankYou: 'Bedankt — dit helpt ons betere slaapverhaaltjes te maken.',
+    feedbackSaveError: 'Kon feedback niet opslaan. Probeer het opnieuw.',
+    feedbackRetry: 'Opnieuw proberen',
+    feedbackClose: 'Sluiten',
   },
   
   sv: {
@@ -555,6 +585,21 @@ export const translations = {
     deleteCharacter: 'Radera Karaktär',
     deleteWarning: 'Radera {name}? Alla minnen kommer att gå förlorade.',
     characterDeleted: 'Karaktär raderad',
+    
+    // Post-Story Feedback
+    feedbackQuestion1: 'Hur verkade ditt barn efter den här sagan?',
+    feedbackQuestion2: 'Skulle du använda detta igen imorgon om läggdags är svårt?',
+    feedbackCalmer: 'Lugnare',
+    feedbackSame: 'Ungefär samma',
+    feedbackMoreEnergetic: 'Mer energisk',
+    feedbackYes: 'Ja',
+    feedbackMaybe: 'Kanske',
+    feedbackNo: 'Nej',
+    feedbackSkip: 'Hoppa över',
+    feedbackThankYou: 'Tack — detta hjälper oss att bygga bättre godnattsagor.',
+    feedbackSaveError: 'Kunde inte spara feedback. Försök igen.',
+    feedbackRetry: 'Försök igen',
+    feedbackClose: 'Stäng',
   },
 } as const;
 
