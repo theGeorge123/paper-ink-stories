@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoonStar, Library, Bookmark, Sparkles, Check, Moon } from 'lucide-react';
+import { MoonStar, Library, Sparkles, Check, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import StarRating from './StarRating';
+import PostStoryFeedback from './PostStoryFeedback';
 
 interface SleepWellScreenProps {
   characterName: string;
@@ -32,10 +32,7 @@ export default function SleepWellScreen({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dimmed, setDimmed] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [ratingSaving, setRatingSaving] = useState(false);
-  const [ratingMessage, setRatingMessage] = useState<string | null>(null);
-  const [ratingSaved, setRatingSaved] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(true);
 
   // Build cumulative life summary from existing + new adventure
   const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
@@ -81,58 +78,6 @@ export default function SleepWellScreen({
         .eq('id', characterId);
     } catch (error) {
       console.error('Error updating preferred themes:', error);
-    }
-  };
-
-  const handleRatingChange = async (value: number) => {
-    setRating(value);
-    setRatingSaving(true);
-    setRatingMessage(null);
-    setRatingSaved(false);
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error(t('ratingLoginRequired'));
-        setRatingSaving(false);
-        return;
-      }
-
-      type StoryWithOwner = {
-        character_id: string;
-        characters: { user_id: string } | null;
-      };
-
-      const { data: story, error: storyError } = await supabase
-        .from('stories')
-        .select('character_id, characters!inner(user_id)')
-        .eq('id', storyId)
-        .eq('characters.user_id', user.id)
-        .single<StoryWithOwner>();
-
-      if (storyError || !story || story?.characters?.user_id !== user.id) {
-        toast.error(t('ratingOwnerOnly'));
-        setRatingSaving(false);
-        return;
-      }
-
-      // Store rating in story metadata since ratings table doesn't exist
-      const { error } = await supabase
-        .from('stories')
-        .update({ 
-          story_state: { rating: value }
-        })
-        .eq('id', storyId);
-
-      if (error) throw error;
-
-      setRatingMessage(t('ratingSaved'));
-      setRatingSaved(true);
-    } catch (error) {
-      console.error('Error saving rating:', error);
-      toast.error(t('ratingSaveFailed'));
-    } finally {
-      setRatingSaving(false);
     }
   };
 
@@ -409,27 +354,20 @@ export default function SleepWellScreen({
           )}
         </AnimatePresence>
 
-        {/* Star rating */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2 }}
-          className={`w-full mb-6 rounded-xl border ${ratingSaved ? 'border-emerald-300/60 bg-emerald-500/5 shadow-[0_10px_40px_-30px_rgba(16,185,129,0.8)]' : 'border-white/10 bg-white/5'} p-4`}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-white/80">{t('ratingPrompt')}</span>
-            {ratingMessage && (
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-200" aria-live="polite">
-                <Check className="w-3 h-3" />
-                {ratingMessage}
-              </span>
-            )}
-          </div>
-          <StarRating value={rating} onChange={handleRatingChange} label="" />
-          {ratingSaving && (
-            <p className="mt-2 text-xs text-white/70">{t('ratingSaving')}</p>
-          )}
-        </motion.div>
+        {/* Post-story feedback questionnaire */}
+        {showFeedback && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
+          >
+            <PostStoryFeedback 
+              storyId={storyId} 
+              onComplete={() => setShowFeedback(false)} 
+            />
+          </motion.div>
+        )}
 
         {/* Goodnight button */}
         <motion.div
