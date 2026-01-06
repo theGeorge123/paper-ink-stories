@@ -5,11 +5,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
+import { GuestModeProvider } from "@/hooks/useGuestMode";
+import AuthPromptModal from "@/components/AuthPromptModal";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import CreateCharacter from "./pages/CreateCharacter";
 import Reader from "./pages/Reader";
+import DemoReader from "./pages/DemoReader";
 import About from "./pages/About";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
@@ -22,20 +25,24 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <LanguageProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/create" element={<CreateCharacter />} />
-              <Route path="/read/:storyId" element={<Reader />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
+          <GuestModeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AuthPromptModal />
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/create" element={<CreateCharacter />} />
+                <Route path="/read/:storyId" element={<Reader />} />
+                <Route path="/demo" element={<DemoReader />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </GuestModeProvider>
         </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
