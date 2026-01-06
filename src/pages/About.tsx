@@ -16,7 +16,7 @@ export default function About() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="rounded-full"
           >
             <ArrowLeft className="w-5 h-5" />
