@@ -1,7 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-
-// Force clean module reload
+import { useMemo, useCallback } from 'react';
 
 interface CharacterWithUrl {
   id: string;
@@ -15,76 +12,48 @@ interface BatchUrlResult {
   refresh: () => void;
 }
 
+// Public URL base for hero portraits (no expiration)
+const SUPABASE_URL = 'https://rtmcisfdtnmdytvnmptx.supabase.co';
+
 /**
- * Hook that fetches fresh signed URLs for hero portraits via the edge function.
- * The URLs stored in the database expire, so we need to get fresh ones.
+ * Hook that builds public URLs for hero portraits.
+ * The bucket is now public, so no signed URLs needed - images never expire.
  */
 export function useBatchSignedUrls(characters: CharacterWithUrl[]): BatchUrlResult {
-  const [urls, setUrls] = useState<Record<string, string | null>>({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Get character IDs that have images
-  const characterIds = useMemo(
-    () => characters.filter(c => c.hero_image_url).map(c => c.id),
-    [characters]
-  );
-
-  const fetchUrls = useCallback(async () => {
-    if (characterIds.length === 0) {
-      setUrls({});
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('get-image-url', {
-        body: { heroIds: characterIds },
-      });
-
-      if (fnError) {
-        console.error('Failed to fetch signed URLs:', fnError);
-        setError('Failed to load images');
-        // Fallback to stored URLs (may be expired but worth trying)
-        const fallback: Record<string, string | null> = {};
-        characters.forEach(c => {
-          fallback[c.id] = c.hero_image_url || null;
-        });
-        setUrls(fallback);
-        return;
-      }
-
-      // Build URL map from response
-      const result: Record<string, string | null> = {};
-      characters.forEach(c => {
-        if (data?.urls?.[c.id]?.signedUrl) {
-          result[c.id] = data.urls[c.id].signedUrl;
+  const urls = useMemo(() => {
+    const result: Record<string, string | null> = {};
+    characters.forEach(character => {
+      if (character.hero_image_url) {
+        // Extract the storage path from the existing URL or build public URL
+        // The storage path format is: {user_id}/{character_id}.png
+        // We can extract it from hero_image_url or check if it's already a public URL
+        const existingUrl = character.hero_image_url;
+        
+        // If it's a signed URL, convert to public URL
+        if (existingUrl.includes('/object/sign/')) {
+          // Extract path: hero-portraits/{user_id}/{character_id}.png
+          const match = existingUrl.match(/hero-portraits\/([^?]+)/);
+          if (match) {
+            result[character.id] = `${SUPABASE_URL}/storage/v1/object/public/hero-portraits/${match[1]}`;
+          } else {
+            result[character.id] = existingUrl;
+          }
+        } else if (existingUrl.includes('/object/public/')) {
+          // Already a public URL
+          result[character.id] = existingUrl;
         } else {
-          // Fallback to stored URL if not returned
-          result[c.id] = c.hero_image_url || null;
+          result[character.id] = existingUrl;
         }
-      });
-      setUrls(result);
-    } catch (err) {
-      console.error('Error fetching signed URLs:', err);
-      setError('Failed to load images');
-      // Fallback to stored URLs
-      const fallback: Record<string, string | null> = {};
-      characters.forEach(c => {
-        fallback[c.id] = c.hero_image_url || null;
-      });
-      setUrls(fallback);
-    } finally {
-      setLoading(false);
-    }
-  }, [characterIds, characters]);
+      } else {
+        result[character.id] = null;
+      }
+    });
+    return result;
+  }, [characters]);
 
-  // Fetch on mount and when characters change
-  useEffect(() => {
-    fetchUrls();
-  }, [fetchUrls]);
+  const refresh = useCallback(() => {
+    // No-op for public URLs - they don't expire
+  }, []);
 
-  return { urls, loading, error, refresh: fetchUrls };
+  return { urls, loading: false, error: null, refresh };
 }
