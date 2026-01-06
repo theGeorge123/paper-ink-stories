@@ -1,12 +1,24 @@
 import { motion } from "framer-motion";
-import { Book, Mail, ArrowLeft, MessageCircle, HelpCircle } from "lucide-react";
+import { Book, Mail, ArrowLeft, MessageCircle, ChevronDown } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function Support() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+
+  const faqs = [
+    { question: t('supportFaqQ1'), answer: t('supportFaqA1') },
+    { question: t('supportFaqQ2'), answer: t('supportFaqA2') },
+    { question: t('supportFaqQ3'), answer: t('supportFaqA3') },
+  ];
 
   return (
     <div className="min-h-screen bg-background paper-texture">
@@ -35,10 +47,10 @@ export default function Support() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Support
+            {t('supportTitle')}
           </h1>
           <p className="text-muted-foreground mb-12">
-            We're here to help make bedtime magical.
+            {t('supportSubtitle')}
           </p>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -55,13 +67,13 @@ export default function Support() {
                 </div>
                 <div>
                   <h2 className="font-serif text-lg font-bold text-foreground mb-1">
-                    Email Us
+                    {t('supportEmailUs')}
                   </h2>
                   <p className="text-primary font-medium mb-2">
                     info@paperink.eu
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    We typically respond within 24 hours.
+                    {t('supportEmailResponse')}
                   </p>
                 </div>
               </div>
@@ -70,23 +82,23 @@ export default function Support() {
             {/* FAQ Card */}
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="p-6 rounded-2xl bg-card/50 border border-border/50"
+              className="p-6 rounded-2xl bg-card/50 border border-border/50 md:col-span-2"
             >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0">
-                  <HelpCircle className="w-6 h-6 text-secondary-foreground" />
-                </div>
-                <div>
-                  <h2 className="font-serif text-lg font-bold text-foreground mb-1">
-                    Common Questions
-                  </h2>
-                  <ul className="text-sm text-muted-foreground space-y-2 mt-3">
-                    <li>• How do I create a new character?</li>
-                    <li>• Can I change my child's age band?</li>
-                    <li>• How does the story memory work?</li>
-                  </ul>
-                </div>
-              </div>
+              <h2 className="font-serif text-lg font-bold text-foreground mb-4">
+                {t('supportFaq')}
+              </h2>
+              <Accordion type="single" collapsible className="w-full">
+                {faqs.map((faq, index) => (
+                  <AccordionItem key={index} value={`item-${index}`}>
+                    <AccordionTrigger className="text-left text-foreground hover:no-underline">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </motion.div>
           </div>
 
@@ -95,11 +107,10 @@ export default function Support() {
               <MessageCircle className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
               <div>
                 <h3 className="font-serif text-lg font-bold text-foreground mb-2">
-                  Feedback Welcome
+                  {t('supportFeedback')}
                 </h3>
                 <p className="text-muted-foreground">
-                  Have ideas for new features or improvements? We'd love to hear from you! 
-                  Your feedback helps us create better bedtime stories for families everywhere.
+                  {t('supportFeedbackText')}
                 </p>
               </div>
             </div>
@@ -107,7 +118,7 @@ export default function Support() {
 
           <div className="mt-8">
             <Link to="/about" className="text-primary hover:underline text-sm">
-              ← Learn more about Paper & Ink
+              {t('supportBackToAbout')}
             </Link>
           </div>
         </motion.div>

@@ -199,6 +199,35 @@ export const translations = {
     feedbackSaveError: 'Could not save feedback. Please try again.',
     feedbackRetry: 'Retry',
     feedbackClose: 'Close',
+    
+    // About Page
+    aboutTitle: 'About Paper & Ink',
+    aboutMission: 'Our Mission',
+    aboutMissionText: 'Paper & Ink was born from a simple belief: every child deserves a bedtime story that\'s as unique as they are. We combine the magic of storytelling with the power of AI to create personalized adventures that grow with your child.',
+    aboutSleepEngineered: 'Sleep-Engineered Stories',
+    aboutSleepEngineeredText: 'Every story is crafted with science-backed techniques to help children wind down for sleep. Our narratives use progressively calming language, rhythmic pacing, and soothing imagery designed to guide little ones gently toward dreamland.',
+    aboutInfiniteAdventures: 'Infinite Adventures',
+    aboutInfiniteAdventuresText: 'Unlike traditional storybooks, Paper & Ink remembers. Your child\'s hero remembers the dragon they befriended yesterday, the magical forest they explored, and the lessons they learned. Each new adventure builds on the last, creating a rich, continuous world that\'s uniquely theirs.',
+    aboutForParents: 'For Parents, By Parents',
+    aboutForParentsText: 'We understand the struggle of finding the right bedtime story night after night. That\'s why we created Paper & Ink—to give parents a magical tool that makes bedtime something to look forward to, for both children and parents alike.',
+    aboutContact: 'Questions or feedback?',
+    aboutContactLink: 'Contact our support team',
+    
+    // Support Page
+    supportTitle: 'Support',
+    supportSubtitle: 'We\'re here to help make bedtime magical.',
+    supportEmailUs: 'Email Us',
+    supportEmailResponse: 'We typically respond within 24 hours.',
+    supportFaq: 'Frequently Asked Questions',
+    supportFaqQ1: 'How do I create a new character?',
+    supportFaqA1: 'Tap "Create Character" on the home screen. Choose a name, pick their spirit animal, and optionally add a companion. Your hero will be ready for adventures!',
+    supportFaqQ2: 'Can I change my child\'s age band?',
+    supportFaqA2: 'Yes! Tap the settings icon on any character card to edit their profile, including their age band. Stories will automatically adjust to the new reading level.',
+    supportFaqQ3: 'How does the story memory work?',
+    supportFaqA3: 'Each character remembers their adventures. When you finish a story, you can choose what happens next. Tomorrow\'s story will continue from that choice, building an ongoing saga.',
+    supportFeedback: 'Feedback Welcome',
+    supportFeedbackText: 'Have ideas for new features or improvements? We\'d love to hear from you! Your feedback helps us create better bedtime stories for families everywhere.',
+    supportBackToAbout: '← Learn more about Paper & Ink',
   },
   
   nl: {
@@ -400,6 +429,35 @@ export const translations = {
     feedbackSaveError: 'Kon feedback niet opslaan. Probeer het opnieuw.',
     feedbackRetry: 'Opnieuw proberen',
     feedbackClose: 'Sluiten',
+    
+    // About Page
+    aboutTitle: 'Over Papier & Inkt',
+    aboutMission: 'Onze Missie',
+    aboutMissionText: 'Papier & Inkt is geboren uit een simpel geloof: elk kind verdient een slaapverhaaltje dat net zo uniek is als zijzelf. We combineren de magie van verhalen vertellen met de kracht van AI om gepersonaliseerde avonturen te creëren die meegroeien met je kind.',
+    aboutSleepEngineered: 'Ontworpen voor Slaap',
+    aboutSleepEngineeredText: 'Elk verhaal is gemaakt met wetenschappelijk onderbouwde technieken om kinderen te helpen ontspannen voor het slapen. Onze verhalen gebruiken geleidelijk kalmerende taal, ritmische pacing en rustgevende beelden om kleintjes zachtjes naar dromenland te leiden.',
+    aboutInfiniteAdventures: 'Oneindige Avonturen',
+    aboutInfiniteAdventuresText: 'Anders dan traditionele prentenboeken, onthoudt Papier & Inkt alles. De held van je kind herinnert zich de draak die ze gisteren bevriendden, het magische bos dat ze verkenden en de lessen die ze leerden. Elk nieuw avontuur bouwt voort op het vorige.',
+    aboutForParents: 'Voor Ouders, Door Ouders',
+    aboutForParentsText: 'We begrijpen de uitdaging om elke avond het juiste slaapverhaaltje te vinden. Daarom hebben we Papier & Inkt gemaakt—om ouders een magisch hulpmiddel te geven waardoor bedtijd iets wordt om naar uit te kijken.',
+    aboutContact: 'Vragen of feedback?',
+    aboutContactLink: 'Neem contact op met ons supportteam',
+    
+    // Support Page
+    supportTitle: 'Ondersteuning',
+    supportSubtitle: 'We helpen je graag om bedtijd magisch te maken.',
+    supportEmailUs: 'E-mail Ons',
+    supportEmailResponse: 'We reageren meestal binnen 24 uur.',
+    supportFaq: 'Veelgestelde Vragen',
+    supportFaqQ1: 'Hoe maak ik een nieuw personage?',
+    supportFaqA1: 'Tik op "Personage Maken" op het startscherm. Kies een naam, kies hun geest-dier en voeg optioneel een metgezel toe. Je held is dan klaar voor avonturen!',
+    supportFaqQ2: 'Kan ik de leeftijdsgroep van mijn kind wijzigen?',
+    supportFaqA2: 'Ja! Tik op het instellingen-icoon bij een personage om hun profiel te bewerken, inclusief leeftijdsgroep. Verhalen passen zich automatisch aan het nieuwe leesniveau aan.',
+    supportFaqQ3: 'Hoe werkt het verhaalgeheugen?',
+    supportFaqA3: 'Elk personage onthoudt hun avonturen. Als je een verhaal afmaakt, kun je kiezen wat er daarna gebeurt. Het verhaal van morgen gaat verder waar je gebleven was.',
+    supportFeedback: 'Feedback Welkom',
+    supportFeedbackText: 'Heb je ideeën voor nieuwe functies of verbeteringen? We horen graag van je! Jouw feedback helpt ons betere slaapverhaaltjes te maken voor gezinnen overal.',
+    supportBackToAbout: '← Meer over Papier & Inkt',
   },
   
   sv: {
@@ -600,6 +658,35 @@ export const translations = {
     feedbackSaveError: 'Kunde inte spara feedback. Försök igen.',
     feedbackRetry: 'Försök igen',
     feedbackClose: 'Stäng',
+    
+    // About Page
+    aboutTitle: 'Om Papper & Bläck',
+    aboutMission: 'Vårt Uppdrag',
+    aboutMissionText: 'Papper & Bläck föddes ur en enkel övertygelse: varje barn förtjänar en godnattsaga som är lika unik som de själva. Vi kombinerar berättandets magi med AI:s kraft för att skapa personliga äventyr som växer med ditt barn.',
+    aboutSleepEngineered: 'Sömnoptimerade Sagor',
+    aboutSleepEngineeredText: 'Varje saga är skapad med vetenskapligt beprövade tekniker för att hjälpa barn varva ner inför sömnen. Våra berättelser använder gradvis lugnande språk, rytmisk pacing och avkopplande bilder för att mjukt leda de små mot drömmarnas land.',
+    aboutInfiniteAdventures: 'Oändliga Äventyr',
+    aboutInfiniteAdventuresText: 'Till skillnad från traditionella sagoböcker minns Papper & Bläck. Ditt barns hjälte minns draken de blev vän med igår, den magiska skogen de utforskade och lärdomarna de fick. Varje nytt äventyr bygger på det förra.',
+    aboutForParents: 'För Föräldrar, Av Föräldrar',
+    aboutForParentsText: 'Vi förstår kampen att hitta rätt godnattsaga kväll efter kväll. Därför skapade vi Papper & Bläck—för att ge föräldrar ett magiskt verktyg som gör läggdags till något att se fram emot.',
+    aboutContact: 'Frågor eller feedback?',
+    aboutContactLink: 'Kontakta vårt supportteam',
+    
+    // Support Page
+    supportTitle: 'Support',
+    supportSubtitle: 'Vi hjälper dig att göra läggdags magisk.',
+    supportEmailUs: 'Maila Oss',
+    supportEmailResponse: 'Vi svarar vanligtvis inom 24 timmar.',
+    supportFaq: 'Vanliga Frågor',
+    supportFaqQ1: 'Hur skapar jag en ny karaktär?',
+    supportFaqA1: 'Tryck på "Skapa Karaktär" på startskärmen. Välj ett namn, välj deras andedjur och lägg eventuellt till en följeslagare. Din hjälte är redo för äventyr!',
+    supportFaqQ2: 'Kan jag ändra mitt barns åldersgrupp?',
+    supportFaqA2: 'Ja! Tryck på inställningsikonen på valfritt karaktärskort för att redigera profilen, inklusive åldersgrupp. Sagorna anpassas automatiskt till den nya läsnivån.',
+    supportFaqQ3: 'Hur fungerar sagominnet?',
+    supportFaqA3: 'Varje karaktär minns sina äventyr. När du avslutar en saga kan du välja vad som händer härnäst. Morgondagens saga fortsätter från det valet och bygger en pågående saga.',
+    supportFeedback: 'Feedback Välkommen',
+    supportFeedbackText: 'Har du idéer för nya funktioner eller förbättringar? Vi vill gärna höra från dig! Din feedback hjälper oss skapa bättre godnattsagor för familjer överallt.',
+    supportBackToAbout: '← Läs mer om Papper & Bläck',
   },
 } as const;
 

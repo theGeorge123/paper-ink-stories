@@ -35,7 +35,7 @@ export default function About() {
           transition={{ duration: 0.5 }}
         >
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-8">
-            About Paper & Ink
+            {t('aboutTitle')}
           </h1>
 
           <div className="space-y-8 text-muted-foreground leading-relaxed">
@@ -44,13 +44,9 @@ export default function About() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Heart className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="font-serif text-xl font-bold text-foreground">Our Mission</h2>
+                <h2 className="font-serif text-xl font-bold text-foreground">{t('aboutMission')}</h2>
               </div>
-              <p>
-                Paper & Ink was born from a simple belief: every child deserves a bedtime story 
-                that's as unique as they are. We combine the magic of storytelling with the power 
-                of AI to create personalized adventures that grow with your child.
-              </p>
+              <p>{t('aboutMissionText')}</p>
             </section>
 
             <section className="space-y-4">
@@ -58,13 +54,9 @@ export default function About() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Moon className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="font-serif text-xl font-bold text-foreground">Sleep-Engineered Stories</h2>
+                <h2 className="font-serif text-xl font-bold text-foreground">{t('aboutSleepEngineered')}</h2>
               </div>
-              <p>
-                Every story is crafted with science-backed techniques to help children wind down 
-                for sleep. Our narratives use progressively calming language, rhythmic pacing, 
-                and soothing imagery designed to guide little ones gently toward dreamland.
-              </p>
+              <p>{t('aboutSleepEngineeredText')}</p>
             </section>
 
             <section className="space-y-4">
@@ -72,31 +64,22 @@ export default function About() {
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="font-serif text-xl font-bold text-foreground">Infinite Adventures</h2>
+                <h2 className="font-serif text-xl font-bold text-foreground">{t('aboutInfiniteAdventures')}</h2>
               </div>
-              <p>
-                Unlike traditional storybooks, Paper & Ink remembers. Your child's hero remembers 
-                the dragon they befriended yesterday, the magical forest they explored, and the 
-                lessons they learned. Each new adventure builds on the last, creating a rich, 
-                continuous world that's uniquely theirs.
-              </p>
+              <p>{t('aboutInfiniteAdventuresText')}</p>
             </section>
 
             <section className="space-y-4">
-              <h2 className="font-serif text-xl font-bold text-foreground">For Parents, By Parents</h2>
-              <p>
-                We understand the struggle of finding the right bedtime story night after night. 
-                That's why we created Paper & Ink—to give parents a magical tool that makes 
-                bedtime something to look forward to, for both children and parents alike.
-              </p>
+              <h2 className="font-serif text-xl font-bold text-foreground">{t('aboutForParents')}</h2>
+              <p>{t('aboutForParentsText')}</p>
             </section>
           </div>
 
           <div className="mt-12 pt-8 border-t border-border/50">
             <p className="text-sm text-muted-foreground">
-              Questions or feedback?{" "}
+              {t('aboutContact')}{" "}
               <Link to="/support" className="text-primary hover:underline">
-                Contact our support team
+                {t('aboutContactLink')}
               </Link>
             </p>
           </div>
