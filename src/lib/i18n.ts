@@ -228,6 +228,24 @@ export const translations = {
     supportFeedback: 'Feedback Welcome',
     supportFeedbackText: 'Have ideas for new features or improvements? We\'d love to hear from you! Your feedback helps us create better bedtime stories for families everywhere.',
     supportBackToAbout: '← Learn more about Paper & Ink',
+    
+    // Guest Mode
+    tryDemo: 'Try Demo Story',
+    guestMode: 'Guest Mode',
+    authPromptTitle: 'Create a Free Account',
+    authPromptSubtitle: 'To {action}, you\'ll need to sign up. It only takes a moment!',
+    authBenefitSave: 'Save Your Progress',
+    authBenefitSaveDesc: 'Pick up right where you left off, every night.',
+    authBenefitMemory: 'Stories That Remember',
+    authBenefitMemoryDesc: 'Your hero remembers their adventures forever.',
+    authBenefitPersonalize: 'Personalized Adventures',
+    authBenefitPersonalizeDesc: 'Create characters tailored to your child.',
+    createFreeAccount: 'Create Free Account',
+    continueBrowsing: 'Continue browsing',
+    demoStoryLabel: 'Demo Story',
+    signUpToCreate: 'create your own character',
+    signUpToSave: 'save this story',
+    signUpToPersonalize: 'personalize stories',
   },
   
   nl: {
@@ -458,6 +476,24 @@ export const translations = {
     supportFeedback: 'Feedback Welkom',
     supportFeedbackText: 'Heb je ideeën voor nieuwe functies of verbeteringen? We horen graag van je! Jouw feedback helpt ons betere slaapverhaaltjes te maken voor gezinnen overal.',
     supportBackToAbout: '← Meer over Papier & Inkt',
+    
+    // Guest Mode
+    tryDemo: 'Probeer Demoverhaal',
+    guestMode: 'Gastmodus',
+    authPromptTitle: 'Maak een Gratis Account',
+    authPromptSubtitle: 'Om {action}, moet je je registreren. Het duurt maar even!',
+    authBenefitSave: 'Sla Je Voortgang Op',
+    authBenefitSaveDesc: 'Ga elke avond verder waar je was gebleven.',
+    authBenefitMemory: 'Verhalen die Onthouden',
+    authBenefitMemoryDesc: 'Je held onthoudt al zijn avonturen voor altijd.',
+    authBenefitPersonalize: 'Gepersonaliseerde Avonturen',
+    authBenefitPersonalizeDesc: 'Maak personages op maat voor je kind.',
+    createFreeAccount: 'Maak Gratis Account',
+    continueBrowsing: 'Doorgaan met browsen',
+    demoStoryLabel: 'Demoverhaal',
+    signUpToCreate: 'je eigen personage te maken',
+    signUpToSave: 'dit verhaal op te slaan',
+    signUpToPersonalize: 'verhalen te personaliseren',
   },
   
   sv: {
@@ -687,6 +723,24 @@ export const translations = {
     supportFeedback: 'Feedback Välkommen',
     supportFeedbackText: 'Har du idéer för nya funktioner eller förbättringar? Vi vill gärna höra från dig! Din feedback hjälper oss skapa bättre godnattsagor för familjer överallt.',
     supportBackToAbout: '← Läs mer om Papper & Bläck',
+    
+    // Guest Mode
+    tryDemo: 'Prova Demosaga',
+    guestMode: 'Gästläge',
+    authPromptTitle: 'Skapa ett Gratis Konto',
+    authPromptSubtitle: 'För att {action} behöver du registrera dig. Det tar bara ett ögonblick!',
+    authBenefitSave: 'Spara Dina Framsteg',
+    authBenefitSaveDesc: 'Fortsätt där du slutade, varje kväll.',
+    authBenefitMemory: 'Sagor som Minns',
+    authBenefitMemoryDesc: 'Din hjälte minns sina äventyr för alltid.',
+    authBenefitPersonalize: 'Personliga Äventyr',
+    authBenefitPersonalizeDesc: 'Skapa karaktärer anpassade för ditt barn.',
+    createFreeAccount: 'Skapa Gratis Konto',
+    continueBrowsing: 'Fortsätt titta',
+    demoStoryLabel: 'Demosaga',
+    signUpToCreate: 'skapa din egen karaktär',
+    signUpToSave: 'spara denna saga',
+    signUpToPersonalize: 'personanpassa sagor',
   },
 } as const;
 

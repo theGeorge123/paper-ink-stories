@@ -165,21 +165,25 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
+              onClick={() => navigate("/demo")}
+              variant="outline"
+              className="px-8 py-6 text-lg font-medium rounded-xl border-primary/50 hover:bg-primary/10"
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              {t('tryDemo')}
+            </Button>
+            <Button
+              size="lg"
               onClick={() => navigate("/auth")}
               className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated"
             >
               {t('startFree')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate("/auth")}
-              className="px-8 py-6 text-lg font-medium rounded-xl"
-            >
-              {t('login')}
-            </Button>
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">
+            No account needed to try the demo
+          </p>
         </motion.div>
 
         {/* Scroll indicator */}
