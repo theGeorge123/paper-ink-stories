@@ -1,21 +1,21 @@
 // Demo story data for guest mode preview
-// Age 1-2 version: Very short, rhythmic, calming, focused on sounds
+// Diederik the cat with Max the knight sidekick
 
 export const DEMO_CHARACTER = {
   id: 'demo-character',
-  name: 'Luna',
-  archetype: 'fairy',
-  age_band: '1-2',
-  traits: ['gentle', 'kind'],
-  sidekick_name: 'Pip',
-  sidekick_archetype: 'owl',
+  name: 'Diederik',
+  archetype: 'cat',
+  age_band: '3-6',
+  traits: ['clever', 'curious'],
+  sidekick_name: 'Max',
+  sidekick_archetype: 'knight',
   hero_image_url: null,
-  icon: 'fairy',
+  icon: 'cat',
   user_id: 'demo',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   story_count: 1,
-  preferred_themes: ['sleep', 'nature'],
+  preferred_themes: ['adventure', 'kindness'],
   avoided_themes: [],
   last_summary: null,
   pending_choice: null,
@@ -27,13 +27,13 @@ export const DEMO_CHARACTER = {
 export const DEMO_STORY = {
   id: 'demo-story',
   character_id: 'demo-character',
-  title: "Luna Says Goodnight",
-  length_setting: 'SHORT',
+  title: "Diederik's Bedtime Adventure",
+  length_setting: 'MEDIUM',
   is_active: false,
-  current_page: 3,
-  story_state: { location: 'Cozy Nest', inventory: [] },
-  themes: ['sleep', 'nature'],
-  last_summary: 'Luna said goodnight to all her friends and fell asleep.',
+  current_page: 5,
+  story_state: { location: 'Enchanted Garden', inventory: ['locket'] },
+  themes: ['adventure', 'kindness', 'friendship'],
+  last_summary: 'Diederik found a magical locket and learned about kindness.',
   generated_options: null,
   chosen_option: null,
   child_state_after_story: null,
@@ -44,19 +44,12 @@ export const DEMO_STORY = {
   characters: DEMO_CHARACTER,
 };
 
-// Simple, rhythmic pages for age 1-2
 export const DEMO_PAGES = [
   {
     id: 'demo-page-1',
     story_id: 'demo-story',
     page_number: 1,
-    content: `Shhhh... The moon is out.
-
-Little Luna the fairy yawns.
-
-"Time to sleep," says Pip the owl.
-
-Hoo-hoo. Hoo-hoo.`,
+    content: `Diederik the clever cat padded softly across the cozy living room, his whiskers twitching with curiosity. The shiny key he'd found earlier gleamed in his paw, catching the warm glow of the afternoon sun streaming through the windows. 'Max,' he called to his loyal knight companion, 'I think this key opens something special!' Together, they approached the old wooden chest in the corner, its polished surface decorated with intricate carvings of stars and moons. Diederik carefully inserted the key, hearing a satisfying 'click' as the lock turned. The chest creaked open, revealing a soft glow from within. 'What could it be?' Diederik wondered aloud, his fluffy tail swishing with excitement.`,
     image_url: null,
     created_at: new Date().toISOString(),
   },
@@ -64,13 +57,7 @@ Hoo-hoo. Hoo-hoo.`,
     id: 'demo-page-2',
     story_id: 'demo-story',
     page_number: 2,
-    content: `Luna says goodnight to the flowers.
-
-"Night-night, flowers."
-
-The flowers close their petals.
-
-Soft. Soft. Soft.`,
+    content: `Diederik and Max peered into the glowing chest, their eyes wide with wonder. Inside, nestled among velvet cushions, lay a delicate silver locket shaped like a crescent moon. As Diederik carefully lifted it, the locket emitted a soft, musical chime that made the air shimmer. 'Look!' Max whispered, pointing to the garden door. The locket's glow had made the glass panes sparkle like morning dew. The two friends exchanged an excited glance and tiptoed outside, where the most extraordinary sight awaited them. Their ordinary backyard had transformed into a magical garden! Flowers bloomed in impossible colors—lavender blues, sunset oranges—and their sweet fragrance wrapped around the friends like a warm hug. A gentle breeze carried the scent of honey and fresh mint as Diederik's paws sank into grass so soft it felt like clouds. 'This way,' he murmured, spotting a winding path of glowing stones that pulsed gently in rhythm with the locket's light.`,
     image_url: null,
     created_at: new Date().toISOString(),
   },
@@ -78,15 +65,23 @@ Soft. Soft. Soft.`,
     id: 'demo-page-3',
     story_id: 'demo-story',
     page_number: 3,
-    content: `Luna snuggles in her cozy nest.
-
-Pip sits nearby. Watching. Watching.
-
-Close your eyes now.
-
-Shhh... Sleep tight.
-
-Goodnight, little one. 🌙`,
+    content: `Diederik and Max wandered deeper into the enchanted garden, their paws brushing against petals that felt like silk. The glowing stones beneath their feet led them to a tranquil pond where the water mirrored the twilight sky. In the center of the pond stood a towering willow tree, its branches swaying gently as if welcoming them. Perched on one of the branches was a wise old owl, her feathers shimmering like starlight. 'Welcome, travelers,' she said in a voice as soft as a whisper. 'I am Luna, keeper of kindness.' Diederik tilted his head, curious. 'Kindness?' he asked. Luna nodded, her golden eyes twinkling. 'Yes, little one. Kindness is like the moonlight—it touches everything gently and makes the world brighter.' She gestured to the locket in Diederik's paw. 'That locket holds the power to share kindness wherever you go. Will you use it wisely?' Diederik looked at Max, who smiled warmly. 'We will,' they said together. Luna spread her wings, casting a soft glow over the pond.`,
+    image_url: null,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-page-4',
+    story_id: 'demo-story',
+    page_number: 4,
+    content: `Diederik and Max followed the glowing stones back through the enchanted garden, their hearts brimming with the wisdom Luna had shared. The locket in Diederik's paw felt warm and comforting, as if it carried the gentle light of kindness itself. They reached a small clearing where the air smelled faintly of lavender and the stars began to twinkle overhead. 'Let's share this with our friends,' Diederik said softly, his voice as quiet as the rustling leaves. Max nodded, his armor clinking softly. 'Kindness should be shared,' he agreed. Together, they called out softly, and soon their friends—a curious rabbit named Rosie, a cheerful squirrel named Pip, and a wise old tortoise named Oliver—appeared, drawn by the locket's gentle glow. 'We've found something special,' Diederik explained, holding up the locket. Its light spread across the clearing, wrapping everyone in a warm, golden glow. Rosie giggled softly, Pip's tail flicked with delight, and Oliver smiled warmly.`,
+    image_url: null,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'demo-page-5',
+    story_id: 'demo-story',
+    page_number: 5,
+    content: `The clearing was bathed in the soft glow of the locket, its light mingling with the twinkling stars above. Diederik nestled closer to Max, feeling the warmth of his knight's armor against his fur. The gentle hum of the crickets and the soft rustle of leaves created a soothing lullaby. Rosie, Pip, and Oliver had already curled up nearby, their breathing slow and steady. 'This was the best adventure,' Diederik whispered, his words barely audible. Max smiled down at him, his voice a soft rumble. 'And there will be more tomorrow.' Diederik's eyelids grew heavier, the locket's glow dimming as he drifted off to sleep, feeling safe, loved, and surrounded by friends. The stars above twinkled brighter, as if wishing him sweet dreams.`,
     image_url: null,
     created_at: new Date().toISOString(),
   },

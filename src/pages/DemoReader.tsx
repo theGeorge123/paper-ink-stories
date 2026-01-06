@@ -127,7 +127,7 @@ export default function DemoReader() {
             </motion.div>
             <h1 className="font-serif text-3xl text-white mb-2">{t('theEnd')}</h1>
             <p className="text-white/70">
-              You experienced Luna's bedtime story!
+              You experienced Diederik's bedtime adventure!
             </p>
           </div>
 
