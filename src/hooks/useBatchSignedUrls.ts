@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+// v2 - Public URLs, no expiration
 
 interface CharacterWithUrl {
   id: string;
