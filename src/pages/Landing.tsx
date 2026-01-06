@@ -272,6 +272,14 @@ export default function Landing() {
             <Book className="w-4 h-4 text-primary" />
             <span className="font-serif font-bold">{t('appName')}</span>
           </div>
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate("/about")} className="hover:text-foreground transition-colors">
+              About
+            </button>
+            <button onClick={() => navigate("/support")} className="hover:text-foreground transition-colors">
+              Support
+            </button>
+          </div>
           <p>© {new Date().getFullYear()} {t('appName')}. {t('madeWithLove')}</p>
         </div>
       </footer>
