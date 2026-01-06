@@ -1,19 +1,28 @@
 project_id = "rtmcisfdtnmdytvnmptx"
 
+# User-facing functions - manually verify JWT using supabase.auth.getUser() in code
+# This is required because Supabase's signing-keys system is used, and the default
+# verify_jwt = true doesn't work with signing-keys
 [functions.generate-page]
-verify_jwt = false
-
-[functions.send-reminders]
-verify_jwt = false
-
-[functions.disable-reminders]
 verify_jwt = false
 
 [functions.create-hero]
 verify_jwt = false
 
+[functions.get-image-url]
+verify_jwt = false
+
+# Internal/background function - uses service role key for authentication
+# Called from create-hero edge function, not directly by users
 [functions.generate-hero-portrait]
 verify_jwt = false
 
-[functions.get-image-url]
+# Cron/scheduled function - uses X-CRON-SECRET header for authentication
+# Called by external scheduler, not directly by users
+[functions.send-reminders]
+verify_jwt = false
+
+# One-click unsubscribe function - uses HMAC token verification
+# URL contains signed token that validates the user identity
+[functions.disable-reminders]
 verify_jwt = false
