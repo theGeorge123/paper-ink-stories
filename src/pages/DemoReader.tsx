@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Sun, Sunrise, Moon, Sparkles, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
-import { useGuestMode } from '@/hooks/useGuestMode';
-import { DEMO_STORY, DEMO_PAGES, DEMO_CHARACTER } from '@/data/demoStory';
+import { DEMO_STORY, DEMO_PAGES} from '@/data/demoStory';
 
-// Page turn animation variants
+// Page turn animation variants - same as Reader.tsx
 const pageVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 100 : -100,
@@ -26,6 +25,7 @@ const pageVariants = {
   }),
 };
 
+// Same themes as the real Reader
 const themes = {
   day: {
     background: 'bg-white',
@@ -58,11 +58,10 @@ type ThemeKey = typeof themeOptions[number]['key'];
 export default function DemoReader() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { showAuthPrompt } = useGuestMode();
   
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-  const [theme, setTheme] = useState<ThemeKey>('sepia');
+  const [theme, setTheme] = useState<ThemeKey>('day');
   const [showEndScreen, setShowEndScreen] = useState(false);
 
   const activeTheme = themes[theme];
@@ -86,15 +85,7 @@ export default function DemoReader() {
     }
   };
 
-  const handleCreateCharacter = () => {
-    showAuthPrompt(t('signUpToCreate'));
-  };
-
-  const handleSaveStory = () => {
-    showAuthPrompt(t('signUpToSave'));
-  };
-
-  // End screen for demo story
+  // End screen - same style as SleepWellScreen
   if (showEndScreen) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center">
@@ -126,7 +117,7 @@ export default function DemoReader() {
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10 max-w-md"
         >
-          <div className="mb-6">
+          <div className="mb-8">
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -136,20 +127,16 @@ export default function DemoReader() {
             </motion.div>
             <h1 className="font-serif text-3xl text-white mb-2">{t('theEnd')}</h1>
             <p className="text-white/70">
-              You've experienced Luna's demo adventure!
+              You experienced Luna's bedtime story!
             </p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
-            <div className="flex items-center gap-2 text-primary mb-3">
-              <Lock className="w-5 h-5" />
-              <span className="font-medium">Want more stories?</span>
-            </div>
             <p className="text-white/80 text-sm mb-4">
               Create your own personalized characters and unlock infinite bedtime adventures that grow with your child.
             </p>
             <Button
-              onClick={handleCreateCharacter}
+              onClick={() => navigate("/auth")}
               size="lg"
               className="w-full mb-3"
             >
@@ -161,13 +148,9 @@ export default function DemoReader() {
               variant="ghost"
               className="w-full text-white/70 hover:text-white"
             >
-              {t('backToLibrary')}
+              Back to Home
             </Button>
           </div>
-
-          <p className="text-white/50 text-xs">
-            {t('demoStoryLabel')} • {DEMO_CHARACTER.name} the {DEMO_CHARACTER.archetype}
-          </p>
         </motion.div>
       </div>
     );
@@ -175,19 +158,7 @@ export default function DemoReader() {
 
   return (
     <div className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
-      {/* Demo badge */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 flex items-center gap-2"
-        >
-          <Sparkles className="w-3 h-3 text-primary" />
-          <span className="text-xs font-medium text-primary">{t('demoStoryLabel')}</span>
-        </motion.div>
-      </div>
-
-      {/* Header */}
+      {/* Header - same as real Reader */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
         <motion.div whileTap={{ scale: 0.95 }}>
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
@@ -196,6 +167,12 @@ export default function DemoReader() {
         </motion.div>
 
         <div className="flex items-center gap-3">
+          {/* Demo badge */}
+          <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 flex items-center gap-2">
+            <Sparkles className="w-3 h-3 text-primary" />
+            <span className="text-xs font-medium text-primary">{t('demoStoryLabel')}</span>
+          </div>
+          
           <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
             {themeOptions.map(option => {
               const Icon = option.icon;
@@ -217,14 +194,14 @@ export default function DemoReader() {
         </div>
       </header>
 
-      {/* Scrollable reading area */}
+      {/* Scrollable reading area - same as real Reader */}
       <main className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {currentPageIndex === 0 && (
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`font-serif text-2xl text-center mb-8 pt-8 ${activeTheme.text}`}
+              className={`font-serif text-2xl text-center mb-8 pt-4 ${activeTheme.text}`}
             >
               {DEMO_STORY.title}
             </motion.h1>
@@ -245,7 +222,7 @@ export default function DemoReader() {
               }}
               className="prose prose-lg max-w-none"
             >
-              <div className={`space-y-6 font-serif text-lg leading-relaxed ${activeTheme.text}`}>
+              <div className={`space-y-6 font-serif text-xl leading-relaxed ${activeTheme.text}`}>
                 {currentPage.content.split('\n\n').map((paragraph, idx) => (
                   <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:mr-1">
                     {paragraph}
@@ -257,7 +234,7 @@ export default function DemoReader() {
         </div>
       </main>
 
-      {/* Navigation footer */}
+      {/* Navigation footer - same as real Reader */}
       <footer className={`flex-shrink-0 ${activeTheme.footer} border-t border-black/5 backdrop-blur-sm`}>
         <div className="relative h-20">
           {/* Page indicator */}
