@@ -11,7 +11,9 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import CreateCharacter from "./pages/CreateCharacter";
+import CreateQuestions from "./pages/CreateQuestions";
 import Reader from "./pages/Reader";
+import ReadEpisode from "./pages/ReadEpisode";
 import DemoHero from "./pages/DemoHero";
 import DemoReader from "./pages/DemoReader";
 import About from "./pages/About";
@@ -36,6 +38,8 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/create" element={<CreateCharacter />} />
+                <Route path="/create/questions" element={<CreateQuestions />} />
+                <Route path="/read" element={<ReadEpisode />} />
                 <Route path="/read/:storyId" element={<Reader />} />
                 <Route path="/demo-hero" element={<DemoHero />} />
                 <Route path="/demo" element={<DemoReader />} />
