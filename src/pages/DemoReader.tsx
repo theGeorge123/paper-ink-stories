@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
-import { DEMO_STORY, DEMO_PAGES} from '@/data/demoStory';
+import { fetchDemoSession, getOrCreateDemoId } from '@/lib/demoStorage';
+import { toast } from 'sonner';
 
 // Page turn animation variants - same as Reader.tsx
 const pageVariants = {
@@ -55,18 +56,67 @@ const themeOptions = [
 
 type ThemeKey = typeof themeOptions[number]['key'];
 
+const buildDemoPages = (text: string, paragraphsPerPage = 2) => {
+  const paragraphs = text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length === 0) {
+    return [text];
+  }
+
+  const pages: string[] = [];
+  for (let i = 0; i < paragraphs.length; i += paragraphsPerPage) {
+    pages.push(paragraphs.slice(i, i + paragraphsPerPage).join('\n\n'));
+  }
+
+  return pages;
+};
+
 export default function DemoReader() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  
+  const demoId = useMemo(() => getOrCreateDemoId(), []);
+
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [theme, setTheme] = useState<ThemeKey>('day');
   const [showEndScreen, setShowEndScreen] = useState(false);
+  const [pages, setPages] = useState<string[]>([]);
+  const [storyTitle, setStoryTitle] = useState('');
+  const [heroName, setHeroName] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!demoId) return;
+
+    const loadStory = async () => {
+      try {
+        const session = await fetchDemoSession(demoId);
+
+        if (!session.hero || !session.lastEpisode) {
+          navigate('/demo-questions');
+          return;
+        }
+
+        setHeroName(session.hero.heroName);
+        setStoryTitle(`${session.hero.heroName}'s Bedtime Story`);
+        setPages(buildDemoPages(session.lastEpisode.storyText));
+      } catch (error) {
+        console.error('Failed to load demo story', error);
+        toast.error('Unable to load the demo story. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStory();
+  }, [demoId, navigate]);
 
   const activeTheme = themes[theme];
-  const currentPage = DEMO_PAGES[currentPageIndex];
-  const isLastPage = currentPageIndex === DEMO_PAGES.length - 1;
+  const currentPage = pages[currentPageIndex] ?? '';
+  const isLastPage = pages.length > 0 && currentPageIndex === pages.length - 1;
   const isFirstPage = currentPageIndex === 0;
 
   const handleTapLeft = () => {
@@ -84,6 +134,10 @@ export default function DemoReader() {
       setShowEndScreen(true);
     }
   };
+
+  if (loading) {
+    return null;
+  }
 
   // End screen - same style as SleepWellScreen
   if (showEndScreen) {
@@ -127,7 +181,7 @@ export default function DemoReader() {
             </motion.div>
             <h1 className="font-serif text-3xl text-white mb-2">{t('theEnd')}</h1>
             <p className="text-white/70">
-              You experienced Diederik's bedtime adventure!
+              {heroName ? `${heroName}'s story is ready for another cozy night.` : 'Your demo adventure is complete.'}
             </p>
           </div>
 
@@ -144,11 +198,11 @@ export default function DemoReader() {
               {t('createFreeAccount')}
             </Button>
             <Button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/demo-questions')}
               variant="ghost"
               className="w-full text-white/70 hover:text-white"
             >
-              Back to Home
+              Generate another demo story
             </Button>
           </div>
         </motion.div>
@@ -172,7 +226,7 @@ export default function DemoReader() {
             <Sparkles className="w-3 h-3 text-primary" />
             <span className="text-xs font-medium text-primary">{t('demoStoryLabel')}</span>
           </div>
-          
+
           <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
             {themeOptions.map(option => {
               const Icon = option.icon;
@@ -203,13 +257,13 @@ export default function DemoReader() {
               animate={{ opacity: 1, y: 0 }}
               className={`font-serif text-2xl text-center mb-8 pt-4 ${activeTheme.text}`}
             >
-              {DEMO_STORY.title}
+              {storyTitle}
             </motion.h1>
           )}
 
           <AnimatePresence mode="wait" custom={direction}>
             <motion.article
-              key={currentPage.id}
+              key={currentPageIndex}
               custom={direction}
               variants={pageVariants}
               initial="enter"
@@ -223,7 +277,7 @@ export default function DemoReader() {
               className="prose prose-lg max-w-none"
             >
               <div className={`space-y-6 font-serif text-xl leading-relaxed ${activeTheme.text}`}>
-                {currentPage.content.split('\n\n').map((paragraph, idx) => (
+                {currentPage.split('\n\n').map((paragraph, idx) => (
                   <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:mr-1">
                     {paragraph}
                   </p>
@@ -239,9 +293,9 @@ export default function DemoReader() {
         <div className="relative h-20">
           {/* Page indicator */}
           <div className={`absolute top-3 left-1/2 -translate-x-1/2 text-sm ${activeTheme.muted}`}>
-            Page {currentPageIndex + 1} of {DEMO_PAGES.length}
+            Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
           </div>
-          
+
           {/* Tap zones */}
           <div className="absolute inset-0 flex">
             <button
