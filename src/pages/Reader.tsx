@@ -427,6 +427,7 @@ export default function Reader() {
                   onClick={() => setTheme(option.key)}
                   className="h-8 px-3"
                   aria-pressed={theme === option.key}
+                  aria-label={t('readerThemeLabel', { theme: option.label })}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="ml-1 hidden md:inline">{option.label}</span>
@@ -547,11 +548,13 @@ export default function Reader() {
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapLeft}
+          aria-label={t('readerPreviousPage')}
         />
         <div className="w-1/3" />
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapRight}
+          aria-label={t('readerNextPage')}
         />
       </div>
 

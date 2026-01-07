@@ -91,6 +91,9 @@ export const translations = {
     finishCreating: 'Create Character',
     selectAgeBand: 'Select Age Band',
     selectTraits: 'Select Traits',
+    demoStepIndicatorLabel: 'Demo hero creation steps',
+    demoStepLabel: 'Step {step} of {total}',
+    characterCarouselLabel: 'Character carousel',
     
     // Age Bands
     ageBand12: '1-2 yrs • For the littlest ones',
@@ -153,6 +156,10 @@ export const translations = {
     tapToContinue: 'Tap to continue...',
     generatingPortrait: 'Generating portrait...',
     pageIndicator: 'Page {current} of {total}',
+    readerPreviousPage: 'Previous page',
+    readerNextPage: 'Next page',
+    readerFinishStory: 'Finish story',
+    readerThemeLabel: 'Theme: {theme}',
     
     // Cover Page
     coverBrandName: 'Paper & Ink',
@@ -338,6 +345,9 @@ export const translations = {
     finishCreating: 'Personage Maken',
     selectAgeBand: 'Selecteer Leeftijdsgroep',
     selectTraits: 'Selecteer Eigenschappen',
+    demoStepIndicatorLabel: 'Demo heldenstappen',
+    demoStepLabel: 'Stap {step} van {total}',
+    characterCarouselLabel: 'Personagecarrousel',
 
     // Age Bands
     ageBand12: '1-2 jaar • Voor de allerkleinsten',
@@ -401,6 +411,10 @@ export const translations = {
     tapToContinue: 'Tik om verder te gaan...',
     generatingPortrait: 'Portret wordt gemaakt...',
     pageIndicator: 'Pagina {current} van {total}',
+    readerPreviousPage: 'Vorige pagina',
+    readerNextPage: 'Volgende pagina',
+    readerFinishStory: 'Verhaal afronden',
+    readerThemeLabel: 'Thema: {theme}',
     
     // Cover Page
     coverBrandName: 'Papier & Inkt',
@@ -586,6 +600,9 @@ export const translations = {
     finishCreating: 'Skapa Karaktär',
     selectAgeBand: 'Välj Åldersgrupp',
     selectTraits: 'Välj Egenskaper',
+    demoStepIndicatorLabel: 'Demo hjältesteg',
+    demoStepLabel: 'Steg {step} av {total}',
+    characterCarouselLabel: 'Karusell med karaktärer',
     
     // Age Bands
     ageBand12: '1-2 år • För de allra minsta',
@@ -648,6 +665,10 @@ export const translations = {
     tapToContinue: 'Tryck för att fortsätta...',
     generatingPortrait: 'Genererar porträtt...',
     pageIndicator: 'Sida {current} av {total}',
+    readerPreviousPage: 'Föregående sida',
+    readerNextPage: 'Nästa sida',
+    readerFinishStory: 'Avsluta berättelsen',
+    readerThemeLabel: 'Tema: {theme}',
     
     // Cover Page
     coverBrandName: 'Papper & Bläck',

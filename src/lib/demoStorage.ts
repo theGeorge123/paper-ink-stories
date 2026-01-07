@@ -74,7 +74,7 @@ interface DemoSessionResponse {
 
 const DEMO_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const isValidDemoId = (value: string) => DEMO_ID_PATTERN.test(value) || value.startsWith('demo-');
+const isValidDemoId = (value: string): boolean => DEMO_ID_PATTERN.test(value) || value.startsWith('demo-');
 
 const readCookie = (name: string): string | null => {
   if (typeof document === 'undefined') return null;
@@ -124,6 +124,9 @@ const serializeDemoCookie = (demoId: string): string => {
   return JSON.stringify(payload);
 };
 
+/**
+ * Fetch the demo id from cookies or create a new one.
+ */
 export const getOrCreateDemoId = (): string => {
   const existing = readCookie(DEMO_COOKIE_NAME);
   if (existing) {
@@ -136,6 +139,9 @@ export const getOrCreateDemoId = (): string => {
   return demoId;
 };
 
+/**
+ * Clear the demo id cookie.
+ */
 export const clearDemoId = (): void => {
   clearCookie(DEMO_COOKIE_NAME);
 };
@@ -172,6 +178,9 @@ const mapDemoEpisode = (episode?: DemoEpisodeRecordResponse | null): DemoEpisode
   };
 };
 
+/**
+ * Fetch the latest demo session data for a demo id.
+ */
 export const fetchDemoSession = async (demoId: string): Promise<DemoSession> => {
   const { data, error } = await supabase.functions.invoke('demo-session', {
     body: { demoId },
@@ -194,6 +203,9 @@ export const fetchDemoSession = async (demoId: string): Promise<DemoSession> => 
   };
 };
 
+/**
+ * Save demo hero data for a demo session.
+ */
 export const saveDemoHero = async (demoId: string, hero: DemoHeroInput): Promise<void> => {
   const { error } = await supabase.functions.invoke('demo-save-hero', {
     body: { demoId, hero },
