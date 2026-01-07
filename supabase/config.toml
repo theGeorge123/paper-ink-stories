@@ -17,12 +17,6 @@ verify_jwt = false
 [functions.generate-hero-portrait]
 verify_jwt = false
 
-[functions.demo-save-hero]
-verify_jwt = false
-
-[functions.demo-session]
-verify_jwt = false
-
 [functions.generate-demo-story]
 verify_jwt = false
 

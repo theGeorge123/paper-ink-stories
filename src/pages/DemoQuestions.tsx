@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { trackDemoEvent } from '@/lib/performance';
 import {
@@ -12,12 +11,18 @@ import {
   type QuestionLevel,
   type ThreeLevelQuestions,
 } from '@/lib/questions';
+import { buildStoryBrief } from '@/lib/buildStoryBrief';
 import {
   type DemoHeroInput,
   buildDemoRoute,
-  fetchDemoSession,
+  getDemoHero,
+  getDemoStoryContext,
   getOrCreateDemoId,
+  saveDemoAnswers,
+  saveDemoStory,
+  saveDemoStoryMemory,
 } from '@/lib/demoStorage';
+import { supabase } from '@/integrations/supabase/client';
 
 const DEMO_STORY_LIMIT = 3;
 
@@ -31,6 +36,24 @@ const getSelectionTags = (level: QuestionLevel, optionLabel: string) => {
   return level.options.find((option) => option.label === optionLabel)?.tags ?? [];
 };
 
+const normalizeSummary = (summary: string, heroName: string) => {
+  const sentences = summary
+    .split(/(?<=[.!?])\s+/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (sentences.length < 2) {
+    sentences.push(`${heroName} drifts into safe, cozy sleep at the end.`);
+  }
+
+  return sentences.slice(0, 4).join(' ');
+};
+
+const estimateReadingTime = (text: string) => {
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / 150));
+};
+
 export default function DemoQuestions() {
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -42,70 +65,73 @@ export default function DemoQuestions() {
   const [generating, setGenerating] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
   const [storiesRemaining, setStoriesRemaining] = useState<number | null>(null);
+  const [storyContext, setStoryContext] = useState(() => getDemoStoryContext());
 
   useEffect(() => {
     if (!demoId) return;
 
-    const loadDemoData = async () => {
-      let fallbackHero: DemoHeroInput | null = null;
-      try {
-        const session = await fetchDemoSession(demoId);
-        const remaining = Math.max(0, DEMO_STORY_LIMIT - session.profile.storiesUsed);
-        setStoriesRemaining(remaining);
-        setLimitReached(session.profile.storiesUsed >= DEMO_STORY_LIMIT);
+    const heroData = getDemoHero();
+    if (!heroData) {
+      navigate(buildDemoRoute('/demo-hero'));
+      return;
+    }
 
-        if (!session.hero) {
-          navigate(buildDemoRoute('/demo-hero'));
-          return;
-        }
-        fallbackHero = session.hero;
+    setHero(heroData);
 
-        const lastSummary = session.lastEpisode?.episodeSummary || 'None (first episode).';
-        const topTags = session.topTags;
+    const context = getDemoStoryContext();
+    setStoryContext(context);
+    const remaining = Math.max(0, DEMO_STORY_LIMIT - context.storiesUsed);
+    setStoriesRemaining(remaining);
+    setLimitReached(context.storiesUsed >= DEMO_STORY_LIMIT);
 
-        setHero(session.hero);
+    try {
+      const heroProfile = {
+        heroName: heroData.heroName,
+        heroType: heroData.heroType,
+        heroTrait: heroData.heroTrait,
+        comfortItem: heroData.comfortItem,
+      };
 
-        const heroProfile = {
-          heroName: session.hero.heroName,
-          heroType: session.hero.heroType,
-          heroTrait: session.hero.heroTrait,
-          comfortItem: session.hero.comfortItem,
-        };
+      const questionContext = generateQuestionsContext(
+        heroProfile,
+        context.lastSummary,
+        context.topTags,
+        language,
+      );
+      const nextQuestions = createThreeLevelQuestions(questionContext);
 
-        const context = generateQuestionsContext(heroProfile, lastSummary, topTags, language);
-        const nextQuestions = createThreeLevelQuestions(context);
-
-        if (!validateThreeLevelQuestions(nextQuestions)) {
-          throw new Error('Question generation failed: each level must have exactly 3 options.');
-        }
-
-        setQuestions(nextQuestions);
-      } catch (error) {
-        console.error('Question generation failed', error);
-        if (fallbackHero) {
-          const heroProfile = {
-            heroName: fallbackHero.heroName,
-            heroType: fallbackHero.heroType,
-            heroTrait: fallbackHero.heroTrait,
-            comfortItem: fallbackHero.comfortItem,
-          };
-          const context = generateQuestionsContext(heroProfile, 'None (first episode).', [], language);
-          const fallbackQuestions = createThreeLevelQuestions(context);
-          if (validateThreeLevelQuestions(fallbackQuestions)) {
-            setQuestions(fallbackQuestions);
-          }
-        }
-        toast.error(
-          language === 'nl'
-            ? 'Vanavond kunnen we de vragen niet laden.'
-            : language === 'sv'
-            ? 'Vi kunde inte ladda kvällens frågor.'
-            : 'Unable to load tonight’s questions.',
-        );
+      if (!validateThreeLevelQuestions(nextQuestions)) {
+        throw new Error('Question generation failed: each level must have exactly 3 options.');
       }
-    };
 
-    loadDemoData();
+      setQuestions(nextQuestions);
+    } catch (error) {
+      console.error('Question generation failed', error);
+      if (heroData) {
+        const fallbackContext = generateQuestionsContext(
+          {
+            heroName: heroData.heroName,
+            heroType: heroData.heroType,
+            heroTrait: heroData.heroTrait,
+            comfortItem: heroData.comfortItem,
+          },
+          'None (first episode).',
+          [],
+          language,
+        );
+        const fallbackQuestions = createThreeLevelQuestions(fallbackContext);
+        if (validateThreeLevelQuestions(fallbackQuestions)) {
+          setQuestions(fallbackQuestions);
+        }
+      }
+      toast.error(
+        language === 'nl'
+          ? 'Vanavond kunnen we de vragen niet laden.'
+          : language === 'sv'
+          ? 'Vi kunde inte ladda kvällens frågor.'
+          : 'Unable to load tonight’s questions.',
+      );
+    }
   }, [demoId, language, navigate]);
 
   if (!hero) {
@@ -202,50 +228,79 @@ export default function DemoQuestions() {
     setGenerating(true);
 
     try {
+      const selectionsPayload = buildEpisodeChoices();
       const selectionTags = [
         ...getSelectionTags(questions.level1, selections.level1!),
         ...getSelectionTags(questions.level2, selections.level2!),
         ...getSelectionTags(questions.level3, selections.level3!),
       ];
 
+      saveDemoAnswers(selectionsPayload);
+
+      const storyBrief = buildStoryBrief({
+        hero: {
+          heroName: hero.heroName,
+          heroType: hero.heroType,
+          heroTrait: hero.heroTrait,
+          comfortItem: hero.comfortItem,
+        },
+        lastSummary: storyContext.lastSummary,
+        topTags: storyContext.topTags,
+        selections: selectionsPayload,
+        language,
+      });
+
+      const sidekickDetails = hero.sidekickName
+        ? `\nSIDEKICK\n- Name: ${hero.sidekickName}\n- Type: ${hero.sidekickArchetype || 'friend'}\n- Include the sidekick as a supportive companion.`
+        : '';
+
       const { data, error } = await supabase.functions.invoke('generate-demo-story', {
         body: {
-          demoId,
-          selections: buildEpisodeChoices(),
-          selectionTags,
+          storyBrief: `${storyBrief}${sidekickDetails}`,
+          heroName: hero.heroName,
           language,
         },
       });
 
       if (error) {
-        const errorBody = error.context?.json || error.context?.body || error.context || error;
-        const errorCode = errorBody?.error?.message || errorBody?.error || errorBody?.message;
-        if (errorCode === 'limit_reached') {
-          setLimitReached(true);
-          setStoriesRemaining(0);
-          return;
-        }
         throw error;
       }
 
-      const dataError = data?.error as string | { message?: string } | undefined;
-      const dataErrorCode = typeof dataError === 'string' ? dataError : dataError?.message;
-
-      if (dataErrorCode === 'limit_reached') {
-        setLimitReached(true);
-        setStoriesRemaining(0);
-        return;
-      }
-
-      if (!data?.story_text) {
+      if (!data?.story) {
         throw new Error('Story generation failed');
       }
 
-      if (typeof data.stories_used === 'number') {
-        const remaining = Math.max(0, DEMO_STORY_LIMIT - data.stories_used);
-        setStoriesRemaining(remaining);
-        setLimitReached(data.stories_used >= DEMO_STORY_LIMIT);
-      }
+      const summary = normalizeSummary(data.summary || storyContext.lastSummary, hero.heroName);
+      const tagsFromStory = Array.isArray(data.tags_used) ? data.tags_used : [];
+      const tagsUsed = Array.from(new Set([...selectionTags, ...tagsFromStory]));
+      const readingTimeMinutes =
+        typeof data.reading_time_minutes === 'number'
+          ? data.reading_time_minutes
+          : estimateReadingTime(data.story);
+      const storyTitle = data.title || `${hero.heroName}'s Bedtime Story`;
+
+      saveDemoStory({
+        storyTitle,
+        storyText: data.story,
+        episodeSummary: summary,
+        choices: selectionsPayload,
+        tagsUsed,
+        readingTimeMinutes,
+        createdAt: new Date().toISOString(),
+      });
+
+      saveDemoStoryMemory(summary, tagsUsed);
+
+      const newStoriesUsed = storyContext.storiesUsed + 1;
+      const remaining = Math.max(0, DEMO_STORY_LIMIT - newStoriesUsed);
+      setStoriesRemaining(remaining);
+      setLimitReached(newStoriesUsed >= DEMO_STORY_LIMIT);
+      setStoryContext((prev) => ({
+        ...prev,
+        lastSummary: summary,
+        storiesUsed: newStoriesUsed,
+        topTags: tagsUsed,
+      }));
 
       trackDemoEvent('demo_story_generated', { demoId });
       navigate(buildDemoRoute('/demo-reader'));

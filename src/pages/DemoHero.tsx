@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { buildDemoRoute, clearDemoId, DemoSaveHeroError, fetchDemoSession, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
@@ -67,8 +67,6 @@ export default function DemoHero() {
   const [traits, setTraits] = useState<string[]>([]);
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const { t } = useLanguage();
   const navigate = useNavigate();
   const demoId = useMemo(() => getOrCreateDemoId(), []);
@@ -76,32 +74,23 @@ export default function DemoHero() {
   useEffect(() => {
     let isMounted = true;
     trackDemoEvent('demo_hero_creation_started', { demoId });
-    const hydrateDemo = async () => {
-      if (!demoId) {
-        console.error('[DemoHero] Missing demo id during hydration.');
-        return;
-      }
-      try {
-        const session = await fetchDemoSession(demoId);
-        if (!session.hero || !isMounted) return;
+    const hydrateDemo = () => {
+      const hero = getDemoHero();
+      if (!hero || !isMounted) return;
 
-        const heroType = session.hero.heroType;
-        const archetypeMatch = ARCHETYPES.find(
-          (item) =>
-            item.id === heroType.toLowerCase() ||
-            item.label.toLowerCase() === heroType.toLowerCase(),
-        );
+      const heroType = hero.heroType;
+      const archetypeMatch = ARCHETYPES.find(
+        (item) =>
+          item.id === heroType.toLowerCase() ||
+          item.label.toLowerCase() === heroType.toLowerCase(),
+      );
 
-        setName(session.hero.heroName ?? '');
-        setArchetype(archetypeMatch?.id ?? '');
-        setAgeBand(session.hero.ageBand ?? '3-5');
-        setTraits(session.hero.heroTrait ? [session.hero.heroTrait] : []);
-        setSidekickName(session.hero.sidekickName ?? '');
-        setSidekickArchetype(session.hero.sidekickArchetype ?? '');
-      } catch (error) {
-        console.error('[DemoHero] Failed to restore demo hero state', error);
-        clearDemoId();
-      }
+      setName(hero.heroName ?? '');
+      setArchetype(archetypeMatch?.id ?? '');
+      setAgeBand(hero.ageBand ?? '3-5');
+      setTraits(hero.heroTrait ? [hero.heroTrait] : []);
+      setSidekickName(hero.sidekickName ?? '');
+      setSidekickArchetype(hero.sidekickArchetype ?? '');
     };
 
     hydrateDemo();
@@ -118,55 +107,24 @@ export default function DemoHero() {
     }
   };
 
-  const handleStartDemo = async () => {
-    if (saving) {
-      toast('Demo story is loading, please wait...');
-      return;
-    }
+  const handleStartDemo = () => {
     if (!demoId) {
       console.error('[DemoHero] Missing demo id when starting demo.');
-      setSaveError('We could not find your demo session. Please refresh and try again.');
       toast.error('We could not find your demo session. Please refresh and try again.');
       return;
     }
 
-    setSaving(true);
-    setSaveError(null);
-    try {
-      trackDemoEvent('demo_start_clicked', { demoId });
-      await saveDemoHero(demoId, {
-        heroName: name.trim(),
-        heroType: selectedArchetype?.label ?? archetype,
-        heroTrait: traits[0] ?? 'Kind',
-        comfortItem: 'blanket',
-        ageBand,
-        sidekickName: sidekickName.trim() || null,
-        sidekickArchetype: sidekickArchetype || null,
-      });
-      navigate(buildDemoRoute('/demo-reader'));
-    } catch (error) {
-      console.error('[DemoHero] Failed to start demo', error);
-      let message = 'We could not save your demo hero. Please try again.';
-      if (error instanceof DemoSaveHeroError) {
-        if (error.code === 'timeout') {
-          message = 'Saving timed out. Please check your connection and retry.';
-        } else if (error.code === 'network') {
-          message = 'Network issue detected. Check your connection and retry.';
-        } else if (error.code === 'cors') {
-          message = 'The save request was blocked. Please refresh and try again.';
-        } else if (error.code === 'validation') {
-          message = 'Some hero details are missing. Please review your answers and retry.';
-        } else if (error.code === 'server') {
-          message = 'Our demo server is having trouble. Please retry in a moment.';
-        }
-      } else if (error instanceof Error && error.message) {
-        message = error.message;
-      }
-      setSaveError(message);
-      toast.error(message);
-    } finally {
-      setSaving(false);
-    }
+    trackDemoEvent('demo_start_clicked', { demoId });
+    saveDemoHero({
+      heroName: name.trim(),
+      heroType: selectedArchetype?.label ?? archetype,
+      heroTrait: traits[0] ?? 'Kind',
+      comfortItem: 'blanket',
+      ageBand,
+      sidekickName: sidekickName.trim() || null,
+      sidekickArchetype: sidekickArchetype || null,
+    });
+    navigate(buildDemoRoute('/demo-questions'));
   };
 
   const goToStep = (newStep: number) => {
@@ -515,45 +473,13 @@ export default function DemoHero() {
               )}
 
               <div className="space-y-3 pt-4">
-                {saveError && (
-                  <div className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive space-y-2">
-                    <p className="font-medium">We couldn’t save your demo hero.</p>
-                    <p>{saveError}</p>
-                    <p className="text-xs text-destructive/80">Try again, check your connection, or refresh this page.</p>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <Button type="button" size="sm" onClick={handleStartDemo} disabled={saving}>
-                        Retry saving
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => window.location.reload()}
-                      >
-                        Refresh page
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 <Button
                   onClick={handleStartDemo}
                   size="lg"
                   className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary/30"
-                  disabled={saving}
                 >
-                  {saving ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    >
-                      <Sparkles className="w-5 h-5" />
-                    </motion.div>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Start Demo Story
-                    </>
-                  )}
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Start Demo Story
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

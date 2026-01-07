@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
-import { buildDemoRoute, clearDemoId, fetchDemoSession, getDemoIdFromCookie } from '@/lib/demoStorage';
+import { buildDemoRoute, clearDemoId, getDemoHero, getDemoIdFromCookie, getDemoStory } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
-import { toast } from 'sonner';
 
 // Page turn animation variants - same as Reader.tsx
 const pageVariants = {
@@ -46,7 +45,7 @@ const themes = {
     text: 'text-[#f0f4f8]',
     muted: 'text-[#cbd2d9]',
     footer: 'bg-[#1f2933]/95',
-  }
+  },
 } as const;
 
 const themeOptions = [
@@ -79,6 +78,8 @@ export default function DemoReader() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const demoId = useMemo(() => getDemoIdFromCookie(), []);
+  const hero = useMemo(() => getDemoHero(), []);
+  const story = useMemo(() => getDemoStory(), []);
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -87,49 +88,28 @@ export default function DemoReader() {
   const [pages, setPages] = useState<string[]>([]);
   const [storyTitle, setStoryTitle] = useState('');
   const [heroName, setHeroName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!demoId) {
-      setLoading(false);
       navigate(buildDemoRoute('/demo-hero'));
       return;
     }
 
-    const loadStory = async () => {
-      try {
-        const session = await fetchDemoSession(demoId);
+    if (!hero) {
+      navigate(buildDemoRoute('/demo-hero'));
+      return;
+    }
 
-        if (!session.hero || !session.lastEpisode) {
-          if (!session.hero) {
-            navigate(buildDemoRoute('/demo-hero'));
-          } else {
-            navigate(buildDemoRoute('/demo-questions'));
-          }
-          return;
-        }
+    if (!story) {
+      navigate(buildDemoRoute('/demo-questions'));
+      return;
+    }
 
-        setHeroName(session.hero.heroName);
-        setStoryTitle(`${session.hero.heroName}'s Bedtime Story`);
-        setPages(buildDemoPages(session.lastEpisode.storyText));
-        trackDemoEvent('demo_reader_loaded', { demoId, episodeId: session.lastEpisode.id });
-      } catch (error) {
-        console.error('[DemoReader] Failed to load demo story', error);
-        trackDemoEvent('demo_reader_load_failed', {
-          demoId,
-          message: error instanceof Error ? error.message : String(error),
-        });
-        setLoadError('Unable to load the demo story. Please check your connection and retry.');
-        toast.error('Unable to load the demo story. Please try again.');
-        clearDemoId();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStory();
-  }, [demoId, navigate]);
+    setHeroName(hero.heroName);
+    setStoryTitle(story.storyTitle || `${hero.heroName}'s Bedtime Story`);
+    setPages(buildDemoPages(story.storyText));
+    trackDemoEvent('demo_reader_loaded', { demoId });
+  }, [demoId, hero, navigate, story]);
 
   useEffect(() => {
     if (showEndScreen) {
@@ -158,41 +138,7 @@ export default function DemoReader() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background paper-texture flex items-center justify-center">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="text-primary"
-        >
-          <Sparkles className="w-8 h-8" />
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <main
-        id="main-content"
-        className="min-h-screen bg-background paper-texture flex items-center justify-center px-6"
-      >
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-serif font-semibold text-foreground">We hit a snag.</h1>
-          <p className="text-muted-foreground">{loadError}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button onClick={() => navigate(buildDemoRoute('/demo-reader'))}>Retry</Button>
-            <Button variant="ghost" onClick={() => navigate(buildDemoRoute('/demo-hero'))}>
-              Back to demo setup
-            </Button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (!demoId) {
+  if (!demoId || !hero || !story) {
     return null;
   }
 
