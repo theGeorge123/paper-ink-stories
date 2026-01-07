@@ -244,7 +244,7 @@ export default function DemoQuestions() {
         setLimitReached(data.stories_used >= DEMO_STORY_LIMIT);
       }
 
-      navigate('/demo');
+      navigate('/demo-reader');
     } catch (error) {
       console.error('Failed to generate story', error);
       toast.error(
