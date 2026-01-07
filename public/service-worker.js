@@ -28,7 +28,7 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   if (requestUrl.origin !== self.location.origin) return;
 
-  const excludedPaths = ['/demo-hero', '/demo-reader', '/demo-questions'];
+  const excludedPaths = ['/demo', '/demo-hero', '/demo-reader', '/demo-questions'];
   if (excludedPaths.includes(requestUrl.pathname)) return;
 
   const destination = event.request.destination;

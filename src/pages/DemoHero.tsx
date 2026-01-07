@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { clearDemoId, fetchDemoSession, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { buildDemoRoute, clearDemoId, DemoSaveHeroError, fetchDemoSession, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
@@ -68,6 +68,7 @@ export default function DemoHero() {
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { t } = useLanguage();
   const navigate = useNavigate();
   const demoId = useMemo(() => getOrCreateDemoId(), []);
@@ -124,11 +125,13 @@ export default function DemoHero() {
     }
     if (!demoId) {
       console.error('[DemoHero] Missing demo id when starting demo.');
-      toast.error("Demo data couldn't be saved, please refresh.");
+      setSaveError('We could not find your demo session. Please refresh and try again.');
+      toast.error('We could not find your demo session. Please refresh and try again.');
       return;
     }
 
     setSaving(true);
+    setSaveError(null);
     try {
       trackDemoEvent('demo_start_clicked', { demoId });
       await saveDemoHero(demoId, {
@@ -140,15 +143,27 @@ export default function DemoHero() {
         sidekickName: sidekickName.trim() || null,
         sidekickArchetype: sidekickArchetype || null,
       });
-      navigate('/demo-reader');
+      navigate(buildDemoRoute('/demo-reader'));
     } catch (error) {
       console.error('[DemoHero] Failed to start demo', error);
-      const message = error instanceof Error ? error.message : '';
-      if (message.toLowerCase().includes('fetch') || message.toLowerCase().includes('network')) {
-        toast.error('Connection issue, please try again.');
-      } else {
-        toast.error("Demo data couldn't be saved, please refresh.");
+      let message = 'We could not save your demo hero. Please try again.';
+      if (error instanceof DemoSaveHeroError) {
+        if (error.code === 'timeout') {
+          message = 'Saving timed out. Please check your connection and retry.';
+        } else if (error.code === 'network') {
+          message = 'Network issue detected. Check your connection and retry.';
+        } else if (error.code === 'cors') {
+          message = 'The save request was blocked. Please refresh and try again.';
+        } else if (error.code === 'validation') {
+          message = 'Some hero details are missing. Please review your answers and retry.';
+        } else if (error.code === 'server') {
+          message = 'Our demo server is having trouble. Please retry in a moment.';
+        }
+      } else if (error instanceof Error && error.message) {
+        message = error.message;
       }
+      setSaveError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -500,14 +515,45 @@ export default function DemoHero() {
               )}
 
               <div className="space-y-3 pt-4">
+                {saveError && (
+                  <div className="rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive space-y-2">
+                    <p className="font-medium">We couldn’t save your demo hero.</p>
+                    <p>{saveError}</p>
+                    <p className="text-xs text-destructive/80">Try again, check your connection, or refresh this page.</p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button type="button" size="sm" onClick={handleStartDemo} disabled={saving}>
+                        Retry saving
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => window.location.reload()}
+                      >
+                        Refresh page
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <Button
                   onClick={handleStartDemo}
                   size="lg"
                   className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary/30"
                   disabled={saving}
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  {saving ? 'Starting demo...' : 'Start Demo Story'}
+                  {saving ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    >
+                      <Sparkles className="w-5 h-5" />
+                    </motion.div>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Start Demo Story
+                    </>
+                  )}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

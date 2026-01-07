@@ -5,6 +5,8 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
 };
 
 const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
@@ -13,8 +15,8 @@ const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const errorResponse = (message: string, status = 500, details?: string) =>
-  jsonResponse({ error: { message, details } }, status);
+const errorResponse = (message: string, status = 500, details?: string, requestId?: string) =>
+  jsonResponse({ error: { message, details, requestId } }, status);
 
 const demoHeroSchema = z.object({
   demoId: z.string().uuid("Invalid demo ID format"),
@@ -30,7 +32,11 @@ const demoHeroSchema = z.object({
 });
 
 serve(async (req) => {
+  const requestId = crypto.randomUUID();
+  const startTime = Date.now();
+
   if (req.method === "OPTIONS") {
+    console.info("[demo-save-hero] Preflight request", { requestId });
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -39,10 +45,15 @@ serve(async (req) => {
     const parseResult = demoHeroSchema.safeParse(rawInput);
 
     if (!parseResult.success) {
+      console.warn("[demo-save-hero] Invalid payload", {
+        requestId,
+        errors: parseResult.error.errors.map((err) => err.message),
+      });
       return errorResponse(
         "Invalid input",
         400,
         parseResult.error.errors.map((err) => err.message).join(", "),
+        requestId,
       );
     }
 
@@ -51,14 +62,23 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return errorResponse("Missing configuration", 500);
+      console.error("[demo-save-hero] Missing configuration", { requestId });
+      return errorResponse("Missing configuration", 500, undefined, requestId);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    await adminClient
+    const { error: profileError } = await adminClient
       .from("demo_profiles")
       .upsert({ id: demoId }, { onConflict: "id" });
+
+    if (profileError) {
+      console.error("[demo-save-hero] Failed to upsert demo profile", {
+        requestId,
+        error: profileError,
+      });
+      return errorResponse("Failed to create demo profile", 500, profileError.message, requestId);
+    }
 
     const { error: heroError } = await adminClient
       .from("demo_hero")
@@ -74,15 +94,18 @@ serve(async (req) => {
       }, { onConflict: "profile_id" });
 
     if (heroError) {
-      return errorResponse("Failed to save hero", 500);
+      console.error("[demo-save-hero] Failed to save hero", { requestId, error: heroError });
+      return errorResponse("Failed to save hero", 500, heroError.message, requestId);
     }
 
-    return jsonResponse({ success: true });
+    const durationMs = Date.now() - startTime;
+    console.info("[demo-save-hero] Saved hero", { requestId, demoId, durationMs });
+    return jsonResponse({ success: true, requestId, durationMs });
   } catch (error) {
-    console.error("Demo save hero error:", error);
+    console.error("Demo save hero error:", { requestId, error });
     const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: message }),
+      JSON.stringify({ error: { message, requestId } }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
