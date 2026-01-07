@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
 import { clearDemoId, fetchDemoSession, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
 const ARCHETYPES = [
@@ -73,8 +74,12 @@ export default function DemoHero() {
 
   useEffect(() => {
     let isMounted = true;
+    trackDemoEvent('demo_hero_creation_started', { demoId });
     const hydrateDemo = async () => {
-      if (!demoId) return;
+      if (!demoId) {
+        console.error('[DemoHero] Missing demo id during hydration.');
+        return;
+      }
       try {
         const session = await fetchDemoSession(demoId);
         if (!session.hero || !isMounted) return;
@@ -93,7 +98,7 @@ export default function DemoHero() {
         setSidekickName(session.hero.sidekickName ?? '');
         setSidekickArchetype(session.hero.sidekickArchetype ?? '');
       } catch (error) {
-        console.error('Failed to restore demo hero state', error);
+        console.error('[DemoHero] Failed to restore demo hero state', error);
         clearDemoId();
       }
     };
@@ -113,10 +118,19 @@ export default function DemoHero() {
   };
 
   const handleStartDemo = async () => {
-    if (!demoId) return;
+    if (saving) {
+      toast('Demo story is loading, please wait...');
+      return;
+    }
+    if (!demoId) {
+      console.error('[DemoHero] Missing demo id when starting demo.');
+      toast.error("Demo data couldn't be saved, please refresh.");
+      return;
+    }
 
     setSaving(true);
     try {
+      trackDemoEvent('demo_start_clicked', { demoId });
       await saveDemoHero(demoId, {
         heroName: name.trim(),
         heroType: selectedArchetype?.label ?? archetype,
@@ -126,16 +140,24 @@ export default function DemoHero() {
         sidekickName: sidekickName.trim() || null,
         sidekickArchetype: sidekickArchetype || null,
       });
-      navigate('/demo-questions');
+      navigate('/demo-reader');
     } catch (error) {
-      console.error('Failed to start demo', error);
-      toast.error('Unable to start the demo right now. Please try again.');
+      console.error('[DemoHero] Failed to start demo', error);
+      const message = error instanceof Error ? error.message : '';
+      if (message.toLowerCase().includes('fetch') || message.toLowerCase().includes('network')) {
+        toast.error('Connection issue, please try again.');
+      } else {
+        toast.error("Demo data couldn't be saved, please refresh.");
+      }
     } finally {
       setSaving(false);
     }
   };
 
   const goToStep = (newStep: number) => {
+    if (newStep > step) {
+      trackDemoEvent('demo_step_completed', { step, demoId });
+    }
     setDirection(newStep > step ? 1 : -1);
     setStep(newStep);
   };

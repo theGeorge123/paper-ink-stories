@@ -283,10 +283,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Edge function error:", error);
-    return errorResponse(
-      "Unexpected error",
-      500,
-      error instanceof Error ? error.message : "Unknown error",
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 });

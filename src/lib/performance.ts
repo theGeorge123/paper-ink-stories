@@ -4,6 +4,8 @@ export type PerformanceMetric = {
   unit?: string;
 };
 
+export type DemoTelemetryPayload = Record<string, unknown>;
+
 const logMetric = (metric: PerformanceMetric): void => {
   const unitLabel = metric.unit ? ` ${metric.unit}` : '';
   console.info(`[performance] ${metric.name}: ${metric.value}${unitLabel}`);
@@ -48,4 +50,13 @@ export const initPerformanceMonitoring = (): void => {
       logMetric({ name: 'first-input-delay', value: firstInput.processingStart - firstInput.startTime, unit: 'ms' });
     }
   });
+};
+
+export const trackDemoEvent = (event: string, payload?: DemoTelemetryPayload): void => {
+  if (typeof window === 'undefined') return;
+  const details = payload ? ` ${JSON.stringify(payload)}` : '';
+  console.info(`[demo] ${event}${details}`);
+  if (typeof performance !== 'undefined' && typeof performance.mark === 'function') {
+    performance.mark(`demo:${event}`);
+  }
 };

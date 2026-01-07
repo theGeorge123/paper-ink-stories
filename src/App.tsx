@@ -91,12 +91,29 @@ const App = () => (
                     </ErrorBoundary>
                   }
                 />
-                <Route path="/demo-hero" element={<DemoHero />} />
+                <Route
+                  path="/demo-hero"
+                  element={
+                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
+                      <DemoHero />
+                    </ErrorBoundary>
+                  }
+                />
                 <Route path="/demo-questions" element={<DemoQuestions />} />
+                <Route
+                  path="/demo-reader"
+                  element={
+                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
+                      <Suspense fallback={<ReaderLoader />}>
+                        <DemoReader />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
                 <Route
                   path="/demo"
                   element={
-                    <ErrorBoundary fallbackMessage="We couldn’t load the demo reader.">
+                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
                       <Suspense fallback={<ReaderLoader />}>
                         <DemoReader />
                       </Suspense>

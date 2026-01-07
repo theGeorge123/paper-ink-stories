@@ -5,6 +5,7 @@ import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'l
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
 import { clearDemoId, fetchDemoSession, getOrCreateDemoId } from '@/lib/demoStorage';
+import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
 // Page turn animation variants - same as Reader.tsx
@@ -103,8 +104,9 @@ export default function DemoReader() {
         setHeroName(session.hero.heroName);
         setStoryTitle(`${session.hero.heroName}'s Bedtime Story`);
         setPages(buildDemoPages(session.lastEpisode.storyText));
+        trackDemoEvent('demo_reader_loaded', { demoId, episodeId: session.lastEpisode.id });
       } catch (error) {
-        console.error('Failed to load demo story', error);
+        console.error('[DemoReader] Failed to load demo story', error);
         toast.error('Unable to load the demo story. Please try again.');
         clearDemoId();
       } finally {
@@ -114,6 +116,12 @@ export default function DemoReader() {
 
     loadStory();
   }, [demoId, navigate]);
+
+  useEffect(() => {
+    if (showEndScreen) {
+      trackDemoEvent('demo_completed', { demoId });
+    }
+  }, [demoId, showEndScreen]);
 
   const activeTheme = themes[theme];
   const currentPage = pages[currentPageIndex] ?? '';

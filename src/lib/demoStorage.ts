@@ -128,15 +128,20 @@ const serializeDemoCookie = (demoId: string): string => {
  * Fetch the demo id from cookies or create a new one.
  */
 export const getOrCreateDemoId = (): string => {
-  const existing = readCookie(DEMO_COOKIE_NAME);
-  if (existing) {
-    const parsed = parseDemoCookie(existing);
-    if (parsed) return parsed.demoId;
-    clearCookie(DEMO_COOKIE_NAME);
+  try {
+    const existing = readCookie(DEMO_COOKIE_NAME);
+    if (existing) {
+      const parsed = parseDemoCookie(existing);
+      if (parsed) return parsed.demoId;
+      clearCookie(DEMO_COOKIE_NAME);
+    }
+    const demoId = createDemoId();
+    writeCookie(DEMO_COOKIE_NAME, serializeDemoCookie(demoId), DEMO_COOKIE_DAYS);
+    return demoId;
+  } catch (error) {
+    console.error('[demoStorage] Function failed:', error);
+    return createDemoId();
   }
-  const demoId = createDemoId();
-  writeCookie(DEMO_COOKIE_NAME, serializeDemoCookie(demoId), DEMO_COOKIE_DAYS);
-  return demoId;
 };
 
 /**
@@ -204,14 +209,37 @@ export const fetchDemoSession = async (demoId: string): Promise<DemoSession> => 
 };
 
 /**
+ * Fetch the demo hero data for a demo session.
+ */
+export const getDemoHero = async (demoId: string): Promise<DemoHeroInput | null> => {
+  try {
+    const session = await fetchDemoSession(demoId);
+    return session.hero ?? null;
+  } catch (error) {
+    console.error('[demoStorage] Function failed:', error);
+    return null;
+  }
+};
+
+/**
  * Save demo hero data for a demo session.
  */
 export const saveDemoHero = async (demoId: string, hero: DemoHeroInput): Promise<void> => {
-  const { error } = await supabase.functions.invoke('demo-save-hero', {
-    body: { demoId, hero },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke('demo-save-hero', {
+      body: { demoId, hero },
+    });
 
-  if (error) {
+    if (error) {
+      throw error;
+    }
+
+    if (data?.error) {
+      const message = typeof data.error === 'string' ? data.error : data.error?.message;
+      throw new Error(message || 'Failed to save demo hero.');
+    }
+  } catch (error) {
+    console.error('[demoStorage] Function failed:', error);
     throw error;
   }
 };
