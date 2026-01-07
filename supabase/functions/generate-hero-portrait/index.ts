@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 // MANDATORY STYLE BLOCK - DO NOT MODIFY
 const STORYBOOK_STYLE = "Storybook illustration, hand-painted watercolor and gouache style, soft paper texture, warm cozy bedtime lighting, gentle edges, child-friendly proportions, simple light background, no text, no logos, no watermark, not photorealistic, not 3D, not anime.";
 
@@ -74,10 +83,7 @@ serve(async (req) => {
     const { characterId, regenerate } = await req.json();
 
     if (!characterId) {
-      return new Response(JSON.stringify({ error: "Missing characterId" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Missing characterId", 400);
     }
 
     // Fetch character data
@@ -89,20 +95,14 @@ serve(async (req) => {
 
     if (fetchError || !character) {
       console.error("Failed to fetch character:", fetchError);
-      return new Response(JSON.stringify({ error: "Character not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Character not found", 404);
     }
 
     // Validate OpenRouter API key
     const openRouterKey = Deno.env.get("openrouterimage");
     if (!openRouterKey) {
       console.error("CRITICAL: openrouterimage API key not configured");
-      return new Response(JSON.stringify({ error: "Image generation not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Image generation not configured", 500);
     }
 
     // Build the prompt
@@ -154,13 +154,11 @@ serve(async (req) => {
             .eq("id", characterId);
 
           console.log(`Reused cached portrait for character ${characterId}`);
-          return new Response(JSON.stringify({
+          return jsonResponse({
             success: true,
             already_exists: true,
             hero_image_url: signedUrl,
             storage_path: existingAsset.storage_path,
-          }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
       }
@@ -190,10 +188,7 @@ serve(async (req) => {
     if (!imageResponse.ok) {
       const errorText = await imageResponse.text();
       console.error("OpenRouter Riverflow error:", imageResponse.status, errorText);
-      return new Response(JSON.stringify({ error: "Image generation failed", details: errorText }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Image generation failed", 500, errorText);
     }
 
     const imageData = await imageResponse.json();
@@ -235,10 +230,11 @@ serve(async (req) => {
 
     if (!imageUrl) {
       console.error("No image URL in response:", JSON.stringify(imageData).slice(0, 1000));
-      return new Response(JSON.stringify({ error: "No image generated", response: JSON.stringify(imageData).slice(0, 500) }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "No image generated",
+        500,
+        JSON.stringify(imageData).slice(0, 500),
+      );
     }
 
     console.log("Image URL received:", imageUrl.slice(0, 100) + "...");
@@ -252,10 +248,7 @@ serve(async (req) => {
       const base64Match = imageUrl.match(/^data:image\/\w+;base64,(.+)$/);
       if (!base64Match) {
         console.error("Invalid base64 image format");
-        return new Response(JSON.stringify({ error: "Invalid image format" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Invalid image format", 500);
       }
       const binaryString = atob(base64Match[1]);
       const bytes = new Uint8Array(binaryString.length);
@@ -268,10 +261,7 @@ serve(async (req) => {
       const imageDownload = await fetch(imageUrl);
       if (!imageDownload.ok) {
         console.error("Failed to download image:", imageDownload.status);
-        return new Response(JSON.stringify({ error: "Failed to download generated image" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Failed to download generated image", 500);
       }
       const imageBlob = await imageDownload.blob();
       imageBuffer = await imageBlob.arrayBuffer();
@@ -290,10 +280,7 @@ serve(async (req) => {
 
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
-      return new Response(JSON.stringify({ error: "Failed to save image", details: uploadError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to save image", 500, uploadError.message);
     }
 
     await adminClient.from("image_assets").insert({
@@ -309,10 +296,7 @@ serve(async (req) => {
 
     const signedUrl = await createSignedUrl(adminClient, "hero-portraits", storagePath);
     if (!signedUrl) {
-      return new Response(JSON.stringify({ error: "Failed to sign image URL" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to sign image URL", 500);
     }
 
     // Update character with image data
@@ -327,28 +311,24 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Failed to update character:", updateError);
-      return new Response(JSON.stringify({ error: "Failed to save image reference" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to save image reference", 500);
     }
 
     console.log(`Portrait generated successfully for character ${characterId}`);
 
-    return new Response(JSON.stringify({ 
+    return jsonResponse({
       success: true,
       hero_image_url: signedUrl,
       prompt_used: fullPrompt,
       storage_path: storagePath,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
     console.error("Generate portrait error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Unexpected error",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });

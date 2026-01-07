@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 const generateDemoSchema = z.object({
   demoId: z.string().uuid("Invalid demo ID format"),
   selections: z.object({
@@ -103,13 +112,11 @@ serve(async (req) => {
     const parseResult = generateDemoSchema.safeParse(rawInput);
 
     if (!parseResult.success) {
-      return new Response(JSON.stringify({
-        error: "Invalid input",
-        details: parseResult.error.errors.map((err) => err.message).join(", "),
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Invalid input",
+        400,
+        parseResult.error.errors.map((err) => err.message).join(", "),
+      );
     }
 
     const { demoId, selections, selectionTags, language } = parseResult.data;
@@ -118,12 +125,7 @@ serve(async (req) => {
     const openRouterKey = Deno.env.get("OPENROUTER_API_KEY") ?? "";
 
     if (!supabaseUrl || !serviceRoleKey || !openRouterKey) {
-      return new Response(JSON.stringify({
-        error: "Missing configuration",
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Missing configuration", 500);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
@@ -137,13 +139,7 @@ serve(async (req) => {
     const storiesUsed = profile?.stories_used ?? 0;
 
     if (storiesUsed >= 3) {
-      return new Response(JSON.stringify({
-        error: "limit_reached",
-        stories_used: storiesUsed,
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("limit_reached", 429, `stories_used:${storiesUsed}`);
     }
 
     if (!profile) {
@@ -157,10 +153,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (heroError || !hero) {
-      return new Response(JSON.stringify({ error: "Hero not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Hero not found", 404);
     }
 
     const { data: lastEpisode } = await adminClient
@@ -218,12 +211,7 @@ serve(async (req) => {
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("OpenRouter API error:", aiResponse.status, errorText);
-      return new Response(JSON.stringify({
-        error: "AI generation failed",
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("AI generation failed", 500, errorText);
     }
 
     const aiData = await aiResponse.json();
@@ -235,21 +223,11 @@ serve(async (req) => {
       parsedContent = JSON.parse(content.trim());
     } catch (error) {
       console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({
-        error: "Failed to parse AI response",
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to parse AI response", 500);
     }
 
     if (!parsedContent.story_text || !parsedContent.episode_summary) {
-      return new Response(JSON.stringify({
-        error: "Invalid AI response",
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Invalid AI response", 500);
     }
 
     const episodeNumber = storiesUsed + 1;
@@ -295,23 +273,20 @@ serve(async (req) => {
         .upsert(updatedPrefs, { onConflict: "profile_id,tag" });
     }
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
       story_text: parsedContent.story_text,
       episode_summary: parsedContent.episode_summary,
       story_themes: storyThemes,
       tags_used: tagsUsed,
       episode_number: episodeNumber,
       stories_used: episodeNumber,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("Edge function error:", error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : "Unknown error",
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Unexpected error",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });

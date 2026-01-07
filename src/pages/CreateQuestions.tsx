@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -265,7 +264,7 @@ export default function CreateQuestions() {
 
   return (
     <div className="min-h-screen bg-background paper-texture">
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main id="main-content" className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <header className="space-y-2">
           <p className="text-sm text-muted-foreground">
             {language === 'nl'
@@ -286,10 +285,12 @@ export default function CreateQuestions() {
 
         <section className="grid gap-4 sm:grid-cols-3">
           {currentQuestion.options.map((option) => (
-            <Card
+            <button
               key={option.id}
-              className="p-4 border border-border/60 hover:border-primary/60 cursor-pointer transition"
+              type="button"
+              className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 border-border/60 hover:border-primary/60 cursor-pointer transition text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => handleSelect(currentLevel, option.label)}
+              aria-label={option.label}
             >
               <div className="space-y-2">
                 <p className="font-medium text-foreground">{option.label}</p>
@@ -301,7 +302,7 @@ export default function CreateQuestions() {
                     : 'Tap to select'}
                 </p>
               </div>
-            </Card>
+            </button>
           ))}
         </section>
 
@@ -347,7 +348,7 @@ export default function CreateQuestions() {
               : 'Create tonight’s story'}
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Heart, Moon, Sun, TreePine } from 'lucide-react';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { clearDemoId, fetchDemoSession, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
 import { toast } from 'sonner';
 
 const ARCHETYPES = [
@@ -69,6 +69,40 @@ export default function DemoHero() {
   const [saving, setSaving] = useState(false);
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const demoId = useMemo(() => getOrCreateDemoId(), []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const hydrateDemo = async () => {
+      if (!demoId) return;
+      try {
+        const session = await fetchDemoSession(demoId);
+        if (!session.hero || !isMounted) return;
+
+        const heroType = session.hero.heroType;
+        const archetypeMatch = ARCHETYPES.find(
+          (item) =>
+            item.id === heroType.toLowerCase() ||
+            item.label.toLowerCase() === heroType.toLowerCase(),
+        );
+
+        setName(session.hero.heroName ?? '');
+        setArchetype(archetypeMatch?.id ?? '');
+        setAgeBand(session.hero.ageBand ?? '3-5');
+        setTraits(session.hero.heroTrait ? [session.hero.heroTrait] : []);
+        setSidekickName(session.hero.sidekickName ?? '');
+        setSidekickArchetype(session.hero.sidekickArchetype ?? '');
+      } catch (error) {
+        console.error('Failed to restore demo hero state', error);
+        clearDemoId();
+      }
+    };
+
+    hydrateDemo();
+    return () => {
+      isMounted = false;
+    };
+  }, [demoId]);
 
   const toggleTrait = (trait: string) => {
     if (traits.includes(trait)) {
@@ -79,7 +113,6 @@ export default function DemoHero() {
   };
 
   const handleStartDemo = async () => {
-    const demoId = getOrCreateDemoId();
     if (!demoId) return;
 
     setSaving(true);
@@ -144,7 +177,7 @@ export default function DemoHero() {
         </div>
       </header>
 
-      <main className="px-6 pb-32 max-w-lg mx-auto">
+      <main id="main-content" className="px-6 pb-32 max-w-lg mx-auto">
         <AnimatePresence mode="wait" custom={direction}>
           {/* Step 1: Hero Name */}
           {step === 1 && (
@@ -186,6 +219,7 @@ export default function DemoHero() {
                   onChange={(e) => setName(e.target.value)}
                   className="h-16 text-xl text-center font-serif bg-card/50 border-2 border-border/50 focus:border-primary rounded-2xl"
                   autoFocus
+                  aria-label={t('heroNamePlaceholder')}
                 />
               </motion.div>
 
@@ -235,6 +269,9 @@ export default function DemoHero() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setArchetype(a.id)}
+                      type="button"
+                      aria-label={`${a.label} archetype`}
+                      aria-pressed={isSelected}
                       className={`relative aspect-square rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
                         isSelected 
                           ? `border-primary bg-gradient-to-br ${a.color} shadow-lg ${a.glow}` 
@@ -281,6 +318,9 @@ export default function DemoHero() {
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setAgeBand(age.id)}
+                        type="button"
+                        aria-label={label}
+                        aria-pressed={isSelected}
                         className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
                           isSelected
                             ? `border-primary bg-gradient-to-br ${age.theme} shadow-lg`
@@ -345,6 +385,9 @@ export default function DemoHero() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => toggleTrait(trait)}
                       disabled={!isSelected && traits.length >= 3}
+                      type="button"
+                      aria-label={`Select trait ${trait}`}
+                      aria-pressed={isSelected}
                       className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
                         isSelected
                           ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
@@ -399,6 +442,7 @@ export default function DemoHero() {
                 value={sidekickName}
                 onChange={(e) => setSidekickName(e.target.value)}
                 className="h-14 text-lg text-center bg-card/50 border-2 border-border/50 focus:border-primary rounded-2xl"
+                aria-label={t('sidekickNamePlaceholder')}
               />
 
               {sidekickName && (
@@ -411,6 +455,9 @@ export default function DemoHero() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSidekickArchetype(a.id)}
+                        type="button"
+                        aria-label={`${a.label} sidekick`}
+                        aria-pressed={isSelected}
                         className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/10'

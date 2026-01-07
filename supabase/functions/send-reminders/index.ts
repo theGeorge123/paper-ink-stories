@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 // Generate secure token for disable links
 async function generateDisableToken(userId: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -38,24 +47,16 @@ serve(async (req) => {
     
     if (!cronSecret) {
       console.error("CRITICAL: CRON_SECRET not configured");
-      return new Response(JSON.stringify({ 
-        error: "CRON_SECRET not configured",
-        action: "Add 'CRON_SECRET' secret in Lovable Cloud settings"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "CRON_SECRET not configured",
+        500,
+        "Add 'CRON_SECRET' secret in Lovable Cloud settings",
+      );
     }
     
     if (!providedSecret || providedSecret !== cronSecret) {
       console.error("Unauthorized: Invalid or missing X-CRON-SECRET header");
-      return new Response(JSON.stringify({ 
-        error: "Unauthorized",
-        message: "Valid X-CRON-SECRET header required"
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Unauthorized", 401, "Valid X-CRON-SECRET header required");
     }
     
     console.log("CRON secret validated successfully");
@@ -63,24 +64,20 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get("resend");
     if (!resendApiKey) {
       console.error("CRITICAL: RESEND API key not configured");
-      return new Response(JSON.stringify({ 
-        error: "Resend API key not configured",
-        action: "Add 'resend' secret in Lovable Cloud settings"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Resend API key not configured",
+        500,
+        "Add 'resend' secret in Lovable Cloud settings",
+      );
     }
 
     if (resendApiKey.length < 20) {
       console.error("CRITICAL: RESEND API key appears invalid (too short)");
-      return new Response(JSON.stringify({ 
-        error: "Resend API key appears invalid",
-        action: "Check that the 'resend' secret contains a valid API key"
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Resend API key appears invalid",
+        500,
+        "Check that the 'resend' secret contains a valid API key",
+      );
     }
 
     const resend = new Resend(resendApiKey);
@@ -92,10 +89,7 @@ serve(async (req) => {
     
     if (!serviceRoleKey) {
       console.error("CRITICAL: Service role key not configured");
-      return new Response(JSON.stringify({ error: "Service role key not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Service role key not configured", 500);
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -113,17 +107,16 @@ serve(async (req) => {
 
     if (fetchError) {
       console.error("Failed to fetch reminder settings:", fetchError);
-      return new Response(JSON.stringify({ error: "Failed to fetch settings", details: fetchError }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Failed to fetch settings",
+        500,
+        fetchError?.message ?? "Unknown error",
+      );
     }
 
     if (!reminderSettings || reminderSettings.length === 0) {
       console.log("No users with active reminders found");
-      return new Response(JSON.stringify({ sent: 0, checked: 0, duration_ms: Date.now() - startTime }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ sent: 0, checked: 0, duration_ms: Date.now() - startTime });
     }
 
     console.log(`Found ${reminderSettings.length} users with reminders enabled`);
@@ -265,24 +258,20 @@ serve(async (req) => {
     const duration = Date.now() - startTime;
     console.log(`=== COMPLETED: Sent ${sentCount} emails, ${errors.length} errors, ${duration}ms ===`);
 
-    return new Response(JSON.stringify({ 
-      sent: sentCount, 
+    return jsonResponse({
+      sent: sentCount,
       checked: reminderSettings.length,
       processed,
       errors: errors.length > 0 ? errors : undefined,
-      duration_ms: duration
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      duration_ms: duration,
     });
 
   } catch (error) {
     console.error("Reminder function fatal error:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Unexpected error",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });

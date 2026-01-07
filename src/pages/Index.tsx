@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, BookOpen, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,17 +7,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import CharacterCarousel from '@/components/CharacterCarousel';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/auth');
+      const protectedRoutes = ['/dashboard', '/create', '/read'];
+      const isProtected = protectedRoutes.some((route) => location.pathname.startsWith(route));
+      if (isProtected) {
+        navigate('/auth');
+      }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   const { data: characters, isLoading } = useQuery({
     queryKey: ['characters', user?.id],
@@ -84,7 +90,7 @@ export default function Index() {
         </div>
       </header>
 
-      <main className="px-6 pb-24 max-w-2xl mx-auto">
+      <main id="main-content" className="px-6 pb-24 max-w-2xl mx-auto">
         <motion.div 
           className="flex items-center justify-between mb-8"
           initial={{ opacity: 0, y: 10 }}
@@ -107,10 +113,12 @@ export default function Index() {
             transition={{ delay: 0.2 }}
             className="py-4"
           >
-            <CharacterCarousel 
-              characters={characters} 
-              onCharacterUpdated={handleCharacterUpdated}
-            />
+            <ErrorBoundary fallbackMessage="We couldn’t load your characters.">
+              <CharacterCarousel 
+                characters={characters} 
+                onCharacterUpdated={handleCharacterUpdated}
+              />
+            </ErrorBoundary>
           </motion.div>
         ) : (
           <motion.div

@@ -8,6 +8,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 // Input validation schema
 const generatePageSchema = z.object({
   storyId: z.string().uuid("Invalid story ID format"),
@@ -280,10 +289,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Unauthorized", 401);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -300,10 +306,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Unauthorized", 401);
     }
 
     // Parse and validate input
@@ -312,13 +315,11 @@ serve(async (req) => {
     
     if (!parseResult.success) {
       console.error("Validation error:", parseResult.error.errors);
-      return new Response(JSON.stringify({ 
-        error: "Invalid input", 
-        details: parseResult.error.errors.map(e => e.message).join(", ")
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Invalid input",
+        400,
+        parseResult.error.errors.map((e) => e.message).join(", "),
+      );
     }
 
     const { storyId, targetPage } = parseResult.data;
@@ -333,18 +334,12 @@ serve(async (req) => {
 
     if (storyError || !story) {
       console.error("Story fetch error:", storyError);
-      return new Response(JSON.stringify({ error: "Story not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Story not found", 404);
     }
 
     // Verify ownership through character
     if (story.characters.user_id !== user.id) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Forbidden", 403);
     }
 
     // Fetch user's language preference
@@ -384,7 +379,7 @@ serve(async (req) => {
       const storagePath = `${story.characters.user_id}/${storyId}/page-${currentPage}.png`;
       const refreshedUrl = await createSignedUrl(serviceClient, "story-images", storagePath);
 
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: true,
         page_text: existingPage.content,
         is_ending: !story.is_active,
@@ -394,8 +389,6 @@ serve(async (req) => {
         total_pages: LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8,
         image_url: refreshedUrl || existingPage.image_url || null,
         already_existed: true,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     
@@ -514,14 +507,14 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     const OPENROUTER_API_KEY = Deno.env.get("openrouter");
     if (!OPENROUTER_API_KEY) {
       console.error("OpenRouter API key not configured");
-      return new Response(JSON.stringify({ 
-        error: "API configuration error",
-        fallback: true,
-        page_text: "The story magic is taking a short nap. Try again in a moment."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        {
+          error: { message: "API configuration error" },
+          fallback: true,
+          page_text: "The story magic is taking a short nap. Try again in a moment.",
+        },
+        500,
+      );
     }
 
     const openRouterModel = Deno.env.get("OPENROUTER_STORY_PRESET")?.trim() || "@preset/story-teller";
@@ -546,14 +539,14 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("OpenRouter API error:", aiResponse.status, errorText);
-      return new Response(JSON.stringify({ 
-        error: "AI generation failed",
-        fallback: true,
-        page_text: "The story magic is taking a short nap. Try again in a moment."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        {
+          error: { message: "AI generation failed", details: errorText },
+          fallback: true,
+          page_text: "The story magic is taking a short nap. Try again in a moment.",
+        },
+        500,
+      );
     }
 
     const aiData = await aiResponse.json();
@@ -572,14 +565,14 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       parsedContent = JSON.parse(content.trim());
     } catch (parseError) {
       console.error("Failed to parse AI response:", content);
-      return new Response(JSON.stringify({ 
-        error: "Failed to parse AI response",
-        fallback: true,
-        page_text: "The story magic is taking a short nap. Try again in a moment."
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        {
+          error: { message: "Failed to parse AI response" },
+          fallback: true,
+          page_text: "The story magic is taking a short nap. Try again in a moment.",
+        },
+        500,
+      );
     }
 
     const pageImageDescription = isMidpoint ? parsedContent.visual_scene_description : null;
@@ -598,10 +591,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
 
     if (pageError) {
       console.error("Page upsert error:", pageError);
-      return new Response(JSON.stringify({ error: "Failed to save page" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to save page", 500);
     }
 
     // Mid-story image generation disabled to speed up page generation
@@ -669,7 +659,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
 
     console.log("Page generated successfully:", currentPage, "of", targetPages);
 
-    return new Response(JSON.stringify({
+    return jsonResponse({
       success: true,
       page_text: parsedContent.page_text,
       is_ending: parsedContent.is_ending || false,
@@ -679,19 +669,17 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       page_number: currentPage,
       total_pages: targetPages,
       image_url: pageImageUrl,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (error) {
     console.error("Edge function error:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error",
-      fallback: true,
-      page_text: "The story magic is taking a short nap. Try again in a moment."
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      {
+        error: { message: error instanceof Error ? error.message : "Unknown error" },
+        fallback: true,
+        page_text: "The story magic is taking a short nap. Try again in a moment.",
+      },
+      500,
+    );
   }
 });

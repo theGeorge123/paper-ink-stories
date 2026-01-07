@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/hooks/useLanguage';
-import { fetchDemoSession, getOrCreateDemoId } from '@/lib/demoStorage';
+import { clearDemoId, fetchDemoSession, getOrCreateDemoId } from '@/lib/demoStorage';
 import { toast } from 'sonner';
 
 // Page turn animation variants - same as Reader.tsx
@@ -106,6 +106,7 @@ export default function DemoReader() {
       } catch (error) {
         console.error('Failed to load demo story', error);
         toast.error('Unable to load the demo story. Please try again.');
+        clearDemoId();
       } finally {
         setLoading(false);
       }
@@ -142,7 +143,10 @@ export default function DemoReader() {
   // End screen - same style as SleepWellScreen
   if (showEndScreen) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center">
+      <div
+        id="main-content"
+        className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center"
+      >
         {/* Stars background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {[...Array(50)].map((_, i) => (
@@ -190,7 +194,10 @@ export default function DemoReader() {
               Create your own personalized characters and unlock infinite bedtime adventures that grow with your child.
             </p>
             <Button
-              onClick={() => navigate("/auth")}
+              onClick={() => {
+                clearDemoId();
+                navigate("/auth");
+              }}
               size="lg"
               className="w-full mb-3"
             >
@@ -215,7 +222,7 @@ export default function DemoReader() {
       {/* Header - same as real Reader */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
         <motion.div whileTap={{ scale: 0.95 }}>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Back to home">
             <Home className="w-5 h-5" />
           </Button>
         </motion.div>
@@ -249,7 +256,7 @@ export default function DemoReader() {
       </header>
 
       {/* Scrollable reading area - same as real Reader */}
-      <main className="flex-1 overflow-y-auto px-6 pb-12">
+      <main id="main-content" className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {currentPageIndex === 0 && (
             <motion.h1
