@@ -1,11 +1,8 @@
-import { supabase } from '@/integrations/supabase/client';
 import { trackDemoEvent } from '@/lib/performance';
 
 const DEMO_COOKIE_NAME = 'pi_demo_id';
-const DEMO_COOKIE_DAYS = 90;
-const DEMO_SAVE_TIMEOUT_MS = 4000;
-const DEMO_SAVE_MAX_RETRIES = 3;
-const DEMO_SAVE_INITIAL_BACKOFF_MS = 400;
+const DEMO_COOKIE_DAYS = 7;
+const DEMO_STORAGE_PREFIX = 'paper-ink-demo';
 
 export interface DemoHeroInput {
   heroName: string;
@@ -17,63 +14,36 @@ export interface DemoHeroInput {
   sidekickArchetype?: string | null;
 }
 
-export interface DemoEpisodeRecord {
-  id: string;
-  episodeNumber: number;
+export type DemoAnswers = {
+  level1: string;
+  level2: string;
+  level3: string;
+};
+
+export type DemoStoryContext = {
+  lastSummary: string;
+  topTags: string[];
+  storiesUsed: number;
+};
+
+export type DemoStoryRecord = {
+  storyTitle: string;
   storyText: string;
   episodeSummary: string;
-  choices: Record<string, string>;
+  choices: DemoAnswers;
   tagsUsed: string[];
+  readingTimeMinutes: number;
   createdAt: string;
-}
-
-export interface DemoProfile {
-  id: string;
-  storiesUsed: number;
-}
-
-export interface DemoSession {
-  profile: DemoProfile;
-  hero: DemoHeroInput | null;
-  lastEpisode: DemoEpisodeRecord | null;
-  topTags: string[];
-}
+};
 
 interface DemoCookieSchema {
   demoId: string;
   createdAt: string;
-}
-
-interface DemoHeroRecord {
-  hero_name: string;
-  hero_type: string;
-  hero_trait: string;
-  comfort_item: string;
-  age_band: string;
-  sidekick_name?: string | null;
-  sidekick_archetype?: string | null;
-}
-
-interface DemoEpisodeRecordResponse {
-  id: string;
-  episode_number: number;
-  story_text: string;
-  episode_summary: string;
-  choices_json?: Record<string, string> | null;
-  tags_used?: string[] | null;
-  created_at: string;
-}
-
-interface DemoProfileRecord {
-  id: string;
-  stories_used?: number | null;
-}
-
-interface DemoSessionResponse {
-  profile?: DemoProfileRecord | null;
-  hero?: DemoHeroRecord | null;
-  last_episode?: DemoEpisodeRecordResponse | null;
-  top_tags?: string[] | null;
+  hero?: DemoHeroInput | null;
+  answers?: DemoAnswers | null;
+  lastSummary?: string | null;
+  tagCounts?: Record<string, number> | null;
+  storiesUsed?: number | null;
 }
 
 const DEMO_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -87,6 +57,13 @@ const readCookie = (name: string): string | null => {
   if (!match) return null;
   return decodeURIComponent(match.split('=').slice(1).join('='));
 };
+
+const getStorage = () => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage;
+};
+
+const storageKey = (demoId: string, suffix: string) => `${DEMO_STORAGE_PREFIX}:${demoId}:${suffix}`;
 
 const writeCookie = (name: string, value: string, days: number): void => {
   if (typeof document === 'undefined') return;
@@ -123,102 +100,58 @@ const parseDemoCookie = (rawValue: string): DemoCookieSchema | null => {
   return null;
 };
 
-const serializeDemoCookie = (demoId: string): string => {
-  const payload: DemoCookieSchema = { demoId, createdAt: new Date().toISOString() };
-  return JSON.stringify(payload);
+const serializeDemoCookie = (payload: DemoCookieSchema): string => JSON.stringify(payload);
+
+const readDemoSession = (): DemoCookieSchema | null => {
+  const rawValue = readCookie(DEMO_COOKIE_NAME);
+  if (!rawValue) return null;
+  return parseDemoCookie(rawValue);
 };
 
-const sleep = (durationMs: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, durationMs));
-
-export type DemoSaveHeroErrorCode = 'timeout' | 'network' | 'cors' | 'server' | 'validation' | 'unknown';
-
-export class DemoSaveHeroError extends Error {
-  code: DemoSaveHeroErrorCode;
-  retryable: boolean;
-  details?: string;
-
-  constructor(code: DemoSaveHeroErrorCode, message: string, retryable = false, details?: string) {
-    super(message);
-    this.code = code;
-    this.retryable = retryable;
-    this.details = details;
-  }
-}
-
-const normalizeSaveError = (error: unknown): DemoSaveHeroError => {
-  if (error instanceof DemoSaveHeroError) {
-    return error;
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-  const lowerMessage = message.toLowerCase();
-
-  if (error instanceof DOMException && error.name === 'AbortError') {
-    return new DemoSaveHeroError('timeout', 'Request timed out.', true);
-  }
-
-  if (lowerMessage.includes('timeout')) {
-    return new DemoSaveHeroError('timeout', 'Request timed out.', true);
-  }
-
-  if (lowerMessage.includes('failed to fetch') || lowerMessage.includes('network')) {
-    return new DemoSaveHeroError('network', 'Network error while saving.', true);
-  }
-
-  if (lowerMessage.includes('cors')) {
-    return new DemoSaveHeroError('cors', 'Blocked by CORS policy.', true);
-  }
-
-  const status = (error as { status?: number })?.status;
-  if (typeof status === 'number' && status >= 500) {
-    return new DemoSaveHeroError('server', 'Server error while saving.', true);
-  }
-
-  if (lowerMessage.includes('invalid') || lowerMessage.includes('validation')) {
-    return new DemoSaveHeroError('validation', message);
-  }
-
-  return new DemoSaveHeroError('unknown', message || 'Unknown error');
+const ensureDemoSession = (): DemoCookieSchema => {
+  const existing = readDemoSession();
+  if (existing) return existing;
+  const session = { demoId: createDemoId(), createdAt: new Date().toISOString() };
+  writeCookie(DEMO_COOKIE_NAME, serializeDemoCookie(session), DEMO_COOKIE_DAYS);
+  return session;
 };
 
-const warnIfCookieMissing = (demoId: string): void => {
-  const cookie = readCookie(DEMO_COOKIE_NAME);
-  if (!cookie) {
-    console.warn('[demoStorage] Demo cookie missing while saving hero.', { demoId });
+const writeDemoSession = (payload: DemoCookieSchema): void => {
+  writeCookie(DEMO_COOKIE_NAME, serializeDemoCookie(payload), DEMO_COOKIE_DAYS);
+};
+
+const safeParse = <T>(value: string | null, fallback: T): T => {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+};
+
+const readDemoStory = (demoId: string): DemoStoryRecord | null => {
+  const storage = getStorage();
+  if (!storage) return null;
+  return safeParse<DemoStoryRecord | null>(storage.getItem(storageKey(demoId, 'story')), null);
+};
+
+const writeDemoStory = (demoId: string, story: DemoStoryRecord | null): void => {
+  const storage = getStorage();
+  if (!storage) return;
+  const key = storageKey(demoId, 'story');
+  if (!story) {
+    storage.removeItem(key);
     return;
   }
-
-  const parsed = parseDemoCookie(cookie);
-  if (!parsed) {
-    console.warn('[demoStorage] Demo cookie invalid while saving hero.', { demoId, cookie });
-  }
+  storage.setItem(key, JSON.stringify(story));
 };
 
-const invokeDemoSaveHero = async (
-  demoId: string,
-  hero: DemoHeroInput,
-  timeoutMs: number,
-): Promise<{ data: unknown; error: unknown; durationMs: number }> => {
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-  const start = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  const timeoutId =
-    controller && typeof window !== 'undefined'
-      ? window.setTimeout(() => controller.abort(), timeoutMs)
-      : null;
-
-  try {
-    const { data, error } = await supabase.functions.invoke('demo-save-hero', {
-      body: { demoId, hero },
-      signal: controller?.signal,
-    });
-    const end = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    return { data, error, durationMs: end - start };
-  } finally {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId);
-    }
-  }
+const getTopTagsFromCounts = (counts?: Record<string, number> | null, limit = 5): string[] => {
+  if (!counts) return [];
+  return Object.entries(counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit)
+    .map(([tag]) => tag);
 };
 
 /**
@@ -226,31 +159,18 @@ const invokeDemoSaveHero = async (
  */
 export const getOrCreateDemoId = (): string => {
   try {
-    const existing = readCookie(DEMO_COOKIE_NAME);
-    if (existing) {
-      const parsed = parseDemoCookie(existing);
-      if (parsed) return parsed.demoId;
-      clearCookie(DEMO_COOKIE_NAME);
-    }
-    const demoId = createDemoId();
-    writeCookie(DEMO_COOKIE_NAME, serializeDemoCookie(demoId), DEMO_COOKIE_DAYS);
-    const verifyCookie = readCookie(DEMO_COOKIE_NAME);
-    if (!verifyCookie) {
-      console.warn('[demoStorage] Demo cookie failed to persist.');
-    }
-    return demoId;
+    const session = ensureDemoSession();
+    return session.demoId;
   } catch (error) {
-    console.error('[demoStorage] Function failed:', error);
+    console.error('[demoStorage] Failed to ensure demo session:', error);
     return createDemoId();
   }
 };
 
 export const getDemoIdFromCookie = (): string | null => {
   try {
-    const existing = readCookie(DEMO_COOKIE_NAME);
-    if (!existing) return null;
-    const parsed = parseDemoCookie(existing);
-    return parsed?.demoId ?? null;
+    const session = readDemoSession();
+    return session?.demoId ?? null;
   } catch (error) {
     console.error('[demoStorage] Failed to read demo cookie:', error);
     return null;
@@ -266,131 +186,80 @@ export const buildDemoRoute = (path: string): string => {
  * Clear the demo id cookie.
  */
 export const clearDemoId = (): void => {
+  const session = readDemoSession();
+  if (session?.demoId) {
+    writeDemoStory(session.demoId, null);
+  }
   clearCookie(DEMO_COOKIE_NAME);
 };
 
-const mapDemoHero = (hero?: DemoHeroRecord | null): DemoHeroInput | null => {
-  if (!hero || !hero.hero_name || !hero.hero_type || !hero.hero_trait || !hero.comfort_item || !hero.age_band) {
-    return null;
-  }
+export const getDemoHero = (): DemoHeroInput | null => {
+  const session = readDemoSession();
+  return session?.hero ?? null;
+};
 
+export const saveDemoHero = (hero: DemoHeroInput): void => {
+  const session = ensureDemoSession();
+  const payload: DemoCookieSchema = {
+    ...session,
+    hero,
+    answers: null,
+    lastSummary: null,
+    tagCounts: null,
+    storiesUsed: 0,
+  };
+  writeDemoSession(payload);
+  writeDemoStory(payload.demoId, null);
+  trackDemoEvent('demo_save_hero_success', { demoId: payload.demoId });
+};
+
+export const getDemoAnswers = (): DemoAnswers | null => {
+  const session = readDemoSession();
+  return session?.answers ?? null;
+};
+
+export const saveDemoAnswers = (answers: DemoAnswers): void => {
+  const session = ensureDemoSession();
+  const payload: DemoCookieSchema = {
+    ...session,
+    answers,
+  };
+  writeDemoSession(payload);
+};
+
+export const getDemoStory = (): DemoStoryRecord | null => {
+  const session = readDemoSession();
+  if (!session?.demoId) return null;
+  return readDemoStory(session.demoId);
+};
+
+export const saveDemoStory = (story: DemoStoryRecord): void => {
+  const session = ensureDemoSession();
+  writeDemoStory(session.demoId, story);
+};
+
+export const getDemoStoryContext = (): DemoStoryContext => {
+  const session = readDemoSession();
   return {
-    heroName: hero.hero_name,
-    heroType: hero.hero_type,
-    heroTrait: hero.hero_trait,
-    comfortItem: hero.comfort_item,
-    ageBand: hero.age_band,
-    sidekickName: hero.sidekick_name ?? null,
-    sidekickArchetype: hero.sidekick_archetype ?? null,
+    lastSummary: session?.lastSummary || 'None (first episode).',
+    topTags: getTopTagsFromCounts(session?.tagCounts, 5),
+    storiesUsed: session?.storiesUsed ?? 0,
   };
 };
 
-const mapDemoEpisode = (episode?: DemoEpisodeRecordResponse | null): DemoEpisodeRecord | null => {
-  if (!episode || !episode.id || !episode.story_text || !episode.episode_summary || !episode.created_at) {
-    return null;
-  }
-
-  return {
-    id: episode.id,
-    episodeNumber: episode.episode_number,
-    storyText: episode.story_text,
-    episodeSummary: episode.episode_summary,
-    choices: episode.choices_json ?? {},
-    tagsUsed: episode.tags_used ?? [],
-    createdAt: episode.created_at,
-  };
-};
-
-/**
- * Fetch the latest demo session data for a demo id.
- */
-export const fetchDemoSession = async (demoId: string): Promise<DemoSession> => {
-  const { data, error } = await supabase.functions.invoke('demo-session', {
-    body: { demoId },
+export const saveDemoStoryMemory = (summary: string, tagsUsed: string[]): void => {
+  const session = ensureDemoSession();
+  const nextCounts: Record<string, number> = { ...(session.tagCounts ?? {}) };
+  tagsUsed.forEach((tag) => {
+    nextCounts[tag] = (nextCounts[tag] ?? 0) + 1;
   });
 
-  if (error || !data) {
-    throw error || new Error('Failed to load demo session');
-  }
-
-  const response = data as DemoSessionResponse;
-
-  return {
-    profile: {
-      id: response.profile?.id ?? demoId,
-      storiesUsed: response.profile?.stories_used ?? 0,
-    },
-    hero: mapDemoHero(response.hero),
-    lastEpisode: mapDemoEpisode(response.last_episode),
-    topTags: Array.isArray(response.top_tags) ? response.top_tags : [],
+  const payload: DemoCookieSchema = {
+    ...session,
+    lastSummary: summary,
+    tagCounts: nextCounts,
+    storiesUsed: (session.storiesUsed ?? 0) + 1,
   };
-};
 
-/**
- * Fetch the demo hero data for a demo session.
- */
-export const getDemoHero = async (demoId: string): Promise<DemoHeroInput | null> => {
-  try {
-    const session = await fetchDemoSession(demoId);
-    return session.hero ?? null;
-  } catch (error) {
-    console.error('[demoStorage] Function failed:', error);
-    return null;
-  }
-};
-
-/**
- * Save demo hero data for a demo session.
- */
-export const saveDemoHero = async (demoId: string, hero: DemoHeroInput): Promise<void> => {
-  warnIfCookieMissing(demoId);
-  trackDemoEvent('demo_save_hero_started', { demoId });
-
-  let delayMs = DEMO_SAVE_INITIAL_BACKOFF_MS;
-
-  for (let attempt = 1; attempt <= DEMO_SAVE_MAX_RETRIES; attempt += 1) {
-    try {
-      const { data, error, durationMs } = await invokeDemoSaveHero(demoId, hero, DEMO_SAVE_TIMEOUT_MS);
-      const responseData = data as { error?: string | { message?: string } } | null;
-
-      trackDemoEvent('demo_save_hero_response', {
-        demoId,
-        attempt,
-        durationMs,
-        success: !error && !responseData?.error,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (responseData?.error) {
-        const message = typeof responseData.error === 'string' ? responseData.error : responseData.error?.message;
-        throw new DemoSaveHeroError('server', message || 'Failed to save demo hero.');
-      }
-
-      trackDemoEvent('demo_save_hero_success', { demoId, attempt, durationMs });
-      return;
-    } catch (error) {
-      const normalizedError = normalizeSaveError(error);
-      console.error('[demoStorage] Demo save hero attempt failed', {
-        attempt,
-        code: normalizedError.code,
-        message: normalizedError.message,
-      });
-      trackDemoEvent('demo_save_hero_failed', {
-        demoId,
-        attempt,
-        code: normalizedError.code,
-        message: normalizedError.message,
-      });
-
-      if (attempt < DEMO_SAVE_MAX_RETRIES && normalizedError.retryable) {
-        await sleep(delayMs);
-        delayMs *= 2;
-        continue;
-      }
-      throw normalizedError;
-    }
-  }
+  writeDemoSession(payload);
 };
