@@ -245,6 +245,7 @@ export default function DemoReader() {
                   onClick={() => setTheme(option.key)}
                   className="h-8 px-3"
                   aria-pressed={theme === option.key}
+                  aria-label={t('readerThemeLabel', { theme: option.label })}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="ml-1 hidden md:inline">{option.label}</span>
@@ -309,14 +310,14 @@ export default function DemoReader() {
               onClick={handleTapLeft}
               disabled={isFirstPage}
               className="flex-1 flex items-center justify-center touch-manipulation disabled:opacity-30"
-              aria-label="Previous page"
+              aria-label={t('readerPreviousPage')}
             >
               <ChevronLeft className={`w-8 h-8 ${activeTheme.muted}`} />
             </button>
             <button
               onClick={handleTapRight}
               className="flex-1 flex items-center justify-center touch-manipulation"
-              aria-label={isLastPage ? 'Finish story' : 'Next page'}
+              aria-label={isLastPage ? t('readerFinishStory') : t('readerNextPage')}
             >
               <ChevronRight className={`w-8 h-8 ${activeTheme.muted}`} />
             </button>

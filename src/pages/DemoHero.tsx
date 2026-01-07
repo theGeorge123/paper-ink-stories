@@ -163,7 +163,7 @@ export default function DemoHero() {
             <Sparkles className="w-3 h-3 text-primary" />
             <span className="text-xs font-medium text-primary">{t('demoStoryLabel')}</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="list" aria-label={t('demoStepIndicatorLabel')}>
             {[1, 2, 3, 4].map((s) => (
               <motion.div 
                 key={s} 
@@ -171,6 +171,9 @@ export default function DemoHero() {
                   s === step ? 'w-8 bg-primary' : s < step ? 'w-2 bg-primary/60' : 'w-2 bg-muted'
                 }`}
                 layoutId={`step-${s}`}
+                role="listitem"
+                aria-current={s === step ? 'step' : undefined}
+                aria-label={t('demoStepLabel', { step: s, total: 4 })}
               />
             ))}
           </div>

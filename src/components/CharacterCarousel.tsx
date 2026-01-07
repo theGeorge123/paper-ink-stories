@@ -508,6 +508,9 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
             shouldVirtualize ? 'max-h-[calc(100vh-240px)] overflow-y-auto pr-1 scrollbar-thin' : ''
           }`}
           style={shouldVirtualize ? { paddingTop: paddingStart, paddingBottom: paddingEnd } : undefined}
+          role="region"
+          aria-label={t('characterCarouselLabel')}
+          tabIndex={0}
         >
           {visibleCharacters.map((character) => (
             <MobileCharacterCard key={character.id} character={character} />
@@ -520,6 +523,9 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
             ref={containerRef}
             className="flex gap-6 overflow-x-auto pb-4 px-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
             style={shouldVirtualize ? { paddingLeft: paddingStart, paddingRight: paddingEnd } : undefined}
+            role="region"
+            aria-label={t('characterCarouselLabel')}
+            tabIndex={0}
           >
             {visibleCharacters.map((character, index) => (
               <DesktopCharacterCard
