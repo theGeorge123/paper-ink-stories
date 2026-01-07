@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
+import { getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { toast } from 'sonner';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight', color: 'from-blue-400/20 to-blue-600/20', glow: 'shadow-blue-500/30' },
@@ -64,6 +66,7 @@ export default function DemoHero() {
   const [traits, setTraits] = useState<string[]>([]);
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
+  const [saving, setSaving] = useState(false);
   const { t } = useLanguage();
   const navigate = useNavigate();
 
@@ -75,9 +78,28 @@ export default function DemoHero() {
     }
   };
 
-  const handleStartDemo = () => {
-    // Just navigate to demo story - no saving
-    navigate('/demo');
+  const handleStartDemo = async () => {
+    const demoId = getOrCreateDemoId();
+    if (!demoId) return;
+
+    setSaving(true);
+    try {
+      await saveDemoHero(demoId, {
+        heroName: name.trim(),
+        heroType: selectedArchetype?.label ?? archetype,
+        heroTrait: traits[0] ?? 'Kind',
+        comfortItem: 'blanket',
+        ageBand,
+        sidekickName: sidekickName.trim() || null,
+        sidekickArchetype: sidekickArchetype || null,
+      });
+      navigate('/demo-questions');
+    } catch (error) {
+      console.error('Failed to start demo', error);
+      toast.error('Unable to start the demo right now. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const goToStep = (newStep: number) => {
@@ -410,9 +432,10 @@ export default function DemoHero() {
                   onClick={handleStartDemo}
                   size="lg"
                   className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary/30"
+                  disabled={saving}
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  Start Demo Story
+                  {saving ? 'Starting demo...' : 'Start Demo Story'}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

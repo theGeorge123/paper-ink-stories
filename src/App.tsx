@@ -15,6 +15,7 @@ import CreateQuestions from "./pages/CreateQuestions";
 import Reader from "./pages/Reader";
 import ReadEpisode from "./pages/ReadEpisode";
 import DemoHero from "./pages/DemoHero";
+import DemoQuestions from "./pages/DemoQuestions";
 import DemoReader from "./pages/DemoReader";
 import About from "./pages/About";
 import Support from "./pages/Support";
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/read" element={<ReadEpisode />} />
                 <Route path="/read/:storyId" element={<Reader />} />
                 <Route path="/demo-hero" element={<DemoHero />} />
+                <Route path="/demo-questions" element={<DemoQuestions />} />
                 <Route path="/demo" element={<DemoReader />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/support" element={<Support />} />
