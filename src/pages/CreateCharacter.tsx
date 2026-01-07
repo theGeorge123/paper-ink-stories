@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Moon, Sun, Heart, Zap, TreePine } from 'lucide-react';
@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
+import { loadProfileId, saveHero } from '@/lib/storyMemory';
 import { toast } from 'sonner';
 
 const ARCHETYPES = [
@@ -27,6 +28,7 @@ const ARCHETYPES = [
 ];
 
 const TRAITS = ['Brave', 'Curious', 'Funny', 'Kind', 'Clever', 'Creative', 'Adventurous', 'Gentle'];
+const COMFORT_ITEMS = ['Blanket', 'Lantern', 'Teddy', 'Pillow', 'Little Backpack'];
 
 type AgeBandOption = {
   id: string;
@@ -65,6 +67,7 @@ export default function CreateCharacter() {
   const [archetype, setArchetype] = useState('');
   const [ageBand, setAgeBand] = useState('6-8');
   const [traits, setTraits] = useState<string[]>([]);
+  const [comfortItem, setComfortItem] = useState('');
   const [sidekickName, setSidekickName] = useState('');
   const [sidekickArchetype, setSidekickArchetype] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,6 +77,7 @@ export default function CreateCharacter() {
   const { user, session, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const profileId = useMemo(() => loadProfileId(), []);
 
   const toggleTrait = (trait: string) => {
     if (traits.includes(trait)) {
@@ -178,9 +182,25 @@ export default function CreateCharacter() {
       }
 
       if (data?.character?.id) {
+        const heroTypeLabel = selectedArchetype?.label || archetype;
+        saveHero(profileId, {
+          heroName: name.trim(),
+          heroType: heroTypeLabel,
+          heroTrait: traits[0] || 'Kind',
+          comfortItem,
+          supabaseCharacterId: data.character.id,
+        });
         toast.success(`${name} is ready for adventure! Het portret wordt nu gemaakt...`);
         await pollForPortrait(data.character.id);
       } else {
+        const heroTypeLabel = selectedArchetype?.label || archetype;
+        saveHero(profileId, {
+          heroName: name.trim(),
+          heroType: heroTypeLabel,
+          heroTrait: traits[0] || 'Kind',
+          comfortItem,
+          supabaseCharacterId: createdCharacterId,
+        });
         toast.success(`${name} is ready for adventure!`);
         navigate('/dashboard');
       }
@@ -197,7 +217,7 @@ export default function CreateCharacter() {
     setStep(newStep);
   };
 
-  const canProceed = step === 1 ? name.trim().length > 0 : step === 2 ? archetype && ageBand : step === 3 ? traits.length > 0 : !authLoading && !!session;
+  const canProceed = step === 1 ? name.trim().length > 0 : step === 2 ? archetype && ageBand : step === 3 ? traits.length > 0 && comfortItem : !authLoading && !!session;
 
   const selectedArchetype = ARCHETYPES.find(a => a.id === archetype);
 
@@ -454,6 +474,38 @@ export default function CreateCharacter() {
                   </p>
                 </motion.div>
               )}
+
+              <div className="space-y-4 pt-4">
+                <p className="text-center text-muted-foreground">
+                  {language === 'nl'
+                    ? 'Kies een knuffelitem voor bedtijd'
+                    : language === 'sv'
+                    ? 'Välj ett trygghetsföremål för läggdags'
+                    : 'Choose a comfort item for bedtime'}
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {COMFORT_ITEMS.map((item) => {
+                    const isSelected = comfortItem === item;
+                    return (
+                      <motion.button
+                        key={item}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setComfortItem(item)}
+                        className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
+                          isSelected
+                            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                      >
+                        {item}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
             </motion.div>
           )}
 
