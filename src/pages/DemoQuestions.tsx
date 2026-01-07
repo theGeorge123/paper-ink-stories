@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
+import { trackDemoEvent } from '@/lib/performance';
 import {
   createThreeLevelQuestions,
   generateQuestionsContext,
@@ -13,6 +14,7 @@ import {
 } from '@/lib/questions';
 import {
   type DemoHeroInput,
+  buildDemoRoute,
   fetchDemoSession,
   getOrCreateDemoId,
 } from '@/lib/demoStorage';
@@ -53,7 +55,7 @@ export default function DemoQuestions() {
         setLimitReached(session.profile.storiesUsed >= DEMO_STORY_LIMIT);
 
         if (!session.hero) {
-          navigate('/demo-hero');
+          navigate(buildDemoRoute('/demo-hero'));
           return;
         }
         fallbackHero = session.hero;
@@ -160,6 +162,7 @@ export default function DemoQuestions() {
 
   const handleSelect = (level: 1 | 2 | 3, optionLabel: string) => {
     setSelections((prev) => ({ ...prev, [`level${level}`]: optionLabel }));
+    trackDemoEvent('demo_question_selected', { demoId, level, option: optionLabel });
     if (level < 3) {
       setCurrentLevel((level + 1) as 1 | 2 | 3);
     }
@@ -244,7 +247,8 @@ export default function DemoQuestions() {
         setLimitReached(data.stories_used >= DEMO_STORY_LIMIT);
       }
 
-      navigate('/demo-reader');
+      trackDemoEvent('demo_story_generated', { demoId });
+      navigate(buildDemoRoute('/demo-reader'));
     } catch (error) {
       console.error('Failed to generate story', error);
       toast.error(
@@ -335,7 +339,7 @@ export default function DemoQuestions() {
         </section>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button variant="ghost" onClick={() => navigate('/demo-hero')}>
+          <Button variant="ghost" onClick={() => navigate(buildDemoRoute('/demo-hero'))}>
             {language === 'nl' ? 'Held aanpassen' : language === 'sv' ? 'Redigera hjälten' : 'Edit hero'}
           </Button>
           <Button
