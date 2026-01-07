@@ -23,7 +23,10 @@ export default function ReadEpisode() {
 
   if (!episode) {
     return (
-      <div className="min-h-screen bg-background paper-texture flex items-center justify-center px-6">
+      <main
+        id="main-content"
+        className="min-h-screen bg-background paper-texture flex items-center justify-center px-6"
+      >
         <div className="max-w-lg text-center space-y-4">
           <h1 className="text-3xl font-serif font-semibold text-foreground">
             {language === 'nl' ? 'Nog geen verhaal' : language === 'sv' ? 'Ingen berättelse ännu' : 'No story yet'}
@@ -43,13 +46,13 @@ export default function ReadEpisode() {
               : 'Start tonight’s story'}
           </Button>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
     <div className="min-h-screen bg-background paper-texture">
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main id="main-content" className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <header className="space-y-3">
           <p className="text-sm text-muted-foreground">
             {language === 'nl'
@@ -97,7 +100,7 @@ export default function ReadEpisode() {
             {language === 'nl' ? 'Held aanpassen' : language === 'sv' ? 'Redigera hjälten' : 'Edit hero'}
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

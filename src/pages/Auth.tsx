@@ -51,7 +51,10 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background paper-texture flex items-center justify-center p-6">
+    <main
+      id="main-content"
+      className="min-h-screen bg-background paper-texture flex items-center justify-center p-6"
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,6 +143,6 @@ export default function Auth() {
           </button>
         </p>
       </motion.div>
-    </div>
+    </main>
   );
 }

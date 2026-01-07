@@ -8,6 +8,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 // Input validation schemas
 const uuidSchema = z.string().uuid();
 const getImageUrlSchema = z.object({
@@ -49,10 +58,7 @@ serve(async (req) => {
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse("Unauthorized", 401);
   }
 
   const supabase = createClient(supabaseUrl, anonKey, {
@@ -62,10 +68,7 @@ serve(async (req) => {
 
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse("Unauthorized", 401);
   }
 
   // Parse and validate input
@@ -74,13 +77,11 @@ serve(async (req) => {
   
   if (!parseResult.success) {
     console.error("Validation error:", parseResult.error.errors);
-    return new Response(JSON.stringify({ 
-      error: "Invalid input", 
-      details: parseResult.error.errors.map(e => e.message).join(", ")
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Invalid input",
+      400,
+      parseResult.error.errors.map((e) => e.message).join(", "),
+    );
   }
 
   const { heroId, heroIds, storyId, pageNumber } = parseResult.data;
@@ -96,10 +97,7 @@ serve(async (req) => {
 
       if (charsError) {
         console.error("Batch character fetch error:", charsError);
-        return new Response(JSON.stringify({ error: "Failed to fetch characters" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Failed to fetch characters", 500);
       }
 
       // Filter to only characters owned by this user
@@ -119,9 +117,7 @@ serve(async (req) => {
         })
       );
 
-      return new Response(JSON.stringify({ urls: results }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ urls: results });
     }
 
     // SINGLE MODE: Original behavior for single heroId
@@ -133,17 +129,12 @@ serve(async (req) => {
         .single();
 
       if (characterError || !character || character.user_id !== user.id) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Forbidden", 403);
       }
 
       const storagePath = `${user.id}/${heroId}.png`;
       const signedUrl = await signUrl(admin, "hero-portraits", storagePath);
-      return new Response(JSON.stringify({ signedUrl, storagePath }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ signedUrl, storagePath });
     }
 
     if (storyId && pageNumber) {
@@ -154,10 +145,7 @@ serve(async (req) => {
         .single();
 
       if (storyError || !story) {
-        return new Response(JSON.stringify({ error: "Story not found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Story not found", 404);
       }
 
       const { data: character } = await supabase
@@ -167,28 +155,21 @@ serve(async (req) => {
         .single();
 
       if (!character || character.user_id !== user.id) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return errorResponse("Forbidden", 403);
       }
 
       const storagePath = `${user.id}/${storyId}/page-${pageNumber}.png`;
       const signedUrl = await signUrl(admin, "story-images", storagePath);
-      return new Response(JSON.stringify({ signedUrl, storagePath }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ signedUrl, storagePath });
     }
 
-    return new Response(JSON.stringify({ error: "Invalid request" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse("Invalid request", 400);
   } catch (error) {
     console.error("get-image-url error", error);
-    return new Response(JSON.stringify({ error: "Failed to resolve image" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Failed to resolve image",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });

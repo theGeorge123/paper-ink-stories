@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Language } from "@/lib/i18n";
 
 const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className?: string }) => (
@@ -129,7 +129,10 @@ export default function Landing() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <main
+        id="main-content"
+        className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20"
+      >
         {/* Background glow */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
@@ -201,7 +204,7 @@ export default function Landing() {
             <motion.div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
           </motion.div>
         </motion.div>
-      </section>
+      </main>
 
       {/* Value Props Section */}
       <section className="relative py-24 px-6">

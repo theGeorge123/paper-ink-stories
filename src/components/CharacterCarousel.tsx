@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
@@ -41,6 +41,11 @@ const ARCHETYPE_COLORS: Record<string, { bg: string; accent: string; glow: strin
   bunny: { bg: 'from-rose-100 to-rose-200/50', accent: 'text-rose-600', glow: 'shadow-rose-400/40' },
   bear: { bg: 'from-yellow-100 to-yellow-200/50', accent: 'text-yellow-600', glow: 'shadow-yellow-400/40' },
 };
+
+const DESKTOP_ITEM_WIDTH = 320;
+const DESKTOP_ITEM_GAP = 24;
+const DESKTOP_ITEM_SIZE = DESKTOP_ITEM_WIDTH + DESKTOP_ITEM_GAP;
+const MOBILE_ITEM_HEIGHT = 240;
 
 function HeroPortrait({
   character,
@@ -95,6 +100,8 @@ function HeroPortrait({
         src={imageUrl}
         alt={character.name}
         className="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
         onLoad={() => setLoading(false)}
         onError={() => {
           setLoading(false);
@@ -123,7 +130,7 @@ interface CharacterCarouselProps {
   onCharacterUpdated?: () => void;
 }
 
-export default function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
+const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLengthModal, setShowLengthModal] = useState(false);
@@ -134,6 +141,58 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
   const { t } = useLanguage();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const shouldVirtualize = characters.length > 10;
+  const [visibleRange, setVisibleRange] = useState({
+    start: 0,
+    end: characters.length,
+  });
+
+  useEffect(() => {
+    if (!shouldVirtualize) {
+      setVisibleRange({ start: 0, end: characters.length });
+      return;
+    }
+
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateRange = () => {
+      const itemSize = isMobile ? MOBILE_ITEM_HEIGHT : DESKTOP_ITEM_SIZE;
+      const scrollOffset = isMobile ? container.scrollTop : container.scrollLeft;
+      const viewportSize = isMobile ? container.clientHeight : container.clientWidth;
+      const buffer = 2;
+      const start = Math.max(0, Math.floor(scrollOffset / itemSize) - buffer);
+      const visibleCount = Math.ceil(viewportSize / itemSize) + buffer * 2;
+      const end = Math.min(characters.length, start + visibleCount);
+
+      setVisibleRange((prev) =>
+        prev.start === start && prev.end === end ? prev : { start, end },
+      );
+    };
+
+    updateRange();
+    container.addEventListener('scroll', updateRange, { passive: true });
+    window.addEventListener('resize', updateRange);
+
+    return () => {
+      container.removeEventListener('scroll', updateRange);
+      window.removeEventListener('resize', updateRange);
+    };
+  }, [characters.length, isMobile, shouldVirtualize]);
+
+  const { visibleCharacters, paddingStart, paddingEnd } = useMemo(() => {
+    if (!shouldVirtualize) {
+      return { visibleCharacters: characters, paddingStart: 0, paddingEnd: 0 };
+    }
+
+    const itemSize = isMobile ? MOBILE_ITEM_HEIGHT : DESKTOP_ITEM_SIZE;
+    return {
+      visibleCharacters: characters.slice(visibleRange.start, visibleRange.end),
+      paddingStart: visibleRange.start * itemSize,
+      paddingEnd: (characters.length - visibleRange.end) * itemSize,
+    };
+  }, [characters, isMobile, shouldVirtualize, visibleRange]);
 
   // Batch fetch all hero portrait URLs - pass character objects to use existing signed URLs
   const charactersForUrls = useMemo(() => 
@@ -233,9 +292,7 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   // Mobile compact card component
   const MobileCharacterCard = ({ character }: { character: Character }) => {
-    const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
     const activeStory = character.stories?.find((s) => s.is_active);
-    const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
     const isLoading = loadingCharacterId === character.id;
 
     return (
@@ -323,7 +380,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
 
   // Desktop book-style card
   const DesktopCharacterCard = ({ character, index }: { character: Character; index: number }) => {
-    const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
     const activeStory = character.stories?.find((s) => s.is_active);
     const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
     const isLoading = loadingCharacterId === character.id;
@@ -446,17 +502,31 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
     <>
       {/* Mobile: Stacked list layout */}
       {isMobile ? (
-        <div className="flex flex-col gap-4 px-1">
-          {characters.map((character) => (
+        <div
+          ref={containerRef}
+          className={`flex flex-col gap-4 px-1 ${
+            shouldVirtualize ? 'max-h-[calc(100vh-240px)] overflow-y-auto pr-1 scrollbar-thin' : ''
+          }`}
+          style={shouldVirtualize ? { paddingTop: paddingStart, paddingBottom: paddingEnd } : undefined}
+        >
+          {visibleCharacters.map((character) => (
             <MobileCharacterCard key={character.id} character={character} />
           ))}
         </div>
       ) : (
         /* Desktop: Horizontal scroll with book cards */
         <div className="rounded-3xl border border-border/70 bg-gradient-to-b from-background via-background to-muted/40 p-6 shadow-inner">
-          <div className="flex gap-6 overflow-x-auto pb-4 px-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-            {characters.map((character, index) => (
-              <DesktopCharacterCard key={character.id} character={character} index={index} />
+          <div
+            ref={containerRef}
+            className="flex gap-6 overflow-x-auto pb-4 px-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+            style={shouldVirtualize ? { paddingLeft: paddingStart, paddingRight: paddingEnd } : undefined}
+          >
+            {visibleCharacters.map((character, index) => (
+              <DesktopCharacterCard
+                key={character.id}
+                character={character}
+                index={visibleRange.start + index}
+              />
             ))}
           </div>
         </div>
@@ -518,4 +588,6 @@ export default function CharacterCarousel({ characters, onCharacterUpdated }: Ch
       )}
     </>
   );
-}
+});
+
+export default CharacterCarousel;

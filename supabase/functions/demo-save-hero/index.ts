@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 const demoHeroSchema = z.object({
   demoId: z.string().uuid("Invalid demo ID format"),
   hero: z.object({
@@ -30,13 +39,11 @@ serve(async (req) => {
     const parseResult = demoHeroSchema.safeParse(rawInput);
 
     if (!parseResult.success) {
-      return new Response(JSON.stringify({
-        error: "Invalid input",
-        details: parseResult.error.errors.map((err) => err.message).join(", "),
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Invalid input",
+        400,
+        parseResult.error.errors.map((err) => err.message).join(", "),
+      );
     }
 
     const { demoId, hero } = parseResult.data;
@@ -44,10 +51,7 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return new Response(JSON.stringify({ error: "Missing configuration" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Missing configuration", 500);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
@@ -70,22 +74,16 @@ serve(async (req) => {
       }, { onConflict: "profile_id" });
 
     if (heroError) {
-      return new Response(JSON.stringify({ error: "Failed to save hero" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to save hero", 500);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true });
   } catch (error) {
     console.error("Demo save hero error:", error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : "Unknown error",
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Unexpected error",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });

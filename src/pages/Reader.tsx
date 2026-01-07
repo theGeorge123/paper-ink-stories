@@ -405,7 +405,12 @@ export default function Reader() {
       {/* Header */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
         <motion.div whileTap={{ scale: 0.95 }}>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/dashboard')}
+            aria-label="Back to dashboard"
+          >
             <Home className="w-5 h-5" />
           </Button>
         </motion.div>
@@ -448,7 +453,7 @@ export default function Reader() {
       </header>
 
       {/* Scrollable reading area */}
-      <main className="flex-1 overflow-y-auto px-6 pb-12">
+      <main id="main-content" className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {story?.title && currentPageIndex === 0 && (
             <motion.h1

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -113,7 +112,10 @@ export default function DemoQuestions() {
 
   if (limitReached) {
     return (
-      <div className="min-h-screen bg-background paper-texture flex items-center justify-center px-6">
+      <main
+        id="main-content"
+        className="min-h-screen bg-background paper-texture flex items-center justify-center px-6"
+      >
         <div className="max-w-lg text-center space-y-4">
           <h1 className="text-3xl font-serif font-semibold text-foreground">
             {language === 'nl'
@@ -142,7 +144,7 @@ export default function DemoQuestions() {
             </Button>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -213,10 +215,20 @@ export default function DemoQuestions() {
       });
 
       if (error) {
+        const errorBody = error.context?.json || error.context?.body || error.context || error;
+        const errorCode = errorBody?.error?.message || errorBody?.error || errorBody?.message;
+        if (errorCode === 'limit_reached') {
+          setLimitReached(true);
+          setStoriesRemaining(0);
+          return;
+        }
         throw error;
       }
 
-      if (data?.error === 'limit_reached') {
+      const dataError = data?.error as string | { message?: string } | undefined;
+      const dataErrorCode = typeof dataError === 'string' ? dataError : dataError?.message;
+
+      if (dataErrorCode === 'limit_reached') {
         setLimitReached(true);
         setStoriesRemaining(0);
         return;
@@ -251,7 +263,7 @@ export default function DemoQuestions() {
 
   return (
     <div className="min-h-screen bg-background paper-texture">
-      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main id="main-content" className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <header className="space-y-2">
           <p className="text-sm text-muted-foreground">
             {language === 'nl'
@@ -281,10 +293,12 @@ export default function DemoQuestions() {
 
         <section className="grid gap-4 sm:grid-cols-3">
           {currentQuestion.options.map((option) => (
-            <Card
+            <button
               key={option.id}
-              className="p-4 border border-border/60 hover:border-primary/60 cursor-pointer transition"
+              type="button"
+              className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 border-border/60 hover:border-primary/60 cursor-pointer transition text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => handleSelect(currentLevel, option.label)}
+              aria-label={option.label}
             >
               <div className="space-y-2">
                 <p className="font-medium text-foreground">{option.label}</p>
@@ -296,7 +310,7 @@ export default function DemoQuestions() {
                     : 'Tap to select'}
                 </p>
               </div>
-            </Card>
+            </button>
           ))}
         </section>
 
@@ -342,7 +356,7 @@ export default function DemoQuestions() {
               : 'Create tonight’s story'}
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

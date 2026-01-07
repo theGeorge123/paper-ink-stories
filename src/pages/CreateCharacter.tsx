@@ -153,8 +153,11 @@ export default function CreateCharacter() {
         
         // Try multiple paths where the error body might be
         const errorBody = error.context?.json || error.context?.body || error.context || error;
-        const errorMessage = errorBody?.message || error.message;
-        const isLimitError = errorBody?.error === 'limit_reached' || errorMessage?.includes('maximaal');
+        const errorMessage = errorBody?.message || errorBody?.error?.message || error.message;
+        const isLimitError =
+          errorBody?.error === 'limit_reached' ||
+          errorBody?.error?.message === 'limit_reached' ||
+          errorMessage?.includes('maximaal');
         
         if (isLimitError) {
           setLimitReached(true);
@@ -170,12 +173,19 @@ export default function CreateCharacter() {
       }
 
       if (data?.error) {
-        if (data.error === 'limit_reached') {
+        const errorValue = data.error as string | { message?: string; details?: string };
+        const errorCode = typeof errorValue === 'string' ? errorValue : errorValue?.message;
+        const errorMessage =
+          data.message ||
+          (typeof errorValue === 'string' ? errorValue : errorValue?.details) ||
+          'Something went wrong while creating your hero.';
+
+        if (errorCode === 'limit_reached') {
           setLimitReached(true);
-          setLimitMessage(data.message || 'Je kunt maximaal 7 heroes per week maken.');
-          toast.error(data.message);
+          setLimitMessage(errorMessage || 'Je kunt maximaal 7 heroes per week maken.');
+          toast.error(errorMessage);
         } else {
-          toast.error(data.message || data.error);
+          toast.error(errorMessage);
         }
         setLoading(false);
         return;
@@ -248,7 +258,7 @@ export default function CreateCharacter() {
         </div>
       </header>
 
-      <main className="px-6 pb-32 max-w-lg mx-auto">
+      <main id="main-content" className="px-6 pb-32 max-w-lg mx-auto">
         <AnimatePresence mode="wait" custom={direction}>
           {/* Step 1: Identity - Hero Name */}
           {step === 1 && (
@@ -290,6 +300,7 @@ export default function CreateCharacter() {
                   onChange={(e) => setName(e.target.value)}
                   className="h-16 text-xl text-center font-serif bg-card/50 border-2 border-border/50 focus:border-primary rounded-2xl"
                   autoFocus
+                  aria-label={t('heroNamePlaceholder')}
                 />
               </motion.div>
 
@@ -339,6 +350,9 @@ export default function CreateCharacter() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setArchetype(a.id)}
+                      type="button"
+                      aria-label={`${a.label} archetype`}
+                      aria-pressed={isSelected}
                       className={`relative aspect-square rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
                         isSelected 
                           ? `border-primary bg-gradient-to-br ${a.color} shadow-lg ${a.glow}` 
@@ -385,6 +399,9 @@ export default function CreateCharacter() {
                         whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setAgeBand(age.id)}
+                        type="button"
+                        aria-label={label}
+                        aria-pressed={isSelected}
                         className={`relative p-4 rounded-2xl border-2 transition-all duration-300 ${
                           isSelected
                             ? `border-primary bg-gradient-to-br ${age.theme} shadow-lg`
@@ -449,6 +466,9 @@ export default function CreateCharacter() {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => toggleTrait(trait)}
                       disabled={!isSelected && traits.length >= 3}
+                      type="button"
+                      aria-label={`Select trait ${trait}`}
+                      aria-pressed={isSelected}
                       className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
                         isSelected
                           ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
@@ -494,6 +514,9 @@ export default function CreateCharacter() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setComfortItem(item)}
+                        type="button"
+                        aria-label={`Select comfort item ${item}`}
+                        aria-pressed={isSelected}
                         className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
                           isSelected
                             ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
@@ -535,6 +558,7 @@ export default function CreateCharacter() {
                 value={sidekickName}
                 onChange={(e) => setSidekickName(e.target.value)}
                 className="h-14 text-lg text-center bg-card/50 border-2 border-border/50 focus:border-primary rounded-2xl"
+                aria-label={t('sidekickNamePlaceholder')}
               />
 
               {sidekickName && (
@@ -547,6 +571,9 @@ export default function CreateCharacter() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSidekickArchetype(a.id)}
+                        type="button"
+                        aria-label={`${a.label} sidekick`}
+                        aria-pressed={isSelected}
                         className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/10'

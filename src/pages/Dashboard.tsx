@@ -11,6 +11,7 @@ import CharacterCarousel from "@/components/CharacterCarousel";
 import SettingsMenu from "@/components/SettingsMenu";
 import ParentalControls from "@/components/ParentalControls";
 import WelcomeModal from "@/components/WelcomeModal";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -97,7 +98,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main id="main-content" className="max-w-6xl mx-auto px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -121,10 +122,12 @@ export default function Dashboard() {
         </motion.div>
 
         {characters && characters.length > 0 ? (
-          <CharacterCarousel
-            characters={characters}
-            onCharacterUpdated={handleCharacterUpdated}
-          />
+          <ErrorBoundary fallbackMessage="We couldn’t load your characters.">
+            <CharacterCarousel
+              characters={characters}
+              onCharacterUpdated={handleCharacterUpdated}
+            />
+          </ErrorBoundary>
         ) : (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

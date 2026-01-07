@@ -6,6 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const htmlResponse = (message: string, type: "success" | "error", status = 200) =>
+  new Response(renderHTML(message, type), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "text/html" },
+  });
+
 // Simple HMAC-like token generation using Web Crypto API
 async function generateToken(userId: string, secret: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -53,20 +59,18 @@ serve(async (req) => {
     const type = url.searchParams.get("type"); // "all", "bedtime", or "story"
 
     if (!userId || !token) {
-      return new Response(renderHTML("Invalid link", "error"), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "text/html" },
-      });
+      return htmlResponse("Invalid link", "error", 400);
     }
 
     const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const isValid = await verifyToken(userId, token, secret);
 
     if (!isValid) {
-      return new Response(renderHTML("This link has expired. Please use the settings in the app to manage reminders.", "error"), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "text/html" },
-      });
+      return htmlResponse(
+        "This link has expired. Please use the settings in the app to manage reminders.",
+        "error",
+        401,
+      );
     }
 
     const supabase = createClient(
@@ -94,27 +98,18 @@ serve(async (req) => {
 
     if (error) {
       console.error("Failed to update settings:", error);
-      return new Response(renderHTML("Failed to update settings. Please try again.", "error"), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "text/html" },
-      });
+      return htmlResponse("Failed to update settings. Please try again.", "error", 500);
     }
 
     const message = type === "all" || !type 
       ? "All email reminders have been disabled." 
       : `${type.charAt(0).toUpperCase() + type.slice(1)} reminders have been disabled.`;
 
-    return new Response(renderHTML(message, "success"), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "text/html" },
-    });
+    return htmlResponse(message, "success", 200);
 
   } catch (error) {
     console.error("Disable reminders error:", error);
-    return new Response(renderHTML("An error occurred. Please try again.", "error"), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "text/html" },
-    });
+    return htmlResponse("An error occurred. Please try again.", "error", 500);
   }
 });
 

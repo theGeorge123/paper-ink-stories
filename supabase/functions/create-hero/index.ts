@@ -7,6 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const errorResponse = (message: string, status = 500, details?: string) =>
+  jsonResponse({ error: { message, details } }, status);
+
 const MAX_HEROES_PER_WEEK = 7;
 const DAYS_WINDOW = 7;
 
@@ -32,10 +41,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       console.error("No Authorization header provided");
-      return new Response(JSON.stringify({ code: 401, message: "Missing Authorization header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Missing Authorization header", 401);
     }
 
     // Extract token from Bearer header
@@ -54,10 +60,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       console.error("Auth error:", authError?.message || "No user found");
-      return new Response(JSON.stringify({ code: 401, message: "Invalid JWT" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Invalid JWT", 401);
     }
     
     console.log(`Authenticated user: ${user.id}`);
@@ -68,13 +71,11 @@ serve(async (req) => {
     
     if (!parseResult.success) {
       console.error("Validation error:", parseResult.error.errors);
-      return new Response(JSON.stringify({ 
-        error: "Invalid input", 
-        details: parseResult.error.errors.map(e => e.message).join(", ")
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse(
+        "Invalid input",
+        400,
+        parseResult.error.errors.map((e) => e.message).join(", "),
+      );
     }
 
     const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype, preferred_language } = parseResult.data;
@@ -97,26 +98,26 @@ serve(async (req) => {
 
     if (countError) {
       console.error("Failed to check creation limit:", countError);
-      return new Response(JSON.stringify({ error: "Failed to check creation limit" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to check creation limit", 500);
     }
 
     const currentCount = count || 0;
     console.log(`User ${user.id} has created ${currentCount} heroes in the last ${DAYS_WINDOW} days`);
 
     if (currentCount >= MAX_HEROES_PER_WEEK) {
-      return new Response(JSON.stringify({ 
-        error: "limit_reached",
-        message: `Je kunt maximaal ${MAX_HEROES_PER_WEEK} heroes per week maken. Probeer het later opnieuw.`,
-        current_count: currentCount,
-        max_allowed: MAX_HEROES_PER_WEEK,
-        resets_in_days: DAYS_WINDOW
-      }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        {
+          error: {
+            message: "limit_reached",
+            details: `current_count:${currentCount};max_allowed:${MAX_HEROES_PER_WEEK};resets_in_days:${DAYS_WINDOW}`,
+          },
+          message: `Je kunt maximaal ${MAX_HEROES_PER_WEEK} heroes per week maken. Probeer het later opnieuw.`,
+          current_count: currentCount,
+          max_allowed: MAX_HEROES_PER_WEEK,
+          resets_in_days: DAYS_WINDOW,
+        },
+        429,
+      );
     }
 
     const { data: profile } = await supabase
@@ -146,10 +147,7 @@ serve(async (req) => {
 
     if (createError) {
       console.error("Failed to create character:", createError);
-      return new Response(JSON.stringify({ error: "Failed to create character", details: createError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse("Failed to create character", 500, createError.message);
     }
 
     // Log the creation for rate limiting
@@ -171,20 +169,19 @@ serve(async (req) => {
       console.error("Background portrait generation failed:", err);
     });
 
-    return new Response(JSON.stringify({ 
+    return jsonResponse({
       success: true,
       character,
-      remaining_creations: MAX_HEROES_PER_WEEK - currentCount - 1
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      remaining_creations: MAX_HEROES_PER_WEEK - currentCount - 1,
     });
 
   } catch (error) {
     console.error("Create hero error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return errorResponse(
+      "Unexpected error",
+      500,
+      error instanceof Error ? error.message : "Unknown error",
+    );
   }
 });
 
