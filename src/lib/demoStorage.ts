@@ -64,6 +64,8 @@ const getStorage = () => {
 };
 
 const storageKey = (demoId: string, suffix: string) => `${DEMO_STORAGE_PREFIX}:${demoId}:${suffix}`;
+const heroStorageKey = (demoId: string) => storageKey(demoId, 'hero');
+const answersStorageKey = (demoId: string) => storageKey(demoId, 'answers');
 
 const writeCookie = (name: string, value: string, days: number): void => {
   if (typeof document === 'undefined') return;
@@ -135,6 +137,40 @@ const readDemoStory = (demoId: string): DemoStoryRecord | null => {
   return safeParse<DemoStoryRecord | null>(storage.getItem(storageKey(demoId, 'story')), null);
 };
 
+const readDemoHeroFromStorage = (demoId: string): DemoHeroInput | null => {
+  const storage = getStorage();
+  if (!storage) return null;
+  return safeParse<DemoHeroInput | null>(storage.getItem(heroStorageKey(demoId)), null);
+};
+
+const writeDemoHeroToStorage = (demoId: string, hero: DemoHeroInput | null): void => {
+  const storage = getStorage();
+  if (!storage) return;
+  const key = heroStorageKey(demoId);
+  if (!hero) {
+    storage.removeItem(key);
+    return;
+  }
+  storage.setItem(key, JSON.stringify(hero));
+};
+
+const readDemoAnswersFromStorage = (demoId: string): DemoAnswers | null => {
+  const storage = getStorage();
+  if (!storage) return null;
+  return safeParse<DemoAnswers | null>(storage.getItem(answersStorageKey(demoId)), null);
+};
+
+const writeDemoAnswersToStorage = (demoId: string, answers: DemoAnswers | null): void => {
+  const storage = getStorage();
+  if (!storage) return;
+  const key = answersStorageKey(demoId);
+  if (!answers) {
+    storage.removeItem(key);
+    return;
+  }
+  storage.setItem(key, JSON.stringify(answers));
+};
+
 const writeDemoStory = (demoId: string, story: DemoStoryRecord | null): void => {
   const storage = getStorage();
   if (!storage) return;
@@ -189,13 +225,16 @@ export const clearDemoId = (): void => {
   const session = readDemoSession();
   if (session?.demoId) {
     writeDemoStory(session.demoId, null);
+    writeDemoHeroToStorage(session.demoId, null);
+    writeDemoAnswersToStorage(session.demoId, null);
   }
   clearCookie(DEMO_COOKIE_NAME);
 };
 
 export const getDemoHero = (): DemoHeroInput | null => {
   const session = readDemoSession();
-  return session?.hero ?? null;
+  if (!session?.demoId) return null;
+  return session.hero ?? readDemoHeroFromStorage(session.demoId);
 };
 
 export const saveDemoHero = (hero: DemoHeroInput): void => {
@@ -210,12 +249,15 @@ export const saveDemoHero = (hero: DemoHeroInput): void => {
   };
   writeDemoSession(payload);
   writeDemoStory(payload.demoId, null);
+  writeDemoHeroToStorage(payload.demoId, hero);
+  writeDemoAnswersToStorage(payload.demoId, null);
   trackDemoEvent('demo_save_hero_success', { demoId: payload.demoId });
 };
 
 export const getDemoAnswers = (): DemoAnswers | null => {
   const session = readDemoSession();
-  return session?.answers ?? null;
+  if (!session?.demoId) return null;
+  return session.answers ?? readDemoAnswersFromStorage(session.demoId);
 };
 
 export const saveDemoAnswers = (answers: DemoAnswers): void => {
@@ -225,6 +267,9 @@ export const saveDemoAnswers = (answers: DemoAnswers): void => {
     answers,
   };
   writeDemoSession(payload);
+  if (session.demoId) {
+    writeDemoAnswersToStorage(session.demoId, answers);
+  }
 };
 
 export const getDemoStory = (): DemoStoryRecord | null => {
