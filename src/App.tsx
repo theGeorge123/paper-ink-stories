@@ -24,6 +24,7 @@ const queryClient = new QueryClient();
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const CreateCharacter = lazy(() => import("./pages/CreateCharacter"));
 const CreateQuestions = lazy(() => import("./pages/CreateQuestions"));
+const Questions = lazy(() => import("./pages/Questions"));
 const Reader = lazy(() => import("./pages/Reader"));
 const DemoReader = lazy(() => import("./pages/DemoReader"));
 
@@ -87,6 +88,16 @@ const App = () => (
                     <ErrorBoundary fallbackMessage="We couldn’t load the reader.">
                       <Suspense fallback={<ReaderLoader />}>
                         <Reader />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/read/:storyId/questions"
+                  element={
+                    <ErrorBoundary fallbackMessage="We couldn’t load the story questions.">
+                      <Suspense fallback={<PageLoader />}>
+                        <Questions />
                       </Suspense>
                     </ErrorBoundary>
                   }
