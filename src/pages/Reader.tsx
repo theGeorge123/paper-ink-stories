@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, MoonStar, Sun, Sunrise, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getPageRangeLabel, getTotalPages } from '@/lib/storyEngine';
@@ -287,6 +288,8 @@ export default function Reader() {
   const canGenerate = !isLastPage && currentPageIndex === pages.length - 1;
   const isOnFinalPage = isLastPage && currentPageIndex === pages.length - 1;
   const showCover = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
+  const heroAvatarUrl = heroPortrait.url || story?.characters?.hero_image_url;
+  const heroName = story?.characters?.name;
 
   // Only render SceneImage if there's actually an image URL stored
   const SceneImage = ({ imageUrl, pageNumber }: { imageUrl: string; pageNumber: number }) => {
@@ -384,6 +387,7 @@ export default function Reader() {
         adventureSummary={adventureSummary}
         existingLifeSummary={existingLifeSummary}
         storyThemes={storyThemes}
+        onStartNextStory={() => navigate('/create/questions')}
       />
     );
   }
@@ -403,16 +407,26 @@ export default function Reader() {
     <div className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
       {/* Header */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
-        <motion.div whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/dashboard')}
-            aria-label="Back to dashboard"
-          >
-            <Home className="w-5 h-5" />
-          </Button>
-        </motion.div>
+        <div className="flex items-center gap-3">
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/dashboard')}
+              aria-label="Back to dashboard"
+            >
+              <Home className="w-5 h-5" />
+            </Button>
+          </motion.div>
+          {heroAvatarUrl && (
+            <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
+              <AvatarImage src={heroAvatarUrl} alt={heroName ? `${heroName} portrait` : 'Hero portrait'} />
+              <AvatarFallback className="text-xs font-semibold">
+                {heroName ? heroName.slice(0, 2).toUpperCase() : 'HI'}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
