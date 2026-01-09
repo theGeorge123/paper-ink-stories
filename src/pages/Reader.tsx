@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -64,6 +64,7 @@ type ThemeKey = typeof themeOptions[number]['key'];
 export default function Reader() {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { t } = useLanguage();
   
@@ -290,6 +291,23 @@ export default function Reader() {
   const showCover = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
   const heroAvatarUrl = heroPortrait.url || story?.characters?.hero_image_url;
   const heroName = story?.characters?.name;
+  const answeredQuestionPages = story?.story_state && typeof story.story_state === 'object'
+    ? new Set(
+        (story.story_state as { question_history?: { page?: number }[] }).question_history?.map((entry) => entry.page).filter(Boolean) ?? [],
+      )
+    : new Set<number>();
+  const questionPages = story
+    ? Array.from(
+        new Set(
+          [
+            Math.floor(getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') / 3),
+            Math.floor((getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') * 2) / 3),
+          ]
+            .filter((page) => page > 0)
+            .filter((page) => !answeredQuestionPages.has(page)),
+        ),
+      )
+    : [];
 
   // Only render SceneImage if there's actually an image URL stored
   const SceneImage = ({ imageUrl, pageNumber }: { imageUrl: string; pageNumber: number }) => {
@@ -359,14 +377,25 @@ export default function Reader() {
   const handleTapRight = () => {
     // If there's a next page available, go to it
     if (canGoNext) {
+      const currentPageNumber = currentPageIndex + 1;
+      const nextIndex = currentPageIndex + 1;
+      if (questionPages.includes(currentPageNumber)) {
+        navigate(`/read/${storyId}/questions?page=${currentPageNumber}`);
+        return;
+      }
       setDirection(1);
-      setCurrentPageIndex(currentPageIndex + 1);
+      setCurrentPageIndex(nextIndex);
     } 
     // If we're on the last available page but story isn't done, generate more
     else if (canGenerate && !generating) {
       const nextPage = pages.length + 1;
       setDirection(1);
       generatePage(nextPage, false).then(() => {
+        const currentPageNumber = currentPageIndex + 1;
+        if (questionPages.includes(currentPageNumber)) {
+          navigate(`/read/${storyId}/questions?page=${currentPageNumber}`);
+          return;
+        }
         // After generation, move to the new page
         setCurrentPageIndex(prev => prev + 1);
       });
@@ -376,6 +405,17 @@ export default function Reader() {
       setShowEnding(true);
     }
   };
+
+  useEffect(() => {
+    if (!storyId) return;
+    const urlPage = searchParams.get('page');
+    if (urlPage) {
+      const pageIndex = Number(urlPage) - 1;
+      if (!Number.isNaN(pageIndex) && pageIndex >= 0) {
+        setCurrentPageIndex(pageIndex);
+      }
+    }
+  }, [searchParams, storyId]);
 
   // Show ending screen
   if (showEnding && story?.characters) {
@@ -418,14 +458,12 @@ export default function Reader() {
               <Home className="w-5 h-5" />
             </Button>
           </motion.div>
-          {heroAvatarUrl && (
-            <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
-              <AvatarImage src={heroAvatarUrl} alt={heroName ? `${heroName} portrait` : 'Hero portrait'} />
-              <AvatarFallback className="text-xs font-semibold">
-                {heroName ? heroName.slice(0, 2).toUpperCase() : 'HI'}
-              </AvatarFallback>
-            </Avatar>
-          )}
+          <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
+            <AvatarImage src={heroAvatarUrl || undefined} alt={heroName ? `${heroName} portrait` : 'Hero portrait'} />
+            <AvatarFallback className="text-xs font-semibold">
+              {heroName ? heroName.slice(0, 2).toUpperCase() : <UserCircle className="h-5 w-5" />}
+            </AvatarFallback>
+          </Avatar>
         </div>
 
         <div className="flex items-center gap-3">
