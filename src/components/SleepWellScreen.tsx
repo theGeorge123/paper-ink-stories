@@ -16,6 +16,7 @@ interface SleepWellScreenProps {
   nextOptions?: string[];
   existingLifeSummary?: string | null;
   storyThemes?: string[];
+  onStartNextStory?: () => void;
 }
 
 export default function SleepWellScreen({ 
@@ -25,7 +26,8 @@ export default function SleepWellScreen({
   adventureSummary, 
   nextOptions,
   existingLifeSummary,
-  storyThemes = []
+  storyThemes = [],
+  onStartNextStory,
 }: SleepWellScreenProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -379,6 +381,19 @@ export default function SleepWellScreen({
           transition={{ delay: nextOptions?.length ? 1.5 : 1.1 }}
           className="flex flex-col gap-3 w-full"
         >
+          {onStartNextStory && (
+            <motion.div whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={onStartNextStory}
+                size="lg"
+                variant="outline"
+                className="w-full gap-2 border-white/20 text-white hover:bg-white/10"
+              >
+                <Sparkles className="w-5 h-5" />
+                {t('newAdventure')}
+              </Button>
+            </motion.div>
+          )}
           <motion.div whileTap={{ scale: 0.98 }}>
             <Button
               onClick={handleGoodnight}
