@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { DEMO_PAGES, DEMO_STORY } from '@/data/demoStory';
+import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero, saveDemoStory } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
@@ -56,6 +57,16 @@ const stepVariants = {
     x: direction < 0 ? 100 : -100,
     opacity: 0,
   }),
+};
+
+const DEMO_STORY_TEXT = [...DEMO_PAGES]
+  .sort((a, b) => a.page_number - b.page_number)
+  .map((page) => page.content)
+  .join('\n\n');
+
+const estimateReadingTimeMinutes = (text: string) => {
+  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / 150));
 };
 
 export default function DemoHero() {
@@ -124,7 +135,20 @@ export default function DemoHero() {
       sidekickName: sidekickName.trim() || null,
       sidekickArchetype: sidekickArchetype || null,
     });
-    navigate(buildDemoRoute('/demo-questions'));
+    saveDemoStory({
+      storyTitle: DEMO_STORY.title,
+      storyText: DEMO_STORY_TEXT,
+      episodeSummary: DEMO_STORY.last_summary ?? 'A cozy bedtime adventure.',
+      choices: {
+        level1: '',
+        level2: '',
+        level3: '',
+      },
+      tagsUsed: DEMO_STORY.themes ?? [],
+      readingTimeMinutes: estimateReadingTimeMinutes(DEMO_STORY_TEXT),
+      createdAt: new Date().toISOString(),
+    });
+    navigate(buildDemoRoute('/demo-reader'));
   };
 
   const goToStep = (newStep: number) => {
