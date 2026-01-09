@@ -64,7 +64,7 @@ serve(async (req) => {
     }
 
     const { storyBrief, heroName } = parseResult.data;
-    const openRouterKey = Deno.env.get("OPENROUTER_API_KEY") ?? "";
+    const openRouterKey = Deno.env.get("openrouter") ?? Deno.env.get("OPENROUTER_API_KEY") ?? "";
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 
     if (!openRouterKey || !supabaseUrl) {
