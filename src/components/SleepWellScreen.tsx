@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { MoonStar, Library, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
