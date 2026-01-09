@@ -104,26 +104,49 @@ export type Database = {
       image_assets: {
         Row: {
           created_at: string
+          hero_id: string | null
           id: string
+          is_public: boolean | null
+          model: string | null
           prompt_hash: string
           storage_bucket: string
           storage_path: string
+          type: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string
+          hero_id?: string | null
           id?: string
+          is_public?: boolean | null
+          model?: string | null
           prompt_hash: string
           storage_bucket: string
           storage_path: string
+          type?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string
+          hero_id?: string | null
           id?: string
+          is_public?: boolean | null
+          model?: string | null
           prompt_hash?: string
           storage_bucket?: string
           storage_path?: string
+          type?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "image_assets_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pages: {
         Row: {
