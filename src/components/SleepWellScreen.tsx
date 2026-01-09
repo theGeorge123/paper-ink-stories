@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { MoonStar, Library, Sparkles, Check, Moon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { MoonStar, Library } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import PostStoryFeedback from './PostStoryFeedback';
 
 interface SleepWellScreenProps {
@@ -13,7 +12,6 @@ interface SleepWellScreenProps {
   characterId: string;
   storyId: string;
   adventureSummary?: string;
-  nextOptions?: string[];
   existingLifeSummary?: string | null;
   storyThemes?: string[];
 }
@@ -23,19 +21,12 @@ export default function SleepWellScreen({
   characterId,
   storyId,
   adventureSummary, 
-  nextOptions,
   existingLifeSummary,
   storyThemes = []
 }: SleepWellScreenProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [dimmed, setDimmed] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  
-  // Show feedback after user selects an option or if there are no options
-  const shouldShowFeedback = showFeedback || (!nextOptions || nextOptions.length === 0 || selectedOption);
 
   // Build cumulative life summary from existing + new adventure
   const buildCumulativeLifeSummary = (newAdventureSummary: string): string => {
@@ -84,98 +75,7 @@ export default function SleepWellScreen({
     }
   };
 
-  const handleSelectOption = async (option: string) => {
-    setSelectedOption(option);
-    setSaving(true);
-
-    try {
-      // Build cumulative life summary
-      const newLifeSummary = adventureSummary 
-        ? buildCumulativeLifeSummary(adventureSummary)
-        : existingLifeSummary;
-
-      // Update character with pending_choice
-      const { error } = await supabase
-        .from('characters')
-        .update({ 
-          pending_choice: option,
-        })
-        .eq('id', characterId);
-
-      if (error) throw error;
-
-      // Learn from this story's themes
-      await updatePreferredThemes();
-
-      // Also update the story's last_summary for this adventure
-      if (newLifeSummary) {
-        await supabase
-          .from('stories')
-          .update({ last_summary: newLifeSummary, chosen_option: option })
-          .eq('id', storyId);
-      }
-
-      toast.success(t('choiceSaved').replace('{name}', characterName));
-    } catch (error) {
-      console.error('Error saving choice:', error);
-      toast.error(t('choiceSaveFailed'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // "Child is asleep" - pick random option, save cumulative summary, and dim screen
-  const handlePickForMe = async () => {
-    if (!nextOptions || nextOptions.length === 0) {
-      navigate('/dashboard');
-      return;
-    }
-
-    setSaving(true);
-    
-    // Pick random option
-    const randomOption = nextOptions[Math.floor(Math.random() * nextOptions.length)];
-    
-    try {
-      // Build cumulative life summary
-      const newLifeSummary = adventureSummary 
-        ? buildCumulativeLifeSummary(adventureSummary)
-        : existingLifeSummary;
-
-      // Update character with random choice
-      const { error } = await supabase
-        .from('characters')
-        .update({ pending_choice: randomOption })
-        .eq('id', characterId);
-
-      if (error) throw error;
-
-      // Learn from this story's themes
-      await updatePreferredThemes();
-
-      // Update story with cumulative summary and chosen option
-      if (newLifeSummary) {
-        await supabase
-          .from('stories')
-          .update({ last_summary: newLifeSummary, chosen_option: randomOption })
-          .eq('id', storyId);
-      }
-
-      // Dim screen to black (Goodnight mode)
-      setDimmed(true);
-      
-      // Wait a moment then navigate silently
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 2000);
-    } catch (error) {
-      console.error('Error saving choice:', error);
-      setSaving(false);
-      navigate('/dashboard');
-    }
-  };
-
-  // Handle goodnight without option selection
+  // Handle goodnight - save summary and navigate
   const handleGoodnight = async () => {
     // Save cumulative summary even if no option selected
     if (adventureSummary) {
@@ -188,34 +88,6 @@ export default function SleepWellScreen({
     
     navigate('/dashboard');
   };
-
-  // Dimmed screen for sleeping child
-  if (dimmed) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 bg-black flex items-center justify-center"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.1, scale: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-center"
-        >
-          <Moon className="w-16 h-16 text-white mx-auto mb-4" />
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.2 }}
-            transition={{ delay: 0.5 }}
-            className="text-white/20 font-serif text-xl"
-          >
-            {t('sleepWell')}, {characterName}
-          </motion.p>
-        </motion.div>
-      </motion.div>
-    );
-  }
 
   return (
     <motion.div
@@ -274,95 +146,17 @@ export default function SleepWellScreen({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="text-lg text-white/70 mb-6 text-center"
+          className="text-lg text-white/70 mb-8 text-center"
         >
           {t('sleepWell')}, {characterName}
         </motion.p>
 
-
-        {/* Tomorrow's Adventure - Cliffhanger Options */}
-        {nextOptions && nextOptions.length > 0 && !selectedOption && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="w-full mb-6"
-          >
-            <div className="flex items-center gap-2 mb-4 justify-center">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-medium text-amber-400 uppercase tracking-wide">
-                {t('tomorrowsAdventure')}
-              </span>
-            </div>
-            <p className="text-center text-white/70 text-sm mb-4">
-              {t('chooseNextAdventure').replace('{name}', characterName)}
-            </p>
-            <div className="space-y-3">
-              {nextOptions.map((option, index) => (
-                <motion.button
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 1.2 + index * 0.1 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => handleSelectOption(option)}
-                  disabled={saving}
-                  className="w-full p-4 rounded-xl bg-white/10 border border-white/20 text-white text-left hover:bg-white/20 hover:border-amber-400/50 transition-all disabled:opacity-50"
-                >
-                  <span className="text-amber-400 font-bold mr-2">{index + 1}.</span>
-                  {option}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Pick for me button */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.5 }}
-              className="mt-4"
-            >
-              <Button
-                onClick={handlePickForMe}
-                variant="ghost"
-                size="sm"
-                disabled={saving}
-                className="w-full text-white/50 hover:text-white hover:bg-white/10 border border-white/10"
-              >
-                <Moon className="w-4 h-4 mr-2" />
-                {t('pickForMe')}
-              </Button>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Choice Saved Confirmation */}
-        <AnimatePresence>
-          {selectedOption && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="w-full mb-6 p-4 rounded-xl bg-emerald-500/20 border border-emerald-400/50"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-medium text-emerald-400 uppercase tracking-wide">
-                  {t('choiceSaved').replace('{name}', characterName).split('!')[0]}!
-                </span>
-              </div>
-              <p className="text-sm text-white/80 italic leading-relaxed">
-                "{selectedOption}"
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Post-story feedback questionnaire - shows after option selection */}
-        {shouldShowFeedback && !showFeedback && (
+        {/* Post-story feedback questionnaire */}
+        {!showFeedback && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.9 }}
             className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
           >
             <PostStoryFeedback 
@@ -376,7 +170,7 @@ export default function SleepWellScreen({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: nextOptions?.length ? 1.5 : 1.1 }}
+          transition={{ delay: 1.1 }}
           className="flex flex-col gap-3 w-full"
         >
           <motion.div whileTap={{ scale: 0.98 }}>
