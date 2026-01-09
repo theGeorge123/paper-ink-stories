@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero } from '@/lib/demoStorage';
+import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero, type DemoHeroInput } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
 
@@ -116,17 +116,34 @@ export default function DemoHero() {
     }
 
     trackDemoEvent('demo_start_clicked', { demoId });
-    saveDemoHero({
+    
+    const heroData: DemoHeroInput = {
       heroName: name.trim(),
       heroType: selectedArchetype?.label ?? archetype,
-      heroTrait: traits[0] ?? 'Kind',
+      heroTrait: traits.join(', ') || 'Kind',
       comfortItem: 'blanket',
       ageBand,
       sidekickName: sidekickName.trim() || null,
       sidekickArchetype: sidekickArchetype || null,
-    });
-    // Navigate to questions page to generate a real story
-    navigate(buildDemoRoute('/demo-questions'));
+    };
+
+    try {
+      saveDemoHero(heroData);
+      
+      // Verify the save worked before navigating
+      const savedHero = getDemoHero();
+      if (!savedHero) {
+        console.error('[DemoHero] Hero data not saved correctly - getDemoHero returned null');
+        toast.error('Failed to save your hero. Please try again.');
+        return;
+      }
+      
+      console.log('[DemoHero] Hero saved successfully:', savedHero);
+      navigate(buildDemoRoute('/demo-questions'));
+    } catch (error) {
+      console.error('[DemoHero] Error saving hero:', error);
+      toast.error('Failed to save your hero. Please try again.');
+    }
   };
 
   const goToStep = (newStep: number) => {
