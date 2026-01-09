@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Home, UserCircle } from 'lucide-react';
+import { BookOpen, Home, UserCircle, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import {
   type ThreeLevelQuestions,
 } from '@/lib/questions';
 import { getTotalPages } from '@/lib/storyEngine';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const levelLabels = {
   en: 'Level',
@@ -75,6 +76,8 @@ export default function Questions() {
   const [currentLevel, setCurrentLevel] = useState<1 | 2 | 3>(1);
   const [selections, setSelections] = useState<SelectionState>({});
   const [saving, setSaving] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [usedAiQuestions, setUsedAiQuestions] = useState(false);
 
   const questionPage = Number(searchParams.get('page')) || 1;
 
@@ -98,17 +101,24 @@ export default function Questions() {
       id: string;
       name: string;
       archetype: string;
+      age_band?: string;
       traits?: string[] | null;
       preferred_themes?: string[] | null;
       last_summary?: string | null;
       hero_image_url?: string | null;
+      sidekick_name?: string | null;
     };
 
     return {
       heroName: character.name,
       heroType: character.archetype || 'friend',
       heroTrait: character.traits?.[0] || 'Kind',
+      ageBand: character.age_band || '3-5',
+      traits: character.traits || [],
       comfortItem: 'blanket',
+      sidekickName: character.sidekick_name || null,
+      lastSummary: character.last_summary || 'None (first episode).',
+      topTags: (character.preferred_themes as string[]) || [],
       supabaseCharacterId: character.id,
     };
   }, [story?.characters]);
@@ -118,44 +128,158 @@ export default function Questions() {
     heroId: story?.characters?.id,
   });
 
-  useEffect(() => {
-    if (!heroProfile) return;
+  // Generate AI-powered questions for authenticated users
+  const generateAiQuestions = useCallback(async () => {
+    if (!heroProfile) return null;
 
     try {
-      const lastSummary = story?.characters?.last_summary || 'None (first episode).';
-      const topTags = (story?.characters?.preferred_themes as string[]) || [];
-      const questionContext = generateQuestionsContext(heroProfile, lastSummary, topTags, language);
-      const nextQuestions = createThreeLevelQuestions(questionContext);
+      console.log('[Questions] Generating AI questions for:', heroProfile.heroName);
+      
+      const response = await supabase.functions.invoke('generate-questions', {
+        body: {
+          heroName: heroProfile.heroName,
+          heroType: heroProfile.heroType,
+          ageBand: heroProfile.ageBand,
+          traits: heroProfile.traits,
+          comfortItem: heroProfile.comfortItem,
+          sidekickName: heroProfile.sidekickName,
+          lastSummary: heroProfile.lastSummary,
+          topTags: heroProfile.topTags,
+          language,
+        },
+      });
 
-      if (!validateThreeLevelQuestions(nextQuestions)) {
-        throw new Error('Question generation failed: each level must have exactly 3 options.');
+      if (response.error) {
+        console.error('[Questions] AI generation error:', response.error);
+        return null;
       }
 
-      setQuestions(nextQuestions);
+      const aiQuestions = response.data as ThreeLevelQuestions;
+      
+      if (!validateThreeLevelQuestions(aiQuestions)) {
+        console.error('[Questions] AI questions validation failed');
+        return null;
+      }
+
+      console.log('[Questions] AI questions generated successfully');
+      return aiQuestions;
     } catch (error) {
-      console.error('Question generation failed', error);
-      const fallbackContext = generateQuestionsContext(
-        heroProfile,
-        story?.characters?.last_summary || 'None (first episode).',
-        (story?.characters?.preferred_themes as string[]) || [],
-        language,
-      );
-      const fallbackQuestions = createThreeLevelQuestions(fallbackContext);
-      if (validateThreeLevelQuestions(fallbackQuestions)) {
-        setQuestions(fallbackQuestions);
-      }
-      toast.error(
-        language === 'nl'
-          ? 'Vanavond kunnen we de vragen niet laden.'
-          : language === 'sv'
-          ? 'Vi kunde inte ladda kvällens frågor.'
-          : 'Unable to load tonight’s questions.',
-      );
+      console.error('[Questions] Failed to generate AI questions:', error);
+      return null;
     }
-  }, [heroProfile, language, story?.characters?.last_summary, story?.characters?.preferred_themes]);
+  }, [heroProfile, language]);
 
-  if (!story || !heroProfile || !questions) {
+  // Fallback to static questions
+  const getStaticQuestions = useCallback(() => {
+    if (!heroProfile) return null;
+
+    const questionContext = generateQuestionsContext(
+      heroProfile,
+      heroProfile.lastSummary,
+      heroProfile.topTags,
+      language,
+    );
+    const staticQuestions = createThreeLevelQuestions(questionContext);
+    
+    if (validateThreeLevelQuestions(staticQuestions)) {
+      return staticQuestions;
+    }
     return null;
+  }, [heroProfile, language]);
+
+  useEffect(() => {
+    if (!heroProfile || questions) return;
+
+    const loadQuestions = async () => {
+      setIsGeneratingQuestions(true);
+
+      try {
+        // Try AI-generated questions first for authenticated users
+        const aiQuestions = await generateAiQuestions();
+        
+        if (aiQuestions) {
+          setQuestions(aiQuestions);
+          setUsedAiQuestions(true);
+          setIsGeneratingQuestions(false);
+          return;
+        }
+
+        // Fall back to static questions
+        console.log('[Questions] Falling back to static questions');
+        const staticQuestions = getStaticQuestions();
+        
+        if (staticQuestions) {
+          setQuestions(staticQuestions);
+          setUsedAiQuestions(false);
+        } else {
+          toast.error(
+            language === 'nl'
+              ? 'Vanavond kunnen we de vragen niet laden.'
+              : language === 'sv'
+              ? 'Vi kunde inte ladda kvällens frågor.'
+              : "Unable to load tonight's questions.",
+          );
+        }
+      } catch (error) {
+        console.error('[Questions] Question loading failed:', error);
+        // Last resort fallback
+        const staticQuestions = getStaticQuestions();
+        if (staticQuestions) {
+          setQuestions(staticQuestions);
+          setUsedAiQuestions(false);
+        }
+      } finally {
+        setIsGeneratingQuestions(false);
+      }
+    };
+
+    loadQuestions();
+  }, [heroProfile, questions, generateAiQuestions, getStaticQuestions, language]);
+
+  // Loading state while generating questions
+  if (!story || !heroProfile) {
+    return null;
+  }
+
+  if (isGeneratingQuestions || !questions) {
+    return (
+      <div className="min-h-screen bg-background paper-texture">
+        <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+          <header className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+          </header>
+
+          <div className="book-cover relative overflow-hidden p-6 sm:p-8">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-3"
+              >
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-muted-foreground text-center"
+              >
+                {language === 'nl'
+                  ? `Magische vragen maken voor ${heroProfile.heroName}...`
+                  : language === 'sv'
+                  ? `Skapar magiska frågor för ${heroProfile.heroName}...`
+                  : `Creating magical questions for ${heroProfile.heroName}...`}
+              </motion.p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const questionForLevel: Record<1 | 2 | 3, QuestionLevel> = {
@@ -255,13 +379,21 @@ export default function Questions() {
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'nl'
-                  ? `${levelLabels.nl} ${currentLevel} van 3`
-                  : language === 'sv'
-                  ? `${levelLabels.sv} ${currentLevel} av 3`
-                  : `${levelLabels.en} ${currentLevel} of 3`}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {language === 'nl'
+                    ? `${levelLabels.nl} ${currentLevel} van 3`
+                    : language === 'sv'
+                    ? `${levelLabels.sv} ${currentLevel} av 3`
+                    : `${levelLabels.en} ${currentLevel} of 3`}
+                </p>
+                {usedAiQuestions && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                    <Sparkles className="h-3 w-3" />
+                    {language === 'nl' ? 'Gepersonaliseerd' : language === 'sv' ? 'Personlig' : 'Personalized'}
+                  </span>
+                )}
+              </div>
               <h1 className="text-2xl font-serif font-semibold text-foreground">
                 {currentQuestion.question}
               </h1>
