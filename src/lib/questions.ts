@@ -124,38 +124,33 @@ export const createThreeLevelQuestions = (context: QuestionContext): ThreeLevelQ
   const comfort = context.hero?.comfortItem?.toLowerCase() || 'blanket';
   const copy = copyForLanguage(context.language);
 
+  const level1Option3 = copy.options.level1[2] as (comfort: string) => [string, string[]];
+  const level2Option2 = copy.options.level2[1] as (heroType: string) => [string, string[]];
+  const level3Option3 = copy.options.level3[2] as (comfort: string) => [string, string[]];
+
   return {
     level1: {
       question: copy.level1Question(heroName),
       options: [
-        createOption('level1-option1', copy.options.level1[0][0], copy.options.level1[0][1] as string[]),
-        createOption('level1-option2', copy.options.level1[1][0], copy.options.level1[1][1] as string[]),
-        createOption('level1-option3', ...(() => {
-          const option = copy.options.level1[2](comfort);
-          return [option[0], option[1]];
-        })()),
+        createOption('level1-option1', copy.options.level1[0][0] as string, copy.options.level1[0][1] as string[]),
+        createOption('level1-option2', copy.options.level1[1][0] as string, copy.options.level1[1][1] as string[]),
+        createOption('level1-option3', level1Option3(comfort)[0], level1Option3(comfort)[1]),
       ],
     },
     level2: {
       question: copy.level2Question(heroName),
       options: [
-        createOption('level2-option1', copy.options.level2[0][0], copy.options.level2[0][1] as string[]),
-        createOption('level2-option2', ...(() => {
-          const option = copy.options.level2[1](heroType);
-          return [option[0], option[1]];
-        })()),
-        createOption('level2-option3', copy.options.level2[2][0], copy.options.level2[2][1] as string[]),
+        createOption('level2-option1', copy.options.level2[0][0] as string, copy.options.level2[0][1] as string[]),
+        createOption('level2-option2', level2Option2(heroType)[0], level2Option2(heroType)[1]),
+        createOption('level2-option3', copy.options.level2[2][0] as string, copy.options.level2[2][1] as string[]),
       ],
     },
     level3: {
       question: copy.level3Question(heroName),
       options: [
-        createOption('level3-option1', copy.options.level3[0][0], copy.options.level3[0][1] as string[]),
-        createOption('level3-option2', copy.options.level3[1][0], copy.options.level3[1][1] as string[]),
-        createOption('level3-option3', ...(() => {
-          const option = copy.options.level3[2](comfort);
-          return [option[0], option[1]];
-        })()),
+        createOption('level3-option1', copy.options.level3[0][0] as string, copy.options.level3[0][1] as string[]),
+        createOption('level3-option2', copy.options.level3[1][0] as string, copy.options.level3[1][1] as string[]),
+        createOption('level3-option3', level3Option3(comfort)[0], level3Option3(comfort)[1]),
       ],
     },
   };

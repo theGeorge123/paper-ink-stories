@@ -382,7 +382,6 @@ export default function Reader() {
         characterId={story.characters.id}
         storyId={storyId!}
         adventureSummary={adventureSummary}
-        nextOptions={nextOptions}
         existingLifeSummary={existingLifeSummary}
         storyThemes={storyThemes}
       />
