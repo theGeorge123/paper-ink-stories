@@ -23,6 +23,7 @@ interface CharacterCardProps {
     traits: string[];
     sidekick_name: string | null;
     age_band?: string;
+    hero_image_url?: string | null;
     stories?: { id: string; is_active: boolean }[];
   };
 }
@@ -73,9 +74,19 @@ export default function CharacterCard({ character }: CharacterCardProps) {
         className="character-card p-6"
       >
         <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Icon className="w-7 h-7 text-primary" />
-          </div>
+          {character.hero_image_url ? (
+            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
+              <img 
+                src={character.hero_image_url} 
+                alt={character.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Icon className="w-7 h-7 text-primary" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <h3 className="font-serif text-xl text-foreground mb-1">{character.name}</h3>
             <p className="text-sm text-muted-foreground capitalize mb-3">
