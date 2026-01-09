@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { MoonStar, Library, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -91,6 +91,16 @@ export default function SleepWellScreen({
     navigate('/dashboard');
   };
 
+  // Generate stable star positions once
+  const starPositions = useMemo(() => 
+    [...Array(30)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 60}%`,
+      duration: 2 + Math.random() * 2,
+      delay: Math.random() * 2,
+    })), []
+  );
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -101,20 +111,20 @@ export default function SleepWellScreen({
     >
       {/* Stars decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(30)].map((_, i) => (
+        {starPositions.map((star, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0 }}
             animate={{ opacity: [0.2, 0.8, 0.2] }}
             transition={{ 
-              duration: 2 + Math.random() * 2, 
+              duration: star.duration, 
               repeat: Infinity, 
-              delay: Math.random() * 2 
+              delay: star.delay 
             }}
             className="absolute w-1 h-1 bg-white rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 60}%`,
+              left: star.left,
+              top: star.top,
             }}
           />
         ))}
@@ -153,6 +163,20 @@ export default function SleepWellScreen({
           {t('sleepWell')}, {characterName}
         </motion.p>
 
+        {/* Adventure summary if available */}
+        {adventureSummary && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
+          >
+            <p className="text-white/80 text-sm italic text-center leading-relaxed">
+              "{adventureSummary}"
+            </p>
+          </motion.div>
+        )}
+
         {/* Post-story feedback questionnaire */}
         {!showFeedback && (
           <motion.div
@@ -168,13 +192,24 @@ export default function SleepWellScreen({
           </motion.div>
         )}
 
-        {/* Goodnight button */}
+        {/* Action buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.1 }}
           className="flex flex-col gap-3 w-full"
         >
+          <motion.div whileTap={{ scale: 0.98 }}>
+            <Button
+              onClick={handleGoodnight}
+              size="lg"
+              className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
+            >
+              <MoonStar className="w-5 h-5" />
+              {t('goodnight')}
+            </Button>
+          </motion.div>
+
           {onStartNextStory && (
             <motion.div whileTap={{ scale: 0.98 }}>
               <Button
@@ -188,16 +223,6 @@ export default function SleepWellScreen({
               </Button>
             </motion.div>
           )}
-          <motion.div whileTap={{ scale: 0.98 }}>
-            <Button
-              onClick={handleGoodnight}
-              size="lg"
-              className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
-            >
-              <MoonStar className="w-5 h-5" />
-              {t('goodnight')}
-            </Button>
-          </motion.div>
 
           <Button
             onClick={() => navigate('/dashboard')}

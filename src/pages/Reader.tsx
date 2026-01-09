@@ -291,23 +291,9 @@ export default function Reader() {
   const showCover = !!((heroPortrait.url || story?.characters?.hero_image_url) && !hasOpenedCover);
   const heroAvatarUrl = heroPortrait.url || story?.characters?.hero_image_url;
   const heroName = story?.characters?.name;
-  const answeredQuestionPages = story?.story_state && typeof story.story_state === 'object'
-    ? new Set(
-        (story.story_state as { question_history?: { page?: number }[] }).question_history?.map((entry) => entry.page).filter(Boolean) ?? [],
-      )
-    : new Set<number>();
-  const questionPages = story
-    ? Array.from(
-        new Set(
-          [
-            Math.floor(getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') / 3),
-            Math.floor((getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG') * 2) / 3),
-          ]
-            .filter((page) => page > 0)
-            .filter((page) => !answeredQuestionPages.has(page)),
-        ),
-      )
-    : [];
+  // Questions are now only asked at the beginning of the story (before page 1)
+  // No mid-story question interruptions
+  const questionPages: number[] = [];
 
   // Only render SceneImage if there's actually an image URL stored
   const SceneImage = ({ imageUrl, pageNumber }: { imageUrl: string; pageNumber: number }) => {
