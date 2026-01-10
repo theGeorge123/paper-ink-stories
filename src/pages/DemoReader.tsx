@@ -101,7 +101,8 @@ export default function DemoReader() {
     }
 
     if (!story) {
-      navigate(buildDemoRoute('/demo-questions'));
+      // No story yet - redirect to hero creation to start fresh
+      navigate(buildDemoRoute('/demo-hero'));
       return;
     }
 
@@ -207,11 +208,14 @@ export default function DemoReader() {
               {t('createFreeAccount')}
             </Button>
             <Button
-              onClick={() => navigate(buildDemoRoute('/demo-questions'))}
+              onClick={() => {
+                // Generate a new story with the same hero
+                navigate(buildDemoRoute('/demo-hero'));
+              }}
               variant="ghost"
               className="w-full text-white/70 hover:text-white"
             >
-              Generate another demo story
+              Create a new hero
             </Button>
           </div>
         </motion.div>
