@@ -518,30 +518,65 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     }
 
     const openRouterModel = Deno.env.get("OPENROUTER_STORY_PRESET")?.trim() || "@preset/story-teller";
-    const aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "",
-      },
-      body: JSON.stringify({
-        model: openRouterModel,
-        messages: [
-          { role: "system", content: finalSystemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-      }),
-    });
+    
+    // Retry logic for transient OpenRouter errors
+    const MAX_RETRIES = 3;
+    let aiResponse: Response | null = null;
+    let lastError = "";
+    
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": Deno.env.get("SUPABASE_URL") || "",
+          },
+          body: JSON.stringify({
+            model: openRouterModel,
+            messages: [
+              { role: "system", content: finalSystemPrompt },
+              { role: "user", content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1500,
+          }),
+        });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error("OpenRouter API error:", aiResponse.status, errorText);
+        if (aiResponse.ok) {
+          break; // Success, exit retry loop
+        }
+        
+        lastError = await aiResponse.text();
+        console.error(`OpenRouter API error (attempt ${attempt}/${MAX_RETRIES}):`, aiResponse.status, lastError);
+        
+        // Only retry on 5xx errors (server-side issues)
+        if (aiResponse.status < 500) {
+          break; // Don't retry client errors (4xx)
+        }
+        
+        if (attempt < MAX_RETRIES) {
+          // Exponential backoff: 1s, 2s, 4s
+          const delayMs = Math.pow(2, attempt - 1) * 1000;
+          console.log(`Retrying in ${delayMs}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      } catch (fetchError) {
+        lastError = fetchError instanceof Error ? fetchError.message : "Network error";
+        console.error(`OpenRouter fetch error (attempt ${attempt}/${MAX_RETRIES}):`, lastError);
+        if (attempt < MAX_RETRIES) {
+          const delayMs = Math.pow(2, attempt - 1) * 1000;
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+    }
+
+    if (!aiResponse || !aiResponse.ok) {
+      console.error("OpenRouter API failed after all retries:", lastError);
       return jsonResponse(
         {
-          error: { message: "AI generation failed", details: errorText },
+          error: { message: "AI generation failed", details: lastError },
           fallback: true,
           page_text: "The story magic is taking a short nap. Try again in a moment.",
         },
