@@ -5,7 +5,7 @@
  * The output is indistinguishable from AI-generated stories in the reader.
  */
 
-import type { DemoHeroInput, DemoStoryRecord } from './demoStorage';
+import type { DemoHeroInput } from './demoStorage';
 
 type StoryVariables = {
   heroName: string;
@@ -13,6 +13,14 @@ type StoryVariables = {
   trait: string;
   sidekickName: string | null;
   sidekickType: string | null;
+};
+
+export type DemoStoryRecord = {
+  id: string;
+  title: string;
+  pages: string[];
+  character_id: string;
+  created_at: string;
 };
 
 // Story templates with {variable} placeholders
@@ -177,7 +185,7 @@ const getSidekickEnd = (vars: StoryVariables): string => {
 /**
  * Replaces all template variables with actual values
  */
-const substituteVariables = (text: string, vars: StoryVariables): string => {
+const replaceVariables = (text: string, vars: StoryVariables): string => {
   let result = text;
   
   // First, substitute sidekick-specific blocks
@@ -203,44 +211,25 @@ const substituteVariables = (text: string, vars: StoryVariables): string => {
 
 /**
  * Generates a complete demo story from hero input
- * Returns a DemoStoryRecord ready for the reader
  */
-export const generateDemoStoryFromTemplate = (hero: DemoHeroInput): DemoStoryRecord => {
-  // Pick a random template
-  const templateIndex = Math.floor(Math.random() * STORY_TEMPLATES.length);
-  const template = STORY_TEMPLATES[templateIndex];
-  
-  // Prepare variables
-  const trait = hero.heroTrait?.split(',')[0]?.trim() || 'curious';
-  const vars: StoryVariables = {
+export const generateDemoStory = (hero: DemoHeroInput): DemoStoryRecord => {
+  const template = STORY_TEMPLATES[Math.floor(Math.random() * STORY_TEMPLATES.length)];
+
+  const variables: StoryVariables = {
     heroName: hero.heroName,
     heroType: hero.heroType,
-    trait,
+    trait: hero.heroTrait?.split(',')[0]?.trim() || 'curious',
     sidekickName: hero.sidekickName || null,
     sidekickType: hero.sidekickArchetype || null,
   };
-  
-  // Generate title
-  const title = substituteVariables(template.title, vars);
-  
-  // Generate all pages as a single story text (pages separated by double newlines)
-  const storyPages = template.pages.map(page => substituteVariables(page, vars));
-  const storyText = storyPages.join('\n\n');
-  
-  // Generate summary
-  const summary = substituteVariables(template.summary, vars);
-  
+
+  const processedPages = template.pages.map((page) => replaceVariables(page, variables));
+
   return {
-    storyTitle: title,
-    storyText,
-    episodeSummary: summary,
-    choices: {
-      level1: 'Peaceful adventure',
-      level2: 'Cozy exploration',
-      level3: 'Sweet dreams ending',
-    },
-    tagsUsed: template.tags,
-    readingTimeMinutes: 4,
-    createdAt: new Date().toISOString(),
+    id: `demo-${Date.now()}`,
+    title: replaceVariables(template.title, variables),
+    pages: processedPages,
+    character_id: 'demo',
+    created_at: new Date().toISOString(),
   };
 };
