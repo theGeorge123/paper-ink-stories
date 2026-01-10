@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState } from "react";
 import { Language } from "@/lib/i18n";
+import { buildDemoRoute } from "@/lib/demoStorage";
 
 const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className?: string }) => (
   <motion.div
@@ -168,7 +169,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              onClick={() => navigate("/demo-reader")}
+              onClick={() => navigate(buildDemoRoute("/demo-reader"))}
               variant="outline"
               className="px-8 py-6 text-lg font-medium rounded-xl border-primary/50 hover:bg-primary/10"
             >
