@@ -127,9 +127,14 @@ export default function DemoHero() {
       sidekickArchetype: sidekickArchetype || null,
     };
 
-    saveDemoHero(heroData);
-    console.log('[DemoHero] Hero saved:', heroData);
-    navigate(buildDemoRoute('/demo-questions'));
+    try {
+      saveDemoHero(heroData);
+      console.log('[DemoHero] Hero saved:', heroData);
+      navigate(buildDemoRoute('/demo-questions'));
+    } catch (error) {
+      console.error('[DemoHero] Error saving hero:', error);
+      toast.error('Failed to save your hero. Please try again.');
+    }
   };
 
   const goToStep = (newStep: number) => {
