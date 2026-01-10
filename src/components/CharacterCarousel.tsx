@@ -68,12 +68,17 @@ function HeroPortrait({
   const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
   const colors = ARCHETYPE_COLORS[character.archetype] || { bg: 'from-primary/10 to-primary/20', accent: 'text-primary', glow: 'shadow-primary/30' };
 
+  useEffect(() => {
+    setError(false);
+    setLoading(true);
+  }, [imageUrl]);
+
   if (!imageUrl || error) {
     return (
       <div className={`${size} ${rounded} bg-gradient-to-br ${colors.bg} border-2 border-background shadow-md flex items-center justify-center flex-shrink-0 ${className}`}>
         <div className="flex flex-col items-center gap-1">
           <Icon className={`w-7 h-7 ${colors.accent}`} />
-          {onRetry && (
+          {!imageUrl && onRetry && (
             <button
               type="button"
               onClick={(e) => {
