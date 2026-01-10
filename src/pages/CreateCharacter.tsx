@@ -90,39 +90,53 @@ export default function CreateCharacter() {
   const [limitReached, setLimitReached] = useState(false);
   const [limitMessage, setLimitMessage] = useState('');
 
-  const pollForPortrait = async (characterId: string) => {
+  const generatePortrait = async (characterId: string) => {
     setGeneratingPortrait(true);
     setCreatedCharacterId(characterId);
     setPortraitMessage('We maken een betoverend portret voor je held...');
 
-    const maxAttempts = 25;
-    const delay = 2000;
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-hero-portrait', {
+        body: {
+          characterId,
+          name: name.trim(),
+          archetype,
+          traits,
+        },
+      });
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const { data, error } = await supabase
-        .from('characters')
-        .select('hero_image_url')
-        .eq('id', characterId)
-        .single();
-
-      if (error) {
-        console.error('Portrait polling error:', error);
-      }
-
-      if (data?.hero_image_url) {
-        setPortraitMessage('Portret klaar! We brengen je naar het avontuur...');
-        toast.success(`${name || 'Je held'} heeft nu een portret!`);
+      if (error || data?.error) {
+        console.error('Portrait generation error:', error || data?.error);
+        toast.message('Portret maken duurde te lang', {
+          description: 'We proberen het opnieuw op de achtergrond.',
+        });
         navigate('/dashboard');
         return;
       }
 
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+      const heroImageUrl = data?.hero_image_url as string | undefined;
 
-    toast.message('Portret is bijna klaar', {
-      description: 'Het verschijnt zodra het genereren is voltooid.',
-    });
-    navigate('/dashboard');
+      if (heroImageUrl) {
+        const { error: updateError } = await supabase
+          .from('characters')
+          .update({ hero_image_url: heroImageUrl })
+          .eq('id', characterId);
+
+        if (updateError) {
+          console.error('Failed to save hero image URL:', updateError);
+        }
+      }
+
+      setPortraitMessage('Portret klaar! We brengen je naar het avontuur...');
+      toast.success(`${name || 'Je held'} heeft nu een portret!`);
+      navigate('/dashboard');
+    } catch (portraitError) {
+      console.error('Portrait generation exception:', portraitError);
+      toast.error('Portret maken ging mis. We proberen het opnieuw.');
+      navigate('/dashboard');
+    } finally {
+      setGeneratingPortrait(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -201,7 +215,7 @@ export default function CreateCharacter() {
           supabaseCharacterId: data.character.id,
         });
         toast.success(`${name} is ready for adventure! Het portret wordt nu gemaakt...`);
-        await pollForPortrait(data.character.id);
+        await generatePortrait(data.character.id);
       } else {
         const heroTypeLabel = selectedArchetype?.label || archetype;
         saveHero(profileId, {
