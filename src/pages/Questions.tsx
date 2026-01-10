@@ -16,7 +16,6 @@ import {
   type QuestionLevel,
   type ThreeLevelQuestions,
 } from '@/lib/questions';
-import { getTotalPages } from '@/lib/storyEngine';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const levelLabels = {
@@ -31,18 +30,10 @@ type SelectionState = {
   level3?: string;
 };
 
-type QuestionHistoryEntry = {
-  page: number;
-  choices: SelectionState;
-  tags: string[];
-  created_at: string;
-};
-
 type StoryState = {
   location?: string | null;
   inventory?: string[];
   plot_outline?: string[];
-  question_history?: QuestionHistoryEntry[];
 };
 
 const getSelectionTags = (level: QuestionLevel, optionLabel: string) => {
@@ -55,7 +46,6 @@ const normalizeStoryState = (storyState: StoryState | null | undefined): StorySt
       location: null,
       inventory: [],
       plot_outline: [],
-      question_history: [],
     };
   }
 
@@ -63,7 +53,6 @@ const normalizeStoryState = (storyState: StoryState | null | undefined): StorySt
     location: storyState.location ?? null,
     inventory: Array.isArray(storyState.inventory) ? storyState.inventory : [],
     plot_outline: Array.isArray(storyState.plot_outline) ? storyState.plot_outline : [],
-    question_history: Array.isArray(storyState.question_history) ? storyState.question_history : [],
   };
 };
 
@@ -83,7 +72,6 @@ export default function Questions() {
 
   const storyId = storyIdParam || searchParams.get('storyId') || createdStoryId || undefined;
   const lengthSetting = searchParams.get('length');
-  const questionPage = Number(searchParams.get('page')) || 1;
 
   useEffect(() => {
     if (storyId || !characterId) return;
@@ -411,23 +399,12 @@ export default function Questions() {
       ];
 
       const storyState = normalizeStoryState(story.story_state as StoryState);
-      const selectionSummary = `Question choices after page ${questionPage}: ${
-        selections.level1
-      } / ${selections.level2} / ${selections.level3}`;
+      const selectionSummary = `Question choices before story: ${selections.level1} / ${selections.level2} / ${selections.level3}`;
       const updatedStoryState: StoryState = {
         ...storyState,
         plot_outline: storyState.plot_outline?.includes(selectionSummary)
           ? storyState.plot_outline
           : [...(storyState.plot_outline || []), selectionSummary],
-        question_history: [
-          ...(storyState.question_history || []),
-          {
-            page: questionPage,
-            choices: selections,
-            tags: selectionTags,
-            created_at: new Date().toISOString(),
-          },
-        ],
       };
 
       const character = story.characters as { id: string; preferred_themes?: string[] | null };
@@ -439,9 +416,7 @@ export default function Questions() {
         supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
       ]);
 
-      const totalPages = getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG');
-      const nextPage = Math.min(questionPage + 1, totalPages);
-      navigate(`/read/${story.id}?page=${nextPage}`);
+      navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save question answers', error);
       toast.error(

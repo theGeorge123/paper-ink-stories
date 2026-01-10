@@ -363,12 +363,7 @@ export default function Reader() {
   const handleTapRight = () => {
     // If there's a next page available, go to it
     if (canGoNext) {
-      const currentPageNumber = currentPageIndex + 1;
       const nextIndex = currentPageIndex + 1;
-      if (questionPages.includes(currentPageNumber)) {
-        navigate(`/read/${storyId}/questions?page=${currentPageNumber}`);
-        return;
-      }
       setDirection(1);
       setCurrentPageIndex(nextIndex);
     } 
@@ -377,11 +372,6 @@ export default function Reader() {
       const nextPage = pages.length + 1;
       setDirection(1);
       generatePage(nextPage, false).then(() => {
-        const currentPageNumber = currentPageIndex + 1;
-        if (questionPages.includes(currentPageNumber)) {
-          navigate(`/read/${storyId}/questions?page=${currentPageNumber}`);
-          return;
-        }
         // After generation, move to the new page
         setCurrentPageIndex(prev => prev + 1);
       });
