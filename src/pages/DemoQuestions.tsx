@@ -72,7 +72,7 @@ export default function DemoQuestions() {
 
     const heroData = getDemoHero();
     if (!heroData) {
-      navigate(buildDemoRoute('/demo-hero'));
+      navigate(buildDemoRoute('/demo-reader'));
       return;
     }
 
@@ -394,7 +394,7 @@ export default function DemoQuestions() {
         </section>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button variant="ghost" onClick={() => navigate(buildDemoRoute('/demo-hero'))}>
+          <Button variant="ghost" onClick={() => navigate(buildDemoRoute('/demo-reader'))}>
             {language === 'nl' ? 'Held aanpassen' : language === 'sv' ? 'Redigera hjälten' : 'Edit hero'}
           </Button>
           <Button

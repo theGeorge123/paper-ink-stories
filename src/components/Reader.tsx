@@ -201,7 +201,7 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
                 </Button>
                 <Button
                   onClick={() => {
-                    navigate(buildDemoRoute('/demo-hero'));
+                    navigate(buildDemoRoute('/demo-reader'));
                   }}
                   variant="ghost"
                   className="w-full text-white/70 hover:text-white"
