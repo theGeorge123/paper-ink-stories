@@ -7,10 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
-import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero, saveDemoStory, type DemoHeroInput } from '@/lib/demoStorage';
+import { buildDemoRoute, getDemoHero, getOrCreateDemoId, saveDemoHero, type DemoHeroInput } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import { toast } from 'sonner';
-import { generateDemoStoryFromTemplate } from '@/lib/demoStoryTemplate';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight', color: 'from-blue-400/20 to-blue-600/20', glow: 'shadow-blue-500/30' },
@@ -111,8 +110,8 @@ export default function DemoHero() {
 
   const handleStartDemo = () => {
     if (!demoId) {
-      console.error('[DemoHero] Missing demo id when starting demo.');
-      toast.error('We could not find your demo session. Please refresh and try again.');
+      console.error('[DemoHero] Missing demo id');
+      toast.error('Could not find your demo session. Please refresh.');
       return;
     }
 
@@ -128,24 +127,10 @@ export default function DemoHero() {
       sidekickArchetype: sidekickArchetype || null,
     };
 
-    try {
-      // Save hero data
-      saveDemoHero(heroData);
-      console.log('[DemoHero] Hero saved:', heroData);
-      
-      // Generate instant story from template (no API call, no questions)
-      const story = generateDemoStoryFromTemplate(heroData);
-      saveDemoStory(story);
-      console.log('[DemoHero] Story generated instantly:', story.storyTitle);
-      
-      trackDemoEvent('demo_story_generated_instant', { demoId, title: story.storyTitle });
-      
-      // Go straight to reader - skip questions entirely
-      navigate(buildDemoRoute('/demo-reader'));
-    } catch (error) {
-      console.error('[DemoHero] Error saving hero:', error);
-      toast.error('Failed to save your hero. Please try again.');
-    }
+    saveDemoHero(heroData);
+
+    // Navigate directly to DemoReader (bypass questions)
+    navigate(buildDemoRoute('/demo-reader'));
   };
 
   const goToStep = (newStep: number) => {
