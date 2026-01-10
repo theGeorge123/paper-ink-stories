@@ -103,6 +103,16 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="/questions/:characterId"
+                  element={
+                    <ErrorBoundary fallbackMessage="We couldn’t load the story questions.">
+                      <Suspense fallback={<PageLoader />}>
+                        <Questions />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
                   path="/demo-hero"
                   element={
                     <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
