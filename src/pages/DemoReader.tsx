@@ -1,35 +1,27 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Reader from '@/components/Reader';
-import { buildDemoRoute, getDemoHero, getDemoIdFromCookie } from '@/lib/demoStorage';
+import { getDemoHero } from '@/lib/demoStorage';
 import { generateDemoStory } from '@/lib/demoStoryTemplate';
-import type { DemoStoryRecord } from '@/lib/demoStoryTemplate';
+import Reader from '@/components/Reader';
 
 export default function DemoReader() {
-  const navigate = useNavigate();
-  const [story, setStory] = useState<DemoStoryRecord | null>(null);
-  const [heroName, setHeroName] = useState<string | null>(null);
+  const [story, setStory] = useState(null);
+  const [heroName, setHeroName] = useState('');
 
   useEffect(() => {
-    const demoId = getDemoIdFromCookie();
     const hero = getDemoHero();
-
-    // Validate demo session exists
-    if (!demoId || !hero) {
-      navigate(buildDemoRoute('/demo-hero'));
-      return;
+    if (hero) {
+      const generatedStory = generateDemoStory(hero);
+      setStory(generatedStory);
+      setHeroName(hero.heroName);
     }
-
-    // Generate story from template using saved hero data
-    const generatedStory = generateDemoStory(hero);
-    setHeroName(hero.heroName);
-    setStory(generatedStory);
-  }, [navigate]);
+  }, []);
 
   if (!story) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-indigo-950 to-slate-950">
-        <p className="text-white/70">Loading your adventure...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Generating your story...</p>
+        </div>
       </div>
     );
   }
