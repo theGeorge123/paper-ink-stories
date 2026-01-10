@@ -151,34 +151,65 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
             </motion.div>
             <h1 className="font-serif text-3xl text-white mb-2">{t('theEnd')}</h1>
             <p className="text-white/70">
-              {heroName ? `${heroName}'s story is ready for another cozy night.` : 'Your demo adventure is complete.'}
+              {isDemo
+                ? `${heroName ?? 'Luna'}'s sample story is complete.`
+                : heroName
+                  ? `${heroName}'s story is ready for another cozy night.`
+                  : 'Your demo adventure is complete.'}
             </p>
           </div>
 
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
-            <p className="text-white/80 text-sm mb-4">
-              Create your own personalized characters and unlock infinite bedtime adventures that grow with your child.
-            </p>
-            <Button
-              onClick={() => {
-                clearDemoId();
-                navigate('/auth');
-              }}
-              size="lg"
-              className="w-full mb-3"
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {t('createFreeAccount')}
-            </Button>
-            <Button
-              onClick={() => {
-                navigate(buildDemoRoute('/demo-hero'));
-              }}
-              variant="ghost"
-              className="w-full text-white/70 hover:text-white"
-            >
-              Create a new hero
-            </Button>
+            {isDemo ? (
+              <>
+                <p className="text-white/80 text-sm mb-4">
+                  Loved {heroName ?? 'Luna'}'s adventure? Create YOUR child's personalized story! This was just a sample demo.
+                </p>
+                <Button
+                  onClick={() => {
+                    clearDemoId();
+                    navigate('/auth');
+                  }}
+                  size="lg"
+                  className="w-full mb-3"
+                >
+                  Sign Up Free
+                </Button>
+                <Button
+                  onClick={() => navigate('/')}
+                  variant="ghost"
+                  className="w-full text-white/70 hover:text-white"
+                >
+                  Back to home
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-white/80 text-sm mb-4">
+                  Create your own personalized characters and unlock infinite bedtime adventures that grow with your child.
+                </p>
+                <Button
+                  onClick={() => {
+                    clearDemoId();
+                    navigate('/auth');
+                  }}
+                  size="lg"
+                  className="w-full mb-3"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {t('createFreeAccount')}
+                </Button>
+                <Button
+                  onClick={() => {
+                    navigate(buildDemoRoute('/demo-hero'));
+                  }}
+                  variant="ghost"
+                  className="w-full text-white/70 hover:text-white"
+                >
+                  Create a new hero
+                </Button>
+              </>
+            )}
           </div>
         </motion.div>
       </div>
