@@ -1,6 +1,6 @@
 /**
  * Demo Story Template System
- * 
+ *
  * Creates instant, personalized bedtime stories using variable substitution.
  * The output is indistinguishable from AI-generated stories in the reader.
  */
@@ -11,6 +11,7 @@ type StoryVariables = {
   heroName: string;
   heroType: string;
   trait: string;
+  comfortItem: string;
   sidekickName: string | null;
   sidekickType: string | null;
 };
@@ -24,115 +25,109 @@ export type DemoStoryRecord = {
 };
 
 // Story templates with {variable} placeholders
-// Each template produces 5-6 pages of content, matching AI story structure
+// Each template produces 5 pages of content, matching AI story structure
 
 const STORY_TEMPLATES = [
   // Template 1: The Moonlit Garden Adventure
   {
     title: "{heroName}'s Moonlit Garden",
     pages: [
-      `{heroName} the {trait} {heroType} yawned softly as the evening stars began to twinkle outside the cozy window. The day had been full of wonderful adventures, but now it was time for the most magical hour—the hour when the garden came alive with gentle moonlight.
+      `{heroName} the {trait} {heroType} padded to the window as evening stars blinked on, one by one. A soft breeze stirred the curtains, carrying the sweet scent of flowers and the hush of a coming night.
 
 {sidekickIntro}
 
-"I wonder what secrets the garden holds tonight," {heroName} whispered, {heroNamePossessive} eyes sparkling with quiet curiosity. The moon seemed to smile back, casting a silvery glow over everything it touched.`,
+"I think the garden is ready for us," {heroName} whispered, tucking {heroNamePossessive} {comfortItem} under one arm before slipping outside.`,
 
-      `Stepping onto the soft grass, {heroName} felt the cool evening air wrap around like a gentle hug. Fireflies danced in lazy circles, their tiny lights blinking hello. The flowers had closed their petals for the night, tucking themselves in just like little children.
+      `The garden shimmered in silver moonlight. Fireflies drew gentle loops in the air, and the flowers tucked their petals in as if yawning for bed. Each step felt light and quiet, like walking through a lullaby.
 
 {sidekickMiddle}
 
-A wise old owl hooted softly from the oak tree. "Good evening, little {heroType}," she cooed. "The garden has been waiting for you." {heroName} smiled, feeling warm and welcome in this peaceful place.`,
+A wise old owl watched from the oak tree. "Good evening, little {heroType}," she cooed. "The garden saved its softest wonders for a {trait} heart like yours."`,
 
-      `{heroName} followed a winding path of smooth stones that glowed faintly in the moonlight. Each step made a soft sound, like a whispered lullaby. The {trait} {heroType} noticed how everything in the garden seemed to be getting ready for sleep.
+      `{heroName} followed a path of smooth stones that glowed faintly under the moon. The {trait} {heroType} paused to listen: the brook murmured a sleepy story to the pebbles, and the leaves rustled a gentle shush-shush.
 
-The roses swayed gently, humming a quiet tune. The brook babbled softly, telling bedtime stories to the pebbles. Even the wind had slowed to a gentle breeze, rustling the leaves with a soothing shush-shush sound.`,
+The air felt cool and kind, wrapping around {heroName} like a cozy blanket. Somewhere nearby, a cricket began a slow, steady song that matched the pace of {heroNamePossessive} breathing.`,
 
-      `Near the center of the garden stood a magnificent willow tree, its long branches creating a cozy curtain all around. {heroName} parted the branches carefully and discovered the most wonderful sight—a circle of soft moss, perfect for resting.
+      `Near the center of the garden stood a willow tree, its long branches making a curtain of green. {heroName} brushed the branches aside and found a circle of soft moss, perfectly shaped for resting.
 
 {sidekickEnd}
 
-"This is my favorite spot," {heroName} murmured, settling down onto the cushiony moss. The willow branches swayed overhead like a natural mobile, and the stars peeked through the leaves like tiny nightlights.`,
+"This feels just right," {heroName} said softly, settling in with {heroNamePossessive} {comfortItem} tucked close. The willow leaves swayed above like tiny nightlights.`,
 
-      `{heroName} gazed up at the night sky, counting the brightest stars. One, two, three... The {trait} {heroType}'s eyelids grew heavy with each number. The garden sang a soft chorus of crickets and gentle winds.
+      `{heroName} gazed up at the sky and counted the brightest stars. One, two, three... With each number, the {trait} {heroType}'s eyelids grew heavier, as if the night were gently closing them.
 
-"Thank you for this beautiful night," {heroName} whispered to the moon. The fireflies gathered closer, creating a warm, golden glow. Safe and loved, surrounded by the magic of the moonlit garden, {heroName} drifted into the sweetest of dreams.
-
-The stars twinkled their approval, and somewhere, an owl hooted a soft goodnight.`,
+"Thank you, moon," {heroName} murmured. The fireflies gathered near, making a warm golden glow. Safe and sleepy in the moonlit garden, {heroName} drifted into the sweetest dreams.`,
     ],
     summary: "{heroName} explored a magical moonlit garden and discovered a cozy resting spot under a willow tree.",
-    tags: ["nature", "peaceful", "garden", "nighttime", "gentle"],
+    tags: ['nature', 'peaceful', 'garden', 'nighttime', 'gentle'],
   },
 
   // Template 2: The Cozy Cloud Kingdom
   {
-    title: "{heroName} and the Cloud Kingdom",
+    title: '{heroName} and the Cloud Kingdom',
     pages: [
-      `High above the treetops, where the sunset painted the sky in shades of pink and gold, there floated a kingdom made entirely of clouds. {heroName} the {trait} {heroType} had heard whispers about this magical place, and tonight, the clouds had sent a special invitation.
+      `High above the treetops, a kingdom made of clouds glowed with sunset colors. {heroName} the {trait} {heroType} had heard quiet whispers about it, and tonight the clouds sent a special invitation just for {heroNamePossessive} heart.
 
 {sidekickIntro}
 
-A soft, fluffy cloud drifted down like a gentle elevator. "Hop on," it seemed to say, and {heroName} climbed aboard, feeling the cloud's cotton-candy softness beneath {heroNamePossessive} feet.`,
+A soft cloud drifted down like a gentle elevator. {heroName} hugged {heroNamePossessive} {comfortItem} and stepped onto its cotton-candy surface.`,
 
-      `The cloud carried {heroName} higher and higher, past sleepy birds returning to their nests, past the first twinkling stars appearing in the darkening sky. The air grew warmer and smelled of honey and lavender.
+      `The cloud carried {heroName} higher and higher, past sleepy birds and into the warm lavender air. The sky smelled like honey and vanilla, and the first stars blinked hello.
 
 {sidekickMiddle}
 
-The Cloud Kingdom appeared before them—a wonderland of soft white towers and bridges made of mist. Cloud creatures waved hello: fluffy bunnies, cotton sheep, and the gentlest dragons {heroName} had ever seen, their breath making tiny rainbows instead of fire.`,
+Ahead, the Cloud Kingdom appeared: white towers, misty bridges, and friendly cloud creatures waving from every ledge. They smiled as if they had been waiting all day.`,
 
-      `The king of the Cloud Kingdom was a kind old bear with fur as white as snow. "Welcome, dear {heroType}," he said with a warm smile. "We've prepared something special for our {trait} guest."
+      `A kind cloud bear with fur as white as snowfall greeted {heroName}. "Welcome, dear {heroType}," he said. "We prepared a special place for our {trait} guest."
 
-He led {heroName} to a great hall where cloud pillows of every size and shape were arranged in a cozy nest. Soft music played—the sound of gentle rain and distant thunder, like nature's own lullaby.`,
+He led {heroName} to a hall filled with cloud pillows of every size. Soft music floated through the air, like the sound of gentle rain.`,
 
-      `{heroName} sank into the cloud pillows, each one softer than the last. The ceiling of the hall slowly turned from sunset colors to deep, peaceful blue, dotted with glowing stars that the cloud creatures had collected just for this moment.
+      `{heroName} sank into the pillows, each one softer than the last. The ceiling faded from sunset gold to deep, peaceful blue, dotted with tiny lights that twinkled like dream-stars.
 
 {sidekickEnd}
 
-"These stars are for sweet dreams," the Cloud King explained, his voice as soothing as a warm blanket. "Each one holds a happy memory, ready to share with sleeping visitors."`,
+"Each star holds a happy memory," the Cloud Bear whispered. "They glow brightest when someone feels safe."`,
 
-      `The cloud pillows wrapped around {heroName} like the coziest hug. The {trait} {heroType} felt perfectly safe, floating on the softest bed in all the world. The gentle cloud creatures gathered around, humming a quiet melody.
+      `Wrapped in cloud softness, {heroName} felt perfectly held. The {trait} {heroType} nestled {heroNamePossessive} {comfortItem} close, listening to the quiet hum of the kingdom.
 
-"Sleep well, little one," whispered the Cloud King. "The kingdom will watch over you until morning."
-
-{heroName} smiled peacefully, eyes closing. Above, the dream-stars began to twinkle their bedtime stories, and the Cloud Kingdom filled with the sweetest, softest silence of a world at rest.`,
+"Sleep well, little one," the Cloud Bear said. The dream-stars shimmered softly, and {heroName} drifted into warm, floating dreams.`,
     ],
     summary: "{heroName} visited a magical Cloud Kingdom and found the coziest cloud pillows for the sweetest dreams.",
-    tags: ["clouds", "magical", "cozy", "floating", "dreams"],
+    tags: ['clouds', 'magical', 'cozy', 'floating', 'dreams'],
   },
 
   // Template 3: The Friendly Forest Friends
   {
     title: "{heroName}'s Forest Lullaby",
     pages: [
-      `The forest at twilight was the most peaceful place {heroName} knew. As the sun dipped below the trees, painting everything in warm golden light, the {trait} {heroType} padded softly down the familiar path of pine needles.
+      `Twilight settled over the forest like a soft blanket. {heroName} the {trait} {heroType} walked the pine-needle path, listening to the hush of leaves and the distant call of night birds.
 
 {sidekickIntro}
 
-The trees seemed to lean in closer, their leaves whispering secrets of the day. A gentle breeze carried the sweet scent of wildflowers and fresh rain.`,
+"Let's say goodnight to everyone," {heroName} whispered, holding {heroNamePossessive} {comfortItem} close.`,
 
-      `One by one, the forest friends came to say goodnight. First came the deer family, moving silently on soft hooves. "Sweet dreams, dear {heroName}," the mother deer said, touching {heroNamePossessive} nose gently with her own.
+      `One by one, the forest friends appeared. A deer family stepped gently from the trees, noses warm and kind. "Sweet dreams, {heroName}," the mother deer said, brushing {heroNamePossessive} cheek.
 
 {sidekickMiddle}
 
-Then the rabbits appeared, their fluffy tails bobbing as they hopped closer. The youngest bunny yawned hugely, already ready for bed. "We're heading to our burrow," they said. "Will you walk with us a while?"`,
+Rabbits hopped up next, their fluffy tails bobbing. The smallest bunny yawned so wide it made {heroName} smile. "We'll walk with you for a while," they promised.`,
 
-      `{heroName} walked with the rabbits, then the squirrels, then a family of friendly hedgehogs. Each friend had their own cozy home to return to, and each shared a piece of their evening peace.
+      `{heroName} strolled with the rabbits, then with the squirrels, then with a family of friendly hedgehogs. Each friend shared a quiet moment: the squirrels pointed to their leafy nest, and the hedgehogs showed their cozy moss bed.
 
-The squirrels showed {heroName} their nest high in an oak tree. "It's made of the softest leaves," they explained proudly. The hedgehogs' home was a snug hollow beneath a log, lined with moss and dried flowers.`,
+The forest felt like a warm circle of friends, each one adding a little more peace to the evening.`,
 
-      `As the last light faded, {heroName} reached a special clearing where an ancient oak tree stood. Its trunk was wide and welcoming, with a natural hollow just the right size for a {trait} {heroType} to curl up in.
+      `At last, {heroName} reached an ancient oak with a hollow just the right size for a {heroType} to rest. The tree's bark was smooth and warm, as if it had been waiting.
 
 {sidekickEnd}
 
-The tree seemed to wrap its branches around protectively. "Rest here, little one," the old oak seemed to say. "I have watched over forest friends for a hundred years."`,
+"This is your cozy place," the old oak seemed to hum, and {heroName} curled up with {heroNamePossessive} {comfortItem}.`,
 
-      `{heroName} settled into the cozy hollow, feeling the tree's gentle strength all around. The bark was surprisingly soft, worn smooth by generations of forest friends who had rested here before.
+      `An owl began a slow, soothing song. Crickets joined in, and the frogs by the pond added their gentle chorus. The whole forest turned into a lullaby.
 
-Above, an owl began to sing a low, soothing song. The crickets joined in, and the frogs by the distant pond added their chorus. The whole forest was singing {heroName} to sleep.
-
-Warm, safe, and surrounded by friends, the {trait} {heroType} closed {heroNamePossessive} eyes. Tomorrow would bring new adventures, but for now, there was only peace, and the gentle lullaby of the forest.`,
+Safe among friends and trees, the {trait} {heroType} closed {heroNamePossessive} eyes, ready for dreams as soft as moss and as kind as moonlight.`,
     ],
     summary: "{heroName} said goodnight to forest friends and found a cozy resting spot in an ancient oak tree.",
-    tags: ["forest", "animals", "friendship", "nature", "peaceful"],
+    tags: ['forest', 'animals', 'friendship', 'nature', 'peaceful'],
   },
 ];
 
@@ -157,9 +152,9 @@ const getPossessive = (name: string): string => {
  */
 const getSidekickIntro = (vars: StoryVariables): string => {
   if (!vars.sidekickName || !vars.sidekickType) {
-    return `The {heroType}'s heart felt full of warmth as the adventure began.`;
+    return `{heroName} took a calming breath, feeling {heroNamePossessive} {comfortItem} warm and familiar.`;
   }
-  return `{sidekickName} the {sidekickType} padded along beside {heroName}, ${getArticle(vars.sidekickType!)} loyal companion in every adventure. "This is going to be wonderful," {sidekickName} said with a cheerful smile.`;
+  return `{sidekickName} the {sidekickType} padded along beside {heroName}, ${getArticle(vars.sidekickType!)} loyal companion with a {trait} sparkle in their eyes. "This is going to be wonderful," {sidekickName} said.`;
 };
 
 /**
@@ -167,9 +162,9 @@ const getSidekickIntro = (vars: StoryVariables): string => {
  */
 const getSidekickMiddle = (vars: StoryVariables): string => {
   if (!vars.sidekickName || !vars.sidekickType) {
-    return `{heroName} took a deep breath, feeling grateful for this peaceful moment.`;
+    return `{heroName} smiled quietly, letting the peaceful sounds guide each step.`;
   }
-  return `{sidekickName} stayed close by, the {sidekickType}'s presence a constant comfort. "Isn't this amazing?" {sidekickName} whispered, and {heroName} nodded happily.`;
+  return `{sidekickName} stayed close, the {sidekickType}'s presence a gentle comfort. "I'm right here," {sidekickName} whispered, and {heroName} nodded with a {trait} grin.`;
 };
 
 /**
@@ -177,9 +172,9 @@ const getSidekickMiddle = (vars: StoryVariables): string => {
  */
 const getSidekickEnd = (vars: StoryVariables): string => {
   if (!vars.sidekickName || !vars.sidekickType) {
-    return `{heroName} smiled contentedly, ready for rest.`;
+    return `{heroName} felt perfectly ready for rest, cozy and safe.`;
   }
-  return `{sidekickName} curled up nearby, the {sidekickType}'s gentle breathing a soothing rhythm. "Goodnight, {heroName}," {sidekickName} murmured sleepily.`;
+  return `{sidekickName} curled up nearby, the {sidekickType}'s breathing slow and steady. "Goodnight, {heroName}," {sidekickName} murmured.`;
 };
 
 /**
@@ -187,25 +182,26 @@ const getSidekickEnd = (vars: StoryVariables): string => {
  */
 const replaceVariables = (text: string, vars: StoryVariables): string => {
   let result = text;
-  
+
   // First, substitute sidekick-specific blocks
   result = result.replace(/{sidekickIntro}/g, getSidekickIntro(vars));
   result = result.replace(/{sidekickMiddle}/g, getSidekickMiddle(vars));
   result = result.replace(/{sidekickEnd}/g, getSidekickEnd(vars));
-  
+
   // Then substitute simple variables
   result = result.replace(/{heroName}/g, vars.heroName);
   result = result.replace(/{heroType}/g, vars.heroType.toLowerCase());
   result = result.replace(/{trait}/g, vars.trait.toLowerCase());
+  result = result.replace(/{comfortItem}/g, vars.comfortItem.toLowerCase());
   result = result.replace(/{heroNamePossessive}/g, getPossessive(vars.heroName));
-  
+
   if (vars.sidekickName) {
     result = result.replace(/{sidekickName}/g, vars.sidekickName);
   }
   if (vars.sidekickType) {
     result = result.replace(/{sidekickType}/g, vars.sidekickType.toLowerCase());
   }
-  
+
   return result;
 };
 
@@ -219,6 +215,7 @@ export const generateDemoStory = (hero: DemoHeroInput): DemoStoryRecord => {
     heroName: hero.heroName,
     heroType: hero.heroType,
     trait: hero.heroTrait?.split(',')[0]?.trim() || 'curious',
+    comfortItem: hero.comfortItem?.trim() || 'blanket',
     sidekickName: hero.sidekickName || null,
     sidekickType: hero.sidekickArchetype || null,
   };
