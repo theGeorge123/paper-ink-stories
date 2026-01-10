@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import LengthSelectModal from '@/components/LengthSelectModal';
+import { normalizeHeroImageUrl } from '@/lib/heroImage';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -31,10 +32,19 @@ interface CharacterCardProps {
 export default function CharacterCard({ character }: CharacterCardProps) {
   const [showLengthModal, setShowLengthModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
 
   const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
   const activeStory = character.stories?.find((s) => s.is_active);
+  const heroImageUrl = useMemo(
+    () => normalizeHeroImageUrl(character.hero_image_url),
+    [character.hero_image_url],
+  );
+
+  useEffect(() => {
+    setImageError(false);
+  }, [heroImageUrl]);
 
   const startNewStory = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     setLoading(true);
@@ -74,12 +84,13 @@ export default function CharacterCard({ character }: CharacterCardProps) {
         className="character-card p-6"
       >
         <div className="flex items-start gap-4">
-          {character.hero_image_url ? (
+          {heroImageUrl && !imageError ? (
             <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
-              <img 
-                src={character.hero_image_url} 
+              <img
+                src={heroImageUrl}
                 alt={character.name}
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             </div>
           ) : (
