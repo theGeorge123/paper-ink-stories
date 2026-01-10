@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import LengthSelectModal from '@/components/LengthSelectModal';
 import { normalizeHeroImageUrl } from '@/lib/heroImage';
 
@@ -46,32 +45,10 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     setImageError(false);
   }, [heroImageUrl]);
 
-  const startNewStory = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
+  const startNewStory = (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
     setLoading(true);
-    
-    // Deactivate old stories
-    await supabase
-      .from('stories')
-      .update({ is_active: false })
-      .eq('character_id', character.id);
-
-    // Create new story
-    const { data: newStory, error } = await supabase
-      .from('stories')
-      .insert({
-        character_id: character.id,
-        length_setting: length,
-        is_active: true,
-      })
-      .select()
-      .single();
-
-    setLoading(false);
     setShowLengthModal(false);
-
-    if (!error && newStory) {
-      navigate(`/read/${newStory.id}`);
-    }
+    navigate(`/questions/${character.id}?length=${length}`);
   };
 
   return (

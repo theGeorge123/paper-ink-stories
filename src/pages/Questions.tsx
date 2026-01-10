@@ -68,10 +68,12 @@ const normalizeStoryState = (storyState: StoryState | null | undefined): StorySt
 };
 
 export default function Questions() {
-  const { storyId } = useParams<{ storyId: string }>();
+  const { storyId: storyIdParam, characterId } = useParams<{ storyId?: string; characterId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const [createdStoryId, setCreatedStoryId] = useState<string | null>(null);
+  const [isCreatingStory, setIsCreatingStory] = useState(false);
   const [questions, setQuestions] = useState<ThreeLevelQuestions | null>(null);
   const [currentLevel, setCurrentLevel] = useState<1 | 2 | 3>(1);
   const [selections, setSelections] = useState<SelectionState>({});
@@ -79,7 +81,56 @@ export default function Questions() {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [usedAiQuestions, setUsedAiQuestions] = useState(false);
 
+  const storyId = storyIdParam || searchParams.get('storyId') || createdStoryId || undefined;
+  const lengthSetting = searchParams.get('length');
   const questionPage = Number(searchParams.get('page')) || 1;
+
+  useEffect(() => {
+    if (storyId || !characterId) return;
+
+    const createStory = async () => {
+      setIsCreatingStory(true);
+
+      const length =
+        lengthSetting === 'SHORT' || lengthSetting === 'MEDIUM' || lengthSetting === 'LONG'
+          ? lengthSetting
+          : 'SHORT';
+
+      try {
+        await supabase.from('stories').update({ is_active: false }).eq('character_id', characterId);
+
+        const { data: newStory, error } = await supabase
+          .from('stories')
+          .insert({
+            character_id: characterId,
+            length_setting: length,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (error || !newStory) {
+          throw error || new Error('Story creation failed');
+        }
+
+        setCreatedStoryId(newStory.id);
+      } catch (error) {
+        console.error('[Questions] Failed to create story:', error);
+        toast.error(
+          language === 'nl'
+            ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+            : language === 'sv'
+            ? 'Sagomagin vilar en stund. Försök igen snart.'
+            : 'Story magic is resting. Please try again soon.',
+        );
+        navigate('/dashboard');
+      } finally {
+        setIsCreatingStory(false);
+      }
+    };
+
+    createStory();
+  }, [storyId, characterId, lengthSetting, language, navigate]);
 
   const { data: story } = useQuery({
     queryKey: ['story', storyId],
@@ -237,6 +288,47 @@ export default function Questions() {
   }, [heroProfile, questions, generateAiQuestions, getStaticQuestions, language]);
 
   // Loading state while generating questions
+  if (isCreatingStory) {
+    return (
+      <div className="min-h-screen bg-background paper-texture">
+        <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+          <header className="flex items-center gap-3">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-64" />
+            </div>
+          </header>
+
+          <div className="book-cover relative overflow-hidden p-6 sm:p-8">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex items-center gap-3"
+              >
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-muted-foreground text-center"
+              >
+                {language === 'nl'
+                  ? 'Verhaal klaarmaken...'
+                  : language === 'sv'
+                  ? 'Förbereder berättelse...'
+                  : 'Preparing your story...'}
+              </motion.p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!story || !heroProfile) {
     return null;
   }
