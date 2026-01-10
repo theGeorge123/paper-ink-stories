@@ -168,7 +168,7 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
-              onClick={() => navigate("/demo-hero")}
+              onClick={() => navigate("/demo-reader")}
               variant="outline"
               className="px-8 py-6 text-lg font-medium rounded-xl border-primary/50 hover:bg-primary/10"
             >
