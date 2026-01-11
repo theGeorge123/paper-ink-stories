@@ -19,12 +19,18 @@ const LENGTH_PAGE_RANGES = {
   LONG: '9-12',
 };
 
-export function getTotalPages(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): number {
-  return LENGTH_PAGES[lengthSetting];
+export function getTotalPages(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG' | string | undefined): number {
+  if (lengthSetting && lengthSetting in LENGTH_PAGES) {
+    return LENGTH_PAGES[lengthSetting as 'SHORT' | 'MEDIUM' | 'LONG'];
+  }
+  return LENGTH_PAGES.MEDIUM; // Default fallback
 }
 
-export function getPageRangeLabel(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): string {
-  return LENGTH_PAGE_RANGES[lengthSetting];
+export function getPageRangeLabel(lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG' | string | undefined): string {
+  if (lengthSetting && lengthSetting in LENGTH_PAGE_RANGES) {
+    return LENGTH_PAGE_RANGES[lengthSetting as 'SHORT' | 'MEDIUM' | 'LONG'];
+  }
+  return LENGTH_PAGE_RANGES.MEDIUM; // Default fallback
 }
 
 export function getStoryPhase(currentPage: number, lengthSetting: 'SHORT' | 'MEDIUM' | 'LONG'): StoryPhase {

@@ -345,6 +345,64 @@ export default function Questions() {
     );
   }
 
+  // Define handleAdaptiveComplete before conditional returns that use it
+  const handleAdaptiveComplete = async (answers: Record<string, string>) => {
+    if (!story) return;
+    
+    setAdaptiveAnswers(answers);
+    setSaving(true);
+
+    try {
+      // Extract story length from answers and map to database format
+      const lengthValue = answers.story_length?.toLowerCase() || 'medium';
+      const storyLength = lengthValue === 'short' ? 'SHORT' : lengthValue === 'long' ? 'LONG' : 'MEDIUM';
+      
+      // Update story with length setting
+      const storyState = normalizeStoryState(story.story_state as StoryState);
+      const selectionSummary = `Adaptive question answers: ${JSON.stringify(answers)}`;
+      const updatedStoryState: StoryState = {
+        ...storyState,
+        plot_outline: storyState.plot_outline?.includes(selectionSummary)
+          ? storyState.plot_outline
+          : [...(storyState.plot_outline || []), selectionSummary],
+      };
+
+      // Extract tags from adaptive question answers (if available)
+      const selectionTags: string[] = [];
+      if (answers.setting) selectionTags.push(answers.setting);
+      if (answers.companion) selectionTags.push(answers.companion);
+      if (answers.mood) selectionTags.push(answers.mood);
+
+      const character = story.characters as { id: string; preferred_themes?: string[] | null };
+      const currentPreferred = (character.preferred_themes as string[]) || [];
+      const updatedPreferred = Array.from(new Set([...currentPreferred, ...selectionTags])).slice(-10);
+
+      await Promise.all([
+        supabase
+          .from('stories')
+          .update({ 
+            story_state: updatedStoryState,
+            length_setting: storyLength === 'SHORT' ? 'SHORT' : storyLength === 'LONG' ? 'LONG' : 'MEDIUM',
+          })
+          .eq('id', story.id),
+        supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
+      ]);
+
+      navigate(`/read/${story.id}`);
+    } catch (error) {
+      console.error('Failed to save adaptive question answers', error);
+      toast.error(
+        language === 'nl'
+          ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+          : language === 'sv'
+          ? 'Sagomagin vilar en stund. Försök igen snart.'
+          : 'Story magic is resting. Please try again soon.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!story || !heroProfile) {
     return null;
   }
@@ -445,61 +503,6 @@ export default function Questions() {
   };
 
   const hasAllSelections = selections.level1 && selections.level2 && selections.level3;
-
-  const handleAdaptiveComplete = async (answers: Record<string, string>) => {
-    setAdaptiveAnswers(answers);
-    setSaving(true);
-
-    try {
-      // Extract story length from answers and map to database format
-      const lengthValue = answers.story_length?.toLowerCase() || 'medium';
-      const storyLength = lengthValue === 'short' ? 'SHORT' : lengthValue === 'long' ? 'LONG' : 'MEDIUM';
-      
-      // Update story with length setting
-      const storyState = normalizeStoryState(story.story_state as StoryState);
-      const selectionSummary = `Adaptive question answers: ${JSON.stringify(answers)}`;
-      const updatedStoryState: StoryState = {
-        ...storyState,
-        plot_outline: storyState.plot_outline?.includes(selectionSummary)
-          ? storyState.plot_outline
-          : [...(storyState.plot_outline || []), selectionSummary],
-      };
-
-      // Extract tags from adaptive question answers (if available)
-      const selectionTags: string[] = [];
-      if (answers.setting) selectionTags.push(answers.setting);
-      if (answers.companion) selectionTags.push(answers.companion);
-      if (answers.mood) selectionTags.push(answers.mood);
-
-      const character = story.characters as { id: string; preferred_themes?: string[] | null };
-      const currentPreferred = (character.preferred_themes as string[]) || [];
-      const updatedPreferred = Array.from(new Set([...currentPreferred, ...selectionTags])).slice(-10);
-
-      await Promise.all([
-        supabase
-          .from('stories')
-          .update({ 
-            story_state: updatedStoryState,
-            length_setting: storyLength === 'SHORT' ? 'SHORT' : storyLength === 'LONG' ? 'LONG' : 'MEDIUM',
-          })
-          .eq('id', story.id),
-        supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
-      ]);
-
-      navigate(`/read/${story.id}`);
-    } catch (error) {
-      console.error('Failed to save adaptive question answers', error);
-      toast.error(
-        language === 'nl'
-          ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
-          : language === 'sv'
-          ? 'Sagomagin vilar en stund. Försök igen snart.'
-          : 'Story magic is resting. Please try again soon.',
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleContinue = async () => {
     if (!hasAllSelections) {
