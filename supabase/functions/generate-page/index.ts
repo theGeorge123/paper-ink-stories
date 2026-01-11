@@ -435,13 +435,32 @@ ${character.sidekick_name ? `- Loyal Companion: ${character.sidekick_name} the $
       `Page ${p.page_number}: ${p.content}`
     ).join("\n\n");
 
+    // Extract adaptive question answers from plot_outline if present
+    let adaptiveAnswers: Record<string, string> | null = null;
+    let regularPlotOutline: string[] = [];
+    
+    if (storyState.plot_outline?.length) {
+      for (const item of storyState.plot_outline) {
+        if (typeof item === 'string' && item.startsWith('Adaptive question answers:')) {
+          try {
+            const jsonStr = item.replace('Adaptive question answers: ', '');
+            adaptiveAnswers = JSON.parse(jsonStr);
+          } catch (e) {
+            console.log("Could not parse adaptive answers:", e);
+          }
+        } else {
+          regularPlotOutline.push(item);
+        }
+      }
+    }
+
     // Determine story phase for pacing
     const storyProgress = currentPage / targetPages;
     let storyPhase = "SETUP";
     if (storyProgress > 0.6) storyPhase = "WINDDOWN";
     else if (storyProgress > 0.2) storyPhase = "JOURNEY";
 
-    // Build user prompt with all context (simplified - no mood/humor)
+    // Build user prompt with all context
     let userPrompt = `
 ${characterDNA}
 
@@ -451,10 +470,15 @@ Write the entire story in ${languageName}. All text including next_options must 
 ## CURRENT STORY STATE
 - Location: ${storyState.location}
 - Items Collected: ${storyState.inventory?.length ? storyState.inventory.join(", ") : "none yet"}
-- Plot Outline: ${storyState.plot_outline?.length ? storyState.plot_outline.join(" → ") : "(Generate on page 1)"}
+- Plot Outline: ${regularPlotOutline.length ? regularPlotOutline.join(" → ") : "(Generate on page 1)"}
 - Story Phase: ${storyPhase} (${Math.round(storyProgress * 100)}% through the story)
 - Story Length: ${story.length_setting} (${targetPages} pages total)
 - Current Page: ${currentPage} of ${targetPages}
+${adaptiveAnswers ? `
+## PRE-STORY CHOICES (CRITICAL - USE THESE TO GUIDE THE STORY!)
+The reader made these choices before starting:
+${Object.entries(adaptiveAnswers).map(([key, value]) => `- ${key}: ${value}`).join('\n')}
+Incorporate these preferences into the story naturally.` : ''}
 
 ## PREVIOUS PAGES
 ${previousPagesText || "(This is the very beginning of the story - generate plot_outline!)"}
