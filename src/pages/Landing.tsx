@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Language } from "@/lib/i18n";
 import { buildDemoRoute } from "@/lib/demoStorage";
 
@@ -26,31 +26,33 @@ const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className
   </motion.div>
 );
 
-const ValueProp = ({
-  icon: Icon,
-  title,
-  description,
-  delay,
-}: {
+interface ValuePropProps {
   icon: React.ElementType;
   title: string;
   description: string;
   delay: number;
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
-    transition={{ duration: 0.6, delay }}
-    className="flex flex-col items-center text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50"
-  >
-    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-      <Icon className="w-8 h-8 text-primary" />
-    </div>
-    <h3 className="font-serif text-xl font-bold text-foreground mb-3">{title}</h3>
-    <p className="text-muted-foreground leading-relaxed">{description}</p>
-  </motion.div>
+}
+
+const ValueProp = forwardRef<HTMLDivElement, ValuePropProps>(
+  ({ icon: Icon, title, description, delay }, ref) => (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay }}
+      className="flex flex-col items-center text-center p-8 rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50"
+    >
+      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+        <Icon className="w-8 h-8 text-primary" />
+      </div>
+      <h3 className="font-serif text-xl font-bold text-foreground mb-3">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
+    </motion.div>
+  )
 );
+
+ValueProp.displayName = 'ValueProp';
 
 const LANGUAGES: { code: Language; flag: string; name: string }[] = [
   { code: 'en', flag: '🇬🇧', name: 'English' },
