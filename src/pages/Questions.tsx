@@ -388,6 +388,12 @@ export default function Questions() {
         supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
       ]);
 
+      // Start generating page 1 in background - don't await
+      supabase.functions.invoke('generate-page', {
+        body: { storyId: story.id, targetPage: 1 },
+      }).catch(err => console.error('Background page generation error:', err));
+
+      // Navigate immediately - Reader will poll for page 1
       navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save adaptive question answers', error);
@@ -432,9 +438,9 @@ export default function Questions() {
                 </h1>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => navigate(`/read/${story.id}`)}>
+            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
               <Home className="w-4 h-4 mr-2" />
-              {language === 'nl' ? 'Terug naar verhaal' : language === 'sv' ? 'Tillbaka till sagan' : 'Back to story'}
+              {language === 'nl' ? 'Terug naar Dashboard' : language === 'sv' ? 'Tillbaka till Dashboard' : 'Back to Dashboard'}
             </Button>
           </header>
 
@@ -543,6 +549,12 @@ export default function Questions() {
         supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
       ]);
 
+      // Start generating page 1 in background - don't await
+      supabase.functions.invoke('generate-page', {
+        body: { storyId: story.id, targetPage: 1 },
+      }).catch(err => console.error('Background page generation error:', err));
+
+      // Navigate immediately - Reader will poll for page 1
       navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save question answers', error);
@@ -593,9 +605,9 @@ export default function Questions() {
               </h1>
             </div>
           </div>
-          <Button variant="ghost" onClick={() => navigate(`/read/${story.id}`)}>
+          <Button variant="ghost" onClick={() => navigate('/dashboard')}>
             <Home className="w-4 h-4 mr-2" />
-            {language === 'nl' ? 'Terug naar verhaal' : language === 'sv' ? 'Tillbaka till sagan' : 'Back to story'}
+            {language === 'nl' ? 'Terug naar Dashboard' : language === 'sv' ? 'Tillbaka till Dashboard' : 'Back to Dashboard'}
           </Button>
         </header>
 
@@ -666,8 +678,8 @@ export default function Questions() {
             </section>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="ghost" onClick={() => navigate(`/read/${story.id}`)}>
-                {language === 'nl' ? 'Sla over' : language === 'sv' ? 'Hoppa över' : 'Skip for now'}
+              <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+                {language === 'nl' ? 'Annuleren' : language === 'sv' ? 'Avbryt' : 'Cancel'}
               </Button>
               <Button onClick={handleContinue} disabled={!hasAllSelections || saving} className="sm:ml-auto">
                 {saving

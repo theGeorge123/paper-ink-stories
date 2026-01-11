@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark, X } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -62,7 +62,7 @@ const themeOptions = [
 
 type ThemeKey = typeof themeOptions[number]['key'];
 
-export default function Reader() {
+const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader(_props, ref) {
   const { storyId } = useParams<{ storyId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -438,7 +438,7 @@ export default function Reader() {
   }
 
   return (
-    <div className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
+    <div ref={ref} className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
       {/* Header */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -659,4 +659,6 @@ export default function Reader() {
 
     </div>
   );
-}
+});
+
+export default Reader;

@@ -244,28 +244,10 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
     setLoadingCharacterId(character.id);
 
     try {
-      const { data: newStory, error: storyError } = await supabase
-        .from('stories')
-        .insert({
-          character_id: character.id,
-          length_setting: length,
-          story_state: { location: 'Home', inventory: [], plot_outline: [] },
-        })
-        .select()
-        .single();
-
-      if (storyError) throw storyError;
-
-      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
-        body: { storyId: newStory.id, targetPage: 1 },
-      });
-
-      if (pageError) {
-        console.error('Page 1 generation failed:', pageError);
-      }
-
+      // Navigate to questions page with character ID and length setting
+      // The Questions page will create the story and generate page 1 after questions are answered
       setShowLengthModal(false);
-      navigate(`/read/${newStory.id}`);
+      navigate(`/questions/${character.id}?length=${length}`);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast.error('Failed to start adventure');

@@ -42,22 +42,16 @@ async function hashPrompt(prompt: string): Promise<string> {
     .join("");
 }
 
-async function createSignedUrl(
+function getPublicUrl(
   client: SupabaseClient,
   bucket: string,
   path: string,
-  expiresInSeconds = 60 * 60 * 24 * 7, // 7 days
-) {
-  const { data, error } = await client.storage
+): string {
+  const { data } = client.storage
     .from(bucket)
-    .createSignedUrl(path, expiresInSeconds, { download: false });
-
-  if (error || !data?.signedUrl) {
-    console.error("Failed to create signed URL:", error);
-    return null;
-  }
-
-  return data.signedUrl;
+    .getPublicUrl(path);
+  
+  return data.publicUrl;
 }
 
 const AGE_MODIFIERS: Record<string, string> = {
@@ -141,26 +135,24 @@ serve(async (req) => {
         .single();
 
       if (existingAsset) {
-        const signedUrl = await createSignedUrl(
+        const publicUrl = getPublicUrl(
           adminClient,
           existingAsset.storage_bucket,
           existingAsset.storage_path
         );
 
-        if (signedUrl) {
-          await adminClient
-            .from("characters")
-            .update({ hero_image_url: signedUrl })
-            .eq("id", characterId);
+        await adminClient
+          .from("characters")
+          .update({ hero_image_url: publicUrl })
+          .eq("id", characterId);
 
-          console.log(`Reused cached portrait for character ${characterId}`);
-          return jsonResponse({
-            success: true,
-            already_exists: true,
-            hero_image_url: signedUrl,
-            storage_path: existingAsset.storage_path,
-          });
-        }
+        console.log(`Reused cached portrait for character ${characterId}`);
+        return jsonResponse({
+          success: true,
+          already_exists: true,
+          hero_image_url: publicUrl,
+          storage_path: existingAsset.storage_path,
+        });
       }
     }
 
@@ -294,16 +286,14 @@ serve(async (req) => {
       is_public: false,
     });
 
-    const signedUrl = await createSignedUrl(adminClient, "hero-portraits", storagePath);
-    if (!signedUrl) {
-      return errorResponse("Failed to sign image URL", 500);
-    }
+    // Use public URL since hero-portraits bucket is public
+    const publicUrl = getPublicUrl(adminClient, "hero-portraits", storagePath);
 
-    // Update character with image data
+    // Update character with public image URL
     const { error: updateError } = await adminClient
       .from("characters")
       .update({
-        hero_image_url: signedUrl,
+        hero_image_url: publicUrl,
         hero_image_prompt: fullPrompt,
         hero_image_style: "storybook_illustration_v1",
       })
@@ -318,7 +308,7 @@ serve(async (req) => {
 
     return jsonResponse({
       success: true,
-      hero_image_url: signedUrl,
+      hero_image_url: publicUrl,
       prompt_used: fullPrompt,
       storage_path: storagePath,
     });
