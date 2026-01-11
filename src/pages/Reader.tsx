@@ -243,22 +243,23 @@ export default function Reader() {
   }, [story]);
 
   // Background prefetch loop - SILENTLY stay 1-2 pages ahead (rolling window)
-  // CRITICAL: This does NOT change currentPageIndex
+  // CRITICAL: This does NOT change currentPageIndex - user must tap to progress
   useEffect(() => {
     if (!story || !storyId) return;
     
     const targetPages = getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG');
     const isStoryEnded = !story.is_active || pages.length >= targetPages;
     
-    // Prefetch up to 2 pages ahead of current position
+    // Prefetch the next page only (1 page ahead of current read position)
     const nextPageToFetch = pages.length + 1;
-    const maxPrefetch = Math.min(currentPageIndex + 3, targetPages); // 2 pages ahead of current view
+    // Only prefetch if user is close to reading it (within 2 pages)
+    const maxPrefetch = Math.min(currentPageIndex + 2, targetPages);
     
     // Only prefetch if:
     // 1. Story is not ended
     // 2. We're not already prefetching or generating
     // 3. We have at least 1 page (story has started)
-    // 4. Next page is within our prefetch window
+    // 4. Next page is within our prefetch window (user is close to needing it)
     // 5. Not already inflight
     if (
       !isStoryEnded && 
@@ -584,28 +585,65 @@ export default function Reader() {
             ) : null}
           </AnimatePresence>
 
-          {/* Tap to continue hint on final page */}
-          {isOnFinalPage && !generating && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-center mt-8 pb-8"
-            >
-              <motion.p
-                className={`text-sm ${activeTheme.muted}`}
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {t('tapToContinue')}
-              </motion.p>
-            </motion.div>
-          )}
+          {/* Page navigation footer */}
+          <div className="mt-8 pb-8 flex flex-col items-center gap-4">
+            {/* Page indicator */}
+            <p className={`text-sm ${activeTheme.muted}`}>
+              {t('pageOf', { current: currentPageIndex + 1, total: pages.length || '...' })}
+            </p>
+
+            {/* Continue/Finish button - explicit action required */}
+            {canGoNext && (
+              <Button
+                onClick={handleTapRight}
+                size="lg"
+                className="gap-2"
+              >
+                {t('continue') || 'Continue'}
+              </Button>
+            )}
+            
+            {canGenerate && !generating && (
+              <Button
+                onClick={handleTapRight}
+                size="lg"
+                className="gap-2"
+              >
+                {t('continue') || 'Continue'}
+              </Button>
+            )}
+
+            {generating && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-2 text-muted-foreground"
+              >
+                <motion.div
+                  className="w-2 h-2 rounded-full bg-primary"
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                />
+                <span className="text-sm">{t('generating') || 'Writing...'}</span>
+              </motion.div>
+            )}
+
+            {isOnFinalPage && !generating && (
+              <Button
+                onClick={() => setShowEnding(true)}
+                size="lg"
+                className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+              >
+                <MoonStar className="w-5 h-5" />
+                {t('finishStory') || 'Finish Story'}
+              </Button>
+            )}
+          </div>
         </div>
       </main>
 
-      {/* Navigation touch areas - overlay */}
-      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '96px' }}>
+      {/* Navigation touch areas - overlay (keep for tap navigation) */}
+      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '160px' }}>
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapLeft}

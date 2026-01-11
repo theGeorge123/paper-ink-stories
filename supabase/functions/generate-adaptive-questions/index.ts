@@ -26,130 +26,68 @@ const inputSchema = z.object({
   last_story_date: z.string().optional(),
 });
 
-const SYSTEM_PROMPT = `You are a personalized bedtime story assistant. Generate 3-4 pre-story questions that will help create the perfect bedtime story for this child.
+const SYSTEM_PROMPT = `You are a personalized bedtime story assistant. Generate exactly 3 pre-story questions with 3 options each that will help create the perfect bedtime story for this child.
 
-QUESTION GENERATION RULES:
+CRITICAL RULES:
+- Generate EXACTLY 3 questions
+- Each question MUST have EXACTLY 3 options
+- Questions must be based on the hero's PREVIOUS ADVENTURES (use last_summary)
 
-1. ALWAYS include "Story Length" as Question 1:
-   - Options: "Short (3-5 min)", "Medium (5-8 min)", "Long (10-15 min)"
-   - Use icons: 🌙 for Short, ✨ for Medium, 🌟 for Long
-   - Mark "Medium" as recommended for most children
+QUESTION STRUCTURE:
 
-2. Generate 2-3 additional questions that are:
-   - Personalized to this hero's journey and archetype
-   - Age-appropriate for the specified age band
-   - Based on past story patterns and preferences
-   - Varied from previous question sets
+**Question 1: Story Length** (ALWAYS FIRST)
+- Options: "Short (3-5 min)", "Medium (5-8 min)", "Long (10-15 min)"
+- Use icons: 🌙 for Short, ✨ for Medium, 🌟 for Long
+- Mark "Medium" as recommended
 
-3. ADAPTIVE QUESTION EXAMPLES:
+**Question 2: Based on Previous Story** (CRITICAL - USE last_summary!)
+- If last_summary exists: Create a question that references what happened
+  - "Last time, {hero_name} visited [location from summary]. Tonight should we..."
+  - "After [event from summary], {hero_name} could..."
+  - "Remember when {hero_name} [action from summary]? Tonight..."
+- If no last_summary (first story): Ask about setting/world
+  - "Where should {hero_name}'s first adventure begin?"
 
-   For NEW heroes (stories_count < 3):
-   - "What world should {hero_name} explore first?"
-   - "Who should {hero_name} meet on their first adventure?"
-   - "What's {hero_name}'s special power?"
+**Question 3: Adventure Focus**
+- What the adventure should be about tonight
+- Based on archetype and age band
+- Avoid themes in avoided_themes
+- Include themes from preferred_themes
 
-   For ESTABLISHED heroes (stories_count >= 3):
-   - "Should {hero_name} revisit the [past location] or explore somewhere new?"
-   - "Your last adventure was about {last_theme}. Tonight, should it be similar or different?"
-   - "Which friend from past adventures should return tonight?"
+AGE-APPROPRIATE LANGUAGE:
+- Ages 1-2: 3-5 word options with emojis
+- Ages 3-5: Simple sentences, concrete choices
+- Ages 6-8: More detail, gentle choices
+- Ages 9-12: Complex choices with meaning
 
-   For RETURNING heroes (days_since > 7):
-   - "It's been a while! What has {hero_name} been up to?"
-   - "Pick up where we left off, or start fresh?"
-
-4. ARCHETYPE-SPECIFIC QUESTIONS:
-
-   Dragon heroes:
-   - "Should {hero_name} fly high above the clouds or explore hidden caves?"
-   - "What color flames should {hero_name}'s breath glow tonight?"
-
-   Knight heroes:
-   - "What noble quest calls {hero_name} tonight?"
-   - "Which piece of magical armor should {hero_name} discover?"
-
-   Cat heroes:
-   - "Should {hero_name} prowl through moonlit gardens or cozy cottages?"
-   - "What curious thing should {hero_name} investigate?"
-
-   Astronaut heroes:
-   - "Which planet should {hero_name} visit tonight?"
-   - "What alien friend should {hero_name} meet?"
-
-5. AGE-APPROPRIATE PHRASING:
-
-   Ages 1-2:
-   - Very simple, 3-5 word options
-   - Use emojis heavily 🌙🌟⭐
-   - Example: "Big or small?" "Fast or slow?"
-
-   Ages 3-5:
-   - Simple sentences, concrete choices
-   - Example: "Should Max play in the forest or the castle?"
-
-   Ages 6-8:
-   - More detail, introduce gentle decision-making
-   - Example: "Should Max help the lost baby dragon find its way home, or discover the secret treehouse?"
-
-   Ages 9-12:
-   - Complex choices with consequences
-   - Example: "Should Max use the ancient map to find the lost city, or trust the mysterious guide who appeared in the dreams?"
-
-6. LEARNING FROM PAST CHOICES:
-
-   If preferred_themes includes "friendship":
-   - Ask: "Should {hero_name} make a new friend or have an adventure with {sidekick_name}?"
-
-   If avoided_themes includes "darkness":
-   - Avoid: Questions about caves, night-time scary settings
-   - Instead: Focus on magical gardens, sunny meadows, star-lit (not dark) nights
-
-OUTPUT FORMAT (STRICT JSON ONLY):
+OUTPUT FORMAT (STRICT JSON - NO MARKDOWN):
 {
   "questions": [
     {
       "question_text": "How long should tonight's story be?",
       "question_type": "story_length",
       "options": [
-        {
-          "label": "Short",
-          "description": "A few pages • Perfect for sleepy eyes",
-          "icon": "🌙",
-          "value": "short",
-          "estimated_time": "3-5 min"
-        },
-        {
-          "label": "Medium",
-          "description": "A full adventure • Just right!",
-          "icon": "✨",
-          "value": "medium",
-          "estimated_time": "5-8 min",
-          "recommended": true
-        },
-        {
-          "label": "Long",
-          "description": "An epic tale to get lost in",
-          "icon": "🌟",
-          "value": "long",
-          "estimated_time": "10-15 min"
-        }
+        {"label": "Short", "description": "Perfect for sleepy eyes", "icon": "🌙", "value": "short", "estimated_time": "3-5 min"},
+        {"label": "Medium", "description": "A full adventure", "icon": "✨", "value": "medium", "estimated_time": "5-8 min", "recommended": true},
+        {"label": "Long", "description": "An epic tale", "icon": "🌟", "value": "long", "estimated_time": "10-15 min"}
       ]
     },
     {
-      "question_text": "Should {hero_name} return to the magical forest or explore the crystal caves?",
+      "question_text": "Based on last adventure - where next?",
       "question_type": "setting",
       "options": [
-        {
-          "label": "Magical Forest",
-          "description": "Where the friendly owl lives",
-          "icon": "🌲",
-          "value": "forest"
-        },
-        {
-          "label": "Crystal Caves",
-          "description": "A brand new place to discover",
-          "icon": "💎",
-          "value": "caves"
-        }
+        {"label": "Option A", "description": "Description", "icon": "🌲", "value": "option_a"},
+        {"label": "Option B", "description": "Description", "icon": "🏰", "value": "option_b"},
+        {"label": "Option C", "description": "Description", "icon": "🌊", "value": "option_c"}
+      ]
+    },
+    {
+      "question_text": "What should the adventure be about?",
+      "question_type": "theme",
+      "options": [
+        {"label": "Theme A", "description": "Description", "icon": "🎭", "value": "theme_a"},
+        {"label": "Theme B", "description": "Description", "icon": "🔮", "value": "theme_b"},
+        {"label": "Theme C", "description": "Description", "icon": "💫", "value": "theme_c"}
       ]
     }
   ]
@@ -220,28 +158,38 @@ serve(async (req) => {
     const storiesCount = input.stories_count || character.story_count || 0;
     const ageBand = input.age_band || "3-5";
 
-    // Build user prompt
-    const userPrompt = `Generate personalized pre-story questions for:
+    // Build user prompt with strong emphasis on previous story continuity
+    const lastSummary = character.last_summary || null;
+    
+    const userPrompt = `Generate EXACTLY 3 pre-story questions with 3 options each for:
 
-HERO CONTEXT:
+HERO PROFILE:
 - Name: ${character.name}
 - Archetype: ${character.archetype}
-- Age: ${ageBand}
+- Age Band: ${ageBand} years old
 - Personality: ${(character.traits as string[])?.join(", ") || "Curious, Adventurous"}
 - Sidekick: ${character.sidekick_name || "None"}
-- Stories completed: ${storiesCount}
-- Last story themes: ${lastThemes.join(", ") || "None"}
-- Preferred themes: ${preferredThemes.join(", ") || "None"}
+
+STORY HISTORY (CRITICAL - USE THIS!):
+- Total adventures completed: ${storiesCount}
+- Last story themes: ${lastThemes.join(", ") || "None yet"}
+- Preferred themes: ${preferredThemes.join(", ") || "None yet"}
 - Avoided themes: ${avoidedThemes.join(", ") || "None"}
 - Days since last story: ${daysSince}
-- Last summary: ${character.last_summary || "None (first story)"}
 
-${storiesCount < 3 ? "This is a NEW hero - focus on first adventures and exploration." : ""}
-${storiesCount >= 3 ? "This is an ESTABLISHED hero - reference past adventures and offer continuity." : ""}
-${daysSince > 7 ? "This is a RETURNING hero after a break - acknowledge the time gap." : ""}
+## PREVIOUS ADVENTURE SUMMARY (USE THIS FOR QUESTION 2!)
+${lastSummary ? `"${lastSummary}"
 
-Generate 3-4 questions total (including the required story_length question as Question 1).
-Make questions feel natural and personalized to ${character.name}'s journey.`;
+IMPORTANT: Question 2 MUST reference this summary! Examples:
+- "After ${character.name}'s adventure in [location from summary], should we..."
+- "Last time ${character.name} [did something from summary]. Tonight..."
+- "Remember when ${character.name} met [character from summary]? Should they..."` : `This is ${character.name}'s FIRST adventure! No previous story exists.
+Question 2 should ask where the first adventure should begin.`}
+
+${storiesCount >= 3 ? `This is an ESTABLISHED hero with ${storiesCount} stories - make questions build on their history.` : ""}
+${daysSince > 7 ? `It's been ${daysSince} days since the last story - acknowledge the time gap warmly.` : ""}
+
+Generate EXACTLY 3 questions. Each question MUST have EXACTLY 3 options.`;
 
     // Call OpenRouter API
     const openRouterKey = Deno.env.get("openrouter") ?? "";
@@ -295,11 +243,35 @@ Make questions feel natural and personalized to ${character.name}'s journey.`;
       return errorResponse("Failed to parse AI response", 500);
     }
 
-    // Validate structure
+    // Validate structure - must have exactly 3 questions with 3 options each
     const questions = parsedContent as { questions?: unknown[] };
-    if (!questions.questions || !Array.isArray(questions.questions) || questions.questions.length < 2) {
-      console.error("[generate-adaptive-questions] Invalid questions format");
+    if (!questions.questions || !Array.isArray(questions.questions)) {
+      console.error("[generate-adaptive-questions] Invalid questions format - missing questions array");
       return errorResponse("Invalid questions format from AI", 500);
+    }
+    
+    if (questions.questions.length !== 3) {
+      console.error("[generate-adaptive-questions] Wrong number of questions:", questions.questions.length);
+      // Try to fix by padding or trimming
+      if (questions.questions.length > 3) {
+        questions.questions = questions.questions.slice(0, 3);
+      }
+    }
+    
+    // Validate each question has exactly 3 options
+    for (const q of questions.questions) {
+      const question = q as { options?: unknown[] };
+      if (!question.options || !Array.isArray(question.options)) {
+        console.error("[generate-adaptive-questions] Question missing options");
+        return errorResponse("Invalid question format from AI", 500);
+      }
+      if (question.options.length !== 3) {
+        console.warn("[generate-adaptive-questions] Question has", question.options.length, "options instead of 3");
+        // Pad or trim to 3 options
+        if (question.options.length > 3) {
+          question.options = question.options.slice(0, 3);
+        }
+      }
     }
 
     const totalTime = Date.now() - functionStartTime;

@@ -161,6 +161,8 @@ export const translations = {
     readerFinishStory: 'Finish story',
     readerThemeLabel: 'Theme: {theme}',
     bookmarkAndExit: 'Bookmark & Exit',
+    generating: 'Writing...',
+    finishStory: 'Finish Story',
     
     // Cover Page
     coverBrandName: 'Paper & Ink',
@@ -417,6 +419,8 @@ export const translations = {
     readerFinishStory: 'Verhaal afronden',
     readerThemeLabel: 'Thema: {theme}',
     bookmarkAndExit: 'Bladwijzer & Afsluiten',
+    generating: 'Schrijven...',
+    finishStory: 'Verhaal Afronden',
     
     // Cover Page
     coverBrandName: 'Papier & Inkt',
@@ -672,6 +676,8 @@ export const translations = {
     readerFinishStory: 'Avsluta berättelsen',
     readerThemeLabel: 'Tema: {theme}',
     bookmarkAndExit: 'Bokmärk & Avsluta',
+    generating: 'Skriver...',
+    finishStory: 'Avsluta Berättelsen',
     
     // Cover Page
     coverBrandName: 'Papper & Bläck',
