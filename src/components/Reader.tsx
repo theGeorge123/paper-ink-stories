@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Sun, Sunrise, Moon, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Sun, Sunrise, Moon, Sparkles, MoonStar, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLanguage } from '@/hooks/useLanguage';
 import { buildDemoRoute, clearDemoId, getDemoIdFromCookie } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
@@ -98,6 +99,16 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
   const isFirstPage = currentPageIndex === 0;
   const showCover = !!heroImageUrl && !hasOpenedCover;
 
+  // Generate stable star positions once
+  const starPositions = useMemo(() => 
+    [...Array(30)].map(() => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 60}%`,
+      duration: 2 + Math.random() * 2,
+      delay: Math.random() * 2,
+    })), []
+  );
+
   const handleTapLeft = () => {
     if (!isFirstPage) {
       setDirection(-1);
@@ -125,124 +136,155 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
     );
   }
 
+  // End screen - matches SleepWellScreen styling
   if (showEndScreen) {
     return (
-      <div
-        id="main-content"
-        className="min-h-screen bg-gradient-to-b from-indigo-950 via-purple-950 to-slate-950 flex flex-col items-center justify-center p-6 text-center"
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 overflow-y-auto"
+        style={{ background: 'linear-gradient(180deg, #1A202C 0%, #2D3748 100%)' }}
       >
+        {/* Stars decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(50)].map((_, i) => (
+          {starPositions.map((star, i) => (
             <motion.div
               key={i}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.2, 0.8, 0.2] }}
+              transition={{ 
+                duration: star.duration, 
+                repeat: Infinity, 
+                delay: star.delay 
+              }}
               className="absolute w-1 h-1 bg-white rounded-full"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                opacity: [0.2, 1, 0.2],
-                scale: [0.8, 1.2, 0.8],
-              }}
-              transition={{
-                duration: 2 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
+                left: star.left,
+                top: star.top,
               }}
             />
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 max-w-md"
-        >
-          <div className="mb-8">
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-20 h-20 mx-auto rounded-full bg-primary/20 flex items-center justify-center mb-4"
-            >
-              <Sparkles className="w-10 h-10 text-primary" />
-            </motion.div>
-            <h1 className="font-serif text-3xl text-white mb-2">{t('theEnd')}</h1>
-            <p className="text-white/70">
-              {isDemo
-                ? `${heroName ?? 'Luna'}'s sample story is complete.`
-                : heroName
-                  ? `${heroName}'s story is ready for another cozy night.`
-                  : 'Your demo adventure is complete.'}
-            </p>
-          </div>
+        <div className="relative z-10 max-w-md w-full flex flex-col items-center">
+          {/* Moon icon */}
+          <motion.div
+            initial={{ scale: 0, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
+            className="mb-6"
+          >
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center shadow-[0_0_60px_rgba(251,191,36,0.4)]">
+              <MoonStar className="w-10 h-10 text-amber-900" />
+            </div>
+          </motion.div>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
-            {isDemo ? (
-              <>
-                <p className="text-white/80 text-sm mb-4">
-                  Loved {heroName ?? 'Luna'}'s adventure? Create YOUR child's personalized story! This was just a sample demo.
-                </p>
-                <Button
-                  onClick={() => {
-                    clearDemoId();
-                    navigate('/auth');
-                  }}
-                  size="lg"
-                  className="w-full mb-3"
-                >
-                  Sign Up Free
-                </Button>
-                <Button
-                  onClick={() => navigate('/')}
-                  variant="ghost"
-                  className="w-full text-white/70 hover:text-white"
-                >
-                  Back to home
-                </Button>
-              </>
-            ) : (
-              <>
-                <p className="text-white/80 text-sm mb-4">
-                  Create your own personalized characters and unlock infinite bedtime adventures that grow with your child.
-                </p>
-                <Button
-                  onClick={() => {
-                    clearDemoId();
-                    navigate('/auth');
-                  }}
-                  size="lg"
-                  className="w-full mb-3"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  {t('createFreeAccount')}
-                </Button>
-                <Button
-                  onClick={() => {
-                    navigate(buildDemoRoute('/demo-hero'));
-                  }}
-                  variant="ghost"
-                  className="w-full text-white/70 hover:text-white"
-                >
-                  Create a new hero
-                </Button>
-              </>
-            )}
-          </div>
-        </motion.div>
-      </div>
+          {/* The End text */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="font-serif text-4xl text-white mb-2 text-center"
+          >
+            {t('theEnd')}
+          </motion.h1>
+
+          {/* Subtext */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="text-lg text-white/70 mb-8 text-center"
+          >
+            {t('sleepWell')}, little one
+          </motion.p>
+
+          {/* Demo CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
+          >
+            <p className="text-white/80 text-sm text-center mb-4">
+              {isDemo
+                ? "Loved this story? Create personalized adventures with YOUR child's name and favorite things!"
+                : "Create your own personalized characters and unlock infinite bedtime adventures."}
+            </p>
+          </motion.div>
+
+          {/* Action buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+            className="flex flex-col gap-3 w-full"
+          >
+            <motion.div whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => {
+                  clearDemoId();
+                  navigate('/auth');
+                }}
+                size="lg"
+                className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
+              >
+                <Sparkles className="w-5 h-5" />
+                {t('createFreeAccount')}
+              </Button>
+            </motion.div>
+
+            <motion.div whileTap={{ scale: 0.98 }}>
+              <Button
+                onClick={() => navigate(buildDemoRoute('/demo-hero'))}
+                size="lg"
+                variant="outline"
+                className="w-full gap-2 border-white/20 text-white hover:bg-white/10"
+              >
+                <Sparkles className="w-5 h-5" />
+                Create a new hero
+              </Button>
+            </motion.div>
+
+            <Button
+              onClick={() => navigate('/')}
+              variant="ghost"
+              size="sm"
+              className="text-white/60 hover:text-white hover:bg-white/10"
+            >
+              Back to home
+            </Button>
+          </motion.div>
+        </div>
+      </motion.div>
     );
   }
 
   return (
     <div className={`h-screen paper-texture flex flex-col overflow-hidden ${activeTheme.background} ${activeTheme.text}`}>
+      {/* Header - matches logged-in reader */}
       <header className="flex-shrink-0 p-4 flex justify-between items-center z-10 backdrop-blur-sm">
-        <motion.div whileTap={{ scale: 0.95 }}>
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Back to home">
-            <Home className="w-5 h-5" />
-          </Button>
-        </motion.div>
-
         <div className="flex items-center gap-3">
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              aria-label="Back to home"
+            >
+              <Home className="w-5 h-5" />
+            </Button>
+          </motion.div>
+          <Avatar className="h-10 w-10 ring-2 ring-white/40 shadow-sm">
+            <AvatarImage src={heroImageUrl || undefined} alt="Hero portrait" />
+            <AvatarFallback className="text-xs font-semibold">
+              <UserCircle className="h-5 w-5" />
+            </AvatarFallback>
+          </Avatar>
+        </div>
+
+        <div className="flex items-center gap-2">
           {isDemo && (
             <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/30 flex items-center gap-2">
               <Sparkles className="w-3 h-3 text-primary" />
@@ -309,11 +351,29 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
               </div>
             </motion.div>
           </AnimatePresence>
+
+          {/* Tap to continue hint on final page */}
+          {isLastPage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="text-center mt-8 pb-8"
+            >
+              <motion.p
+                className={`text-sm ${activeTheme.muted}`}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                {t('tapToContinue')}
+              </motion.p>
+            </motion.div>
+          )}
         </div>
       </main>
 
       {/* Navigation touch areas - overlay */}
-      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '64px' }}>
+      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '96px' }}>
         <button
           className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
           onClick={handleTapLeft}
@@ -326,15 +386,6 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
           aria-label={isLastPage ? t('readerFinishStory') : t('readerNextPage')}
         />
       </div>
-
-      {/* Footer with page counter */}
-      <footer className={`flex-shrink-0 ${activeTheme.footer} border-t border-black/5 backdrop-blur-sm`}>
-        <div className="relative h-16 flex items-center justify-center">
-          <div className={`text-sm ${activeTheme.muted}`}>
-            Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
