@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,12 @@ interface CoverPageProps {
   lengthSetting?: 'SHORT' | 'MEDIUM' | 'LONG';
 }
 
-export default function CoverPage({ title, heroImageUrl, onOpen, lengthSetting }: CoverPageProps) {
+const CoverPage = forwardRef<HTMLDivElement, CoverPageProps>(function CoverPage({ title, heroImageUrl, onOpen, lengthSetting }, ref) {
   const { t, language } = useLanguage();
   const readingTime = lengthSetting ? getReadingTimeRange(lengthSetting) : null;
 
   return (
-    <div className="relative min-h-screen w-screen overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white p-0 m-0">
+    <div ref={ref} className="relative min-h-screen w-screen overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white p-0 m-0">
       {heroImageUrl && (
         <motion.img
           initial={{ scale: 1.05, opacity: 0 }}
@@ -89,4 +90,6 @@ export default function CoverPage({ title, heroImageUrl, onOpen, lengthSetting }
       </div>
     </div>
   );
-}
+});
+
+export default CoverPage;
