@@ -419,7 +419,7 @@ export default function Reader() {
         adventureSummary={adventureSummary}
         existingLifeSummary={existingLifeSummary}
         storyThemes={storyThemes}
-        onStartNextStory={() => navigate('/create/questions')}
+        onStartNextStory={() => navigate(`/questions/${story.characters.id}`)}
       />
     );
   }
