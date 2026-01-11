@@ -17,6 +17,8 @@ import {
   type ThreeLevelQuestions,
 } from '@/lib/questions';
 import { Skeleton } from '@/components/ui/skeleton';
+import AdaptiveQuestions from '@/components/AdaptiveQuestions';
+import { useAdaptiveQuestions } from '@/hooks/useAdaptiveQuestions';
 
 const levelLabels = {
   en: 'Level',
@@ -69,6 +71,8 @@ export default function Questions() {
   const [saving, setSaving] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [usedAiQuestions, setUsedAiQuestions] = useState(false);
+  const [isUsingAdaptiveQuestions, setIsUsingAdaptiveQuestions] = useState(false);
+  const [adaptiveAnswers, setAdaptiveAnswers] = useState<Record<string, string>>({});
 
   const storyId = storyIdParam || searchParams.get('storyId') || createdStoryId || undefined;
   const lengthSetting = searchParams.get('length');
@@ -226,6 +230,11 @@ export default function Questions() {
     return null;
   }, [heroProfile, language]);
 
+  // Try adaptive questions first
+  const { data: adaptiveQuestionsData, isLoading: isLoadingAdaptive } = useAdaptiveQuestions(
+    story?.characters?.id
+  );
+
   useEffect(() => {
     if (!heroProfile || questions) return;
 
@@ -233,11 +242,22 @@ export default function Questions() {
       setIsGeneratingQuestions(true);
 
       try {
-        // Try AI-generated questions first for authenticated users
+        // Try adaptive questions first (new system)
+        if (adaptiveQuestionsData?.questions && adaptiveQuestionsData.questions.length > 0) {
+          console.log('[Questions] Using adaptive questions');
+          setIsUsingAdaptiveQuestions(true);
+          setUsedAiQuestions(true);
+          setIsGeneratingQuestions(false);
+          return;
+        }
+
+        // Fall back to 3-level AI questions
+        console.log('[Questions] Trying 3-level AI questions');
         const aiQuestions = await generateAiQuestions();
         
         if (aiQuestions) {
           setQuestions(aiQuestions);
+          setIsUsingAdaptiveQuestions(false);
           setUsedAiQuestions(true);
           setIsGeneratingQuestions(false);
           return;
@@ -249,6 +269,7 @@ export default function Questions() {
         
         if (staticQuestions) {
           setQuestions(staticQuestions);
+          setIsUsingAdaptiveQuestions(false);
           setUsedAiQuestions(false);
         } else {
           toast.error(
@@ -265,6 +286,7 @@ export default function Questions() {
         const staticQuestions = getStaticQuestions();
         if (staticQuestions) {
           setQuestions(staticQuestions);
+          setIsUsingAdaptiveQuestions(false);
           setUsedAiQuestions(false);
         }
       } finally {
@@ -272,8 +294,14 @@ export default function Questions() {
       }
     };
 
+    // Wait for adaptive questions to load or fail
+    if (isLoadingAdaptive) {
+      setIsGeneratingQuestions(true);
+      return;
+    }
+
     loadQuestions();
-  }, [heroProfile, questions, generateAiQuestions, getStaticQuestions, language]);
+  }, [heroProfile, questions, generateAiQuestions, getStaticQuestions, language, adaptiveQuestionsData, isLoadingAdaptive]);
 
   // Loading state while generating questions
   if (isCreatingStory) {
@@ -319,6 +347,47 @@ export default function Questions() {
 
   if (!story || !heroProfile) {
     return null;
+  }
+
+  // Show adaptive questions if available
+  if (isUsingAdaptiveQuestions && adaptiveQuestionsData?.questions) {
+    return (
+      <div className="min-h-screen bg-background paper-texture">
+        <main id="main-content" className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 ring-2 ring-primary/30 shadow-sm">
+                <AvatarImage src={heroPortrait.url || story?.characters?.hero_image_url || undefined} alt={`${heroProfile.heroName} portrait`} />
+                <AvatarFallback className="text-primary">
+                  <UserCircle className="h-6 w-6" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
+                    <Sparkles className="h-3 w-3" />
+                    {language === 'nl' ? 'Gepersonaliseerd' : language === 'sv' ? 'Personlig' : 'Personalized'}
+                  </span>
+                </div>
+                <h1 className="text-2xl font-serif font-semibold text-foreground">
+                  {language === 'nl' ? 'Vorm je verhaal' : language === 'sv' ? 'Forma din berättelse' : 'Shape Your Story'}
+                </h1>
+              </div>
+            </div>
+            <Button variant="ghost" onClick={() => navigate(`/read/${story.id}`)}>
+              <Home className="w-4 h-4 mr-2" />
+              {language === 'nl' ? 'Terug naar verhaal' : language === 'sv' ? 'Tillbaka till sagan' : 'Back to story'}
+            </Button>
+          </header>
+
+          <AdaptiveQuestions
+            characterId={story.characters.id}
+            onComplete={handleAdaptiveComplete}
+            loading={saving}
+          />
+        </main>
+      </div>
+    );
   }
 
   if (isGeneratingQuestions || !questions) {
@@ -376,6 +445,61 @@ export default function Questions() {
   };
 
   const hasAllSelections = selections.level1 && selections.level2 && selections.level3;
+
+  const handleAdaptiveComplete = async (answers: Record<string, string>) => {
+    setAdaptiveAnswers(answers);
+    setSaving(true);
+
+    try {
+      // Extract story length from answers and map to database format
+      const lengthValue = answers.story_length?.toLowerCase() || 'medium';
+      const storyLength = lengthValue === 'short' ? 'SHORT' : lengthValue === 'long' ? 'LONG' : 'MEDIUM';
+      
+      // Update story with length setting
+      const storyState = normalizeStoryState(story.story_state as StoryState);
+      const selectionSummary = `Adaptive question answers: ${JSON.stringify(answers)}`;
+      const updatedStoryState: StoryState = {
+        ...storyState,
+        plot_outline: storyState.plot_outline?.includes(selectionSummary)
+          ? storyState.plot_outline
+          : [...(storyState.plot_outline || []), selectionSummary],
+      };
+
+      // Extract tags from adaptive question answers (if available)
+      const selectionTags: string[] = [];
+      if (answers.setting) selectionTags.push(answers.setting);
+      if (answers.companion) selectionTags.push(answers.companion);
+      if (answers.mood) selectionTags.push(answers.mood);
+
+      const character = story.characters as { id: string; preferred_themes?: string[] | null };
+      const currentPreferred = (character.preferred_themes as string[]) || [];
+      const updatedPreferred = Array.from(new Set([...currentPreferred, ...selectionTags])).slice(-10);
+
+      await Promise.all([
+        supabase
+          .from('stories')
+          .update({ 
+            story_state: updatedStoryState,
+            length_setting: storyLength === 'SHORT' ? 'SHORT' : storyLength === 'LONG' ? 'LONG' : 'MEDIUM',
+          })
+          .eq('id', story.id),
+        supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
+      ]);
+
+      navigate(`/read/${story.id}`);
+    } catch (error) {
+      console.error('Failed to save adaptive question answers', error);
+      toast.error(
+        language === 'nl'
+          ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+          : language === 'sv'
+          ? 'Sagomagin vilar en stund. Försök igen snart.'
+          : 'Story magic is resting. Please try again soon.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleContinue = async () => {
     if (!hasAllSelections) {

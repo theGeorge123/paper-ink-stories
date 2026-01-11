@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Stars, BookOpen } from 'lucide-react';
+import { Moon, Stars, BookOpen, Clock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useLanguage } from '@/hooks/useLanguage';
 import { TranslationKey } from '@/lib/i18n';
+import { getReadingTimeRange } from '@/utils/readingTime';
 
 interface LengthSelectModalProps {
   open: boolean;
@@ -46,7 +47,7 @@ export default function LengthSelectModal({
   ageBand,
   loading 
 }: LengthSelectModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const hasAutoSelectedRef = useRef(false);
 
   // For ages 1-2, auto-select SHORT immediately
@@ -129,6 +130,13 @@ export default function LengthSelectModal({
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {t(option.descKey)}
                 </p>
+                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  <span>
+                    {getReadingTimeRange(option.value).label}
+                    {language === 'nl' ? ' lezen' : language === 'sv' ? ' läsning' : ' read'}
+                  </span>
+                </div>
               </div>
               <BookOpen className="w-5 h-5 text-muted-foreground/50" />
             </motion.button>

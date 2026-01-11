@@ -12,6 +12,7 @@ import SettingsMenu from "@/components/SettingsMenu";
 import ParentalControls from "@/components/ParentalControls";
 import WelcomeModal from "@/components/WelcomeModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AgeUpdateManager from "@/components/AgeUpdateManager";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -70,6 +71,9 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background paper-texture">
       <WelcomeModal />
+      {characters && characters.length > 0 && (
+        <AgeUpdateManager characters={characters} />
+      )}
       <header className="sticky top-0 z-50 glass border-b border-border/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

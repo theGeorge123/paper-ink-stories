@@ -7,6 +7,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { buildDemoRoute, clearDemoId, getDemoIdFromCookie } from '@/lib/demoStorage';
 import { trackDemoEvent } from '@/lib/performance';
 import type { DemoStoryRecord } from '@/lib/demoStoryTemplate';
+import CoverPage from '@/components/CoverPage';
 
 type ThemeKey = 'day' | 'sepia' | 'night';
 
@@ -14,6 +15,7 @@ interface ReaderProps {
   story: DemoStoryRecord;
   heroName?: string | null;
   isDemo?: boolean;
+  heroImageUrl?: string | null;
 }
 
 const pageVariants = {
@@ -61,7 +63,7 @@ const themeOptions = [
   { key: 'night', label: 'Night', icon: Moon },
 ] as const;
 
-export default function Reader({ story, heroName, isDemo = false }: ReaderProps) {
+export default function Reader({ story, heroName, isDemo = false, heroImageUrl }: ReaderProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const demoId = useMemo(() => getDemoIdFromCookie(), []);
@@ -71,15 +73,18 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
   const [theme, setTheme] = useState<ThemeKey>('day');
   const [showEndScreen, setShowEndScreen] = useState(false);
   const [pages, setPages] = useState<string[]>([]);
+  const [hasOpenedCover, setHasOpenedCover] = useState(false);
 
   useEffect(() => {
     setPages(story.pages);
     setCurrentPageIndex(0);
     setShowEndScreen(false);
+    // Show cover page if hero image exists, otherwise skip it
+    setHasOpenedCover(!heroImageUrl);
     if (demoId) {
       trackDemoEvent('demo_reader_loaded', { demoId });
     }
-  }, [demoId, story]);
+  }, [demoId, story, heroImageUrl]);
 
   useEffect(() => {
     if (showEndScreen && demoId) {
@@ -91,6 +96,7 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
   const currentPage = pages[currentPageIndex] ?? '';
   const isLastPage = pages.length > 0 && currentPageIndex === pages.length - 1;
   const isFirstPage = currentPageIndex === 0;
+  const showCover = !!heroImageUrl && !hasOpenedCover;
 
   const handleTapLeft = () => {
     if (!isFirstPage) {
@@ -107,6 +113,17 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
       setShowEndScreen(true);
     }
   };
+
+  // Show cover page before story content
+  if (showCover) {
+    return (
+      <CoverPage
+        title={story.title}
+        heroImageUrl={heroImageUrl}
+        onOpen={() => setHasOpenedCover(true)}
+      />
+    );
+  }
 
   if (showEndScreen) {
     return (
@@ -255,9 +272,10 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
         </div>
       </header>
 
+      {/* Scrollable reading area */}
       <main id="main-content" className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
-          {currentPageIndex === 0 && (
+          {story.title && currentPageIndex === 0 && (
             <motion.h1
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -268,7 +286,7 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
           )}
 
           <AnimatePresence mode="wait" custom={direction}>
-            <motion.article
+            <motion.div
               key={currentPageIndex}
               custom={direction}
               variants={pageVariants}
@@ -280,42 +298,40 @@ export default function Reader({ story, heroName, isDemo = false }: ReaderProps)
                 opacity: { duration: 0.2 },
                 rotateY: { duration: 0.3 },
               }}
-              className="prose prose-lg max-w-none"
+              className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
             >
-              <div className={`space-y-6 font-serif text-xl leading-relaxed ${activeTheme.text}`}>
+              <div className="whitespace-pre-line">
                 {currentPage.split('\n\n').map((paragraph, idx) => (
-                  <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:mr-1">
+                  <p key={idx} className="first-letter:text-3xl first-letter:font-bold first-letter:mr-1 mb-6">
                     {paragraph}
                   </p>
                 ))}
               </div>
-            </motion.article>
+            </motion.div>
           </AnimatePresence>
         </div>
       </main>
 
-      <footer className={`flex-shrink-0 ${activeTheme.footer} border-t border-black/5 backdrop-blur-sm`}>
-        <div className="relative h-20">
-          <div className={`absolute top-3 left-1/2 -translate-x-1/2 text-sm ${activeTheme.muted}`}>
-            Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
-          </div>
+      {/* Navigation touch areas - overlay */}
+      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '64px' }}>
+        <button
+          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
+          onClick={handleTapLeft}
+          aria-label={t('readerPreviousPage')}
+        />
+        <div className="w-1/3" />
+        <button
+          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
+          onClick={handleTapRight}
+          aria-label={isLastPage ? t('readerFinishStory') : t('readerNextPage')}
+        />
+      </div>
 
-          <div className="absolute inset-0 flex">
-            <button
-              onClick={handleTapLeft}
-              disabled={isFirstPage}
-              className="flex-1 flex items-center justify-center touch-manipulation disabled:opacity-30"
-              aria-label={t('readerPreviousPage')}
-            >
-              <ChevronLeft className={`w-8 h-8 ${activeTheme.muted}`} />
-            </button>
-            <button
-              onClick={handleTapRight}
-              className="flex-1 flex items-center justify-center touch-manipulation"
-              aria-label={isLastPage ? t('readerFinishStory') : t('readerNextPage')}
-            >
-              <ChevronRight className={`w-8 h-8 ${activeTheme.muted}`} />
-            </button>
+      {/* Footer with page counter */}
+      <footer className={`flex-shrink-0 ${activeTheme.footer} border-t border-black/5 backdrop-blur-sm`}>
+        <div className="relative h-16 flex items-center justify-center">
+          <div className={`text-sm ${activeTheme.muted}`}>
+            Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
           </div>
         </div>
       </footer>

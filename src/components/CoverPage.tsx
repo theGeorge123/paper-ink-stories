@@ -1,16 +1,19 @@
 import { motion } from "framer-motion";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/hooks/useLanguage";
+import { getReadingTimeRange } from "@/utils/readingTime";
 
 interface CoverPageProps {
   title: string;
   heroImageUrl?: string | null;
   onOpen: () => void;
+  lengthSetting?: 'SHORT' | 'MEDIUM' | 'LONG';
 }
 
-export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProps) {
-  const { t } = useLanguage();
+export default function CoverPage({ title, heroImageUrl, onOpen, lengthSetting }: CoverPageProps) {
+  const { t, language } = useLanguage();
+  const readingTime = lengthSetting ? getReadingTimeRange(lengthSetting) : null;
 
   return (
     <div className="relative min-h-screen w-screen overflow-hidden bg-gradient-to-b from-amber-100 via-amber-50 to-white p-0 m-0">
@@ -55,6 +58,23 @@ export default function CoverPage({ title, heroImageUrl, onOpen }: CoverPageProp
         >
           {t('coverSubtitle')}
         </motion.p>
+        {readingTime && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45, duration: 0.8 }}
+            className="mt-3 flex items-center justify-center gap-2 text-sm text-white/70"
+          >
+            <Clock className="w-4 h-4" />
+            <span>
+              {language === 'nl'
+                ? `Ongeveer ${readingTime.label} lezen`
+                : language === 'sv'
+                ? `Cirka ${readingTime.label} läsning`
+                : `About ${readingTime.label} read`}
+            </span>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

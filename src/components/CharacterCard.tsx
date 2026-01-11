@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame } from 'lucide-react';
+import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, BookOpen, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import LengthSelectModal from '@/components/LengthSelectModal';
 import { normalizeHeroImageUrl } from '@/lib/heroImage';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useLastStory } from '@/hooks/useLastStory';
+import { formatReadingTime, estimateReadingTimeFromText } from '@/utils/readingTime';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -33,6 +37,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
+  const { language } = useLanguage();
 
   const Icon = ARCHETYPE_ICONS[character.archetype] || Sparkles;
   const activeStory = character.stories?.find((s) => s.is_active);
@@ -40,6 +45,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     () => normalizeHeroImageUrl(character.hero_image_url),
     [character.hero_image_url],
   );
+  const { data: lastStory } = useLastStory(character.id);
 
   useEffect(() => {
     setImageError(false);
@@ -76,7 +82,14 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h3 className="font-serif text-xl text-foreground mb-1">{character.name}</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-serif text-xl text-foreground">{character.name}</h3>
+              {character.age_band && (
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  Ages {character.age_band}
+                </span>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground capitalize mb-3">
               {character.archetype}
               {character.sidekick_name && ` & ${character.sidekick_name}`}
@@ -93,13 +106,59 @@ export default function CharacterCard({ character }: CharacterCardProps) {
 
         <div className="flex gap-3 mt-5">
           {activeStory && (
-            <Button
-              onClick={() => navigate(`/read/${activeStory.id}`)}
-              className="flex-1 gap-2"
-            >
-              <Play className="w-4 h-4" />
-              Continue
-            </Button>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <Button
+                  onClick={() => navigate(`/read/${activeStory.id}`)}
+                  className="flex-1 gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  Continue
+                </Button>
+              </HoverCardTrigger>
+              {lastStory && (
+                <HoverCardContent className="w-80">
+                  <div className="space-y-3">
+                    <div>
+                      <h4 className="font-serif font-semibold text-sm text-foreground mb-1">
+                        {lastStory.title || `${character.name}'s Adventure`}
+                      </h4>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        {lastStory.hasBookmark && lastStory.currentPage > 0 && lastStory.totalPages > 0 ? (
+                          <span className="text-primary font-medium">
+                            {language === 'nl'
+                              ? `Hervat vanaf pagina ${lastStory.currentPage} van ${lastStory.totalPages}`
+                              : language === 'sv'
+                              ? `Återuppta från sida ${lastStory.currentPage} av ${lastStory.totalPages}`
+                              : `Resume from page ${lastStory.currentPage} of ${lastStory.totalPages}`}
+                          </span>
+                        ) : lastStory.totalPages > 0 ? (
+                          <span>Page {lastStory.currentPage + 1} of {lastStory.totalPages}</span>
+                        ) : null}
+                        {lastStory.preview && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {formatReadingTime(estimateReadingTimeFromText(lastStory.preview))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {lastStory.preview && (
+                      <p className="text-xs text-muted-foreground line-clamp-3">
+                        {lastStory.preview}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'nl'
+                        ? 'Klik om verder te lezen'
+                        : language === 'sv'
+                        ? 'Klicka för att fortsätta läsa'
+                        : 'Click to continue reading'}
+                    </p>
+                  </div>
+                </HoverCardContent>
+              )}
+            </HoverCard>
           )}
           <Button
             onClick={() => setShowLengthModal(true)}
@@ -110,6 +169,15 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             New Adventure
           </Button>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`/stories/${character.id}`)}
+          className="w-full mt-2 text-muted-foreground hover:text-foreground"
+        >
+          <BookOpen className="w-4 h-4 mr-2" />
+          {language === 'nl' ? 'Verhalenbibliotheek' : language === 'sv' ? 'Berättelsebibliotek' : 'Story Library'}
+        </Button>
       </motion.div>
 
       <LengthSelectModal

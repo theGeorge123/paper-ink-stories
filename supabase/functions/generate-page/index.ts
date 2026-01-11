@@ -286,6 +286,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const functionStartTime = Date.now();
+  let aiGenerationStartTime: number | null = null;
+  let aiGenerationEndTime: number | null = null;
+  let aiLatency: number | null = null;
+  let retryCount = 0;
+  let errorOccurred = false;
+  let errorType: string | null = null;
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -503,6 +511,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       .replace("{phase}", storyPhase);
 
     console.log("Calling OpenRouter API for page", currentPage);
+    aiGenerationStartTime = Date.now();
 
     const OPENROUTER_API_KEY = Deno.env.get("openrouter");
     if (!OPENROUTER_API_KEY) {
@@ -525,6 +534,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     let lastError = "";
     
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      retryCount = attempt - 1; // Track retries (0 = first attempt, 1 = first retry, etc.)
       try {
         aiResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -584,8 +594,12 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       );
     }
 
+    aiGenerationEndTime = Date.now();
+    aiLatency = aiGenerationEndTime - (aiGenerationStartTime || functionStartTime);
+    
     const aiData = await aiResponse.json();
     console.log("AI response received for page", currentPage);
+    console.log(`[PERF] AI generation latency: ${aiLatency}ms, retries: ${retryCount}`);
 
     let content = aiData.choices?.[0]?.message?.content || "";
     
@@ -692,7 +706,9 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       }
     }
 
+    const totalFunctionTime = Date.now() - functionStartTime;
     console.log("Page generated successfully:", currentPage, "of", targetPages);
+    console.log(`[PERF] Total function time: ${totalFunctionTime}ms, AI latency: ${aiLatency ?? 'N/A'}ms, retries: ${retryCount}`);
 
     return jsonResponse({
       success: true,
@@ -707,7 +723,11 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     });
 
   } catch (error) {
+    errorOccurred = true;
+    errorType = error instanceof Error ? error.constructor.name : "Unknown";
+    const totalFunctionTime = Date.now() - functionStartTime;
     console.error("Edge function error:", error);
+    console.error(`[PERF] Function failed after ${totalFunctionTime}ms, error type: ${errorType}, retries: ${retryCount}, AI latency: ${aiLatency ?? 'N/A'}ms`);
     return jsonResponse(
       {
         error: { message: error instanceof Error ? error.message : "Unknown error" },

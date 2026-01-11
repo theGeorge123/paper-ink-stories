@@ -27,6 +27,7 @@ const CreateQuestions = lazy(() => import("./pages/CreateQuestions"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Reader = lazy(() => import("./pages/Reader"));
 const DemoReader = lazy(() => import("./pages/DemoReader"));
+const StoryHistory = lazy(() => import("./pages/StoryHistory"));
 
 const PageLoader = () => <SkeletonLoader type="page" />;
 const ReaderLoader = () => <SkeletonLoader type="reader" />;
@@ -105,9 +106,19 @@ const App = () => (
                 <Route
                   path="/questions/:characterId"
                   element={
-                    <ErrorBoundary fallbackMessage="We couldn’t load the story questions.">
+                    <ErrorBoundary fallbackMessage="We couldn't load the story questions.">
                       <Suspense fallback={<PageLoader />}>
                         <Questions />
+                      </Suspense>
+                    </ErrorBoundary>
+                  }
+                />
+                <Route
+                  path="/stories/:characterId"
+                  element={
+                    <ErrorBoundary fallbackMessage="We couldn't load the story history.">
+                      <Suspense fallback={<PageLoader />}>
+                        <StoryHistory />
                       </Suspense>
                     </ErrorBoundary>
                   }

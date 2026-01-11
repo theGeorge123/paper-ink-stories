@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import CoverPage from '@/components/CoverPage';
 import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useStoryProgress } from '@/hooks/useStoryProgress';
 // Page turn animation variants
 const pageVariants = {
   enter: (direction: number) => ({
@@ -121,6 +122,9 @@ export default function Reader() {
     initialUrl: story?.characters?.hero_image_url,
     heroId: story?.characters?.id,
   });
+
+  // Bookmark and progress tracking
+  const { savedPage, hasBookmark, saveProgress } = useStoryProgress(storyId, currentPageIndex);
 
   // Generate page mutation with deduplication
   const generatePage = useCallback(async (targetPageNumber: number, isBackground = false) => {
@@ -382,16 +386,28 @@ export default function Reader() {
     }
   };
 
+  // Resume from bookmark or URL parameter
   useEffect(() => {
-    if (!storyId) return;
+    if (!storyId || !story) return;
+    
     const urlPage = searchParams.get('page');
     if (urlPage) {
       const pageIndex = Number(urlPage) - 1;
       if (!Number.isNaN(pageIndex) && pageIndex >= 0) {
         setCurrentPageIndex(pageIndex);
+        return;
       }
     }
-  }, [searchParams, storyId]);
+
+    // Resume from bookmark if available and no URL page specified
+    if (hasBookmark && savedPage > 0 && pages.length > 0) {
+      const bookmarkIndex = savedPage - 1; // Convert 1-based to 0-based
+      // Only resume if bookmark is within available pages
+      if (bookmarkIndex < pages.length) {
+        setCurrentPageIndex(bookmarkIndex);
+      }
+    }
+  }, [searchParams, storyId, story, hasBookmark, savedPage, pages.length]);
 
   // Show ending screen
   if (showEnding && story?.characters) {
@@ -415,6 +431,7 @@ export default function Reader() {
         title={story.title || `${story.characters.name}'s avontuur`}
         heroImageUrl={heroPortrait.url || characterDetails.hero_image_url}
         onOpen={() => setHasOpenedCover(true)}
+        lengthSetting={story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG'}
       />
     );
   }
@@ -442,7 +459,24 @@ export default function Reader() {
           </Avatar>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Bookmark & Exit button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              await saveProgress(currentPageIndex);
+              navigate('/dashboard');
+            }}
+            className="gap-2 text-xs"
+            aria-label="Bookmark and exit"
+          >
+            <Bookmark className="w-4 h-4" />
+            <span className="hidden sm:inline">
+              {t('bookmarkAndExit') || 'Bookmark & Exit'}
+            </span>
+          </Button>
+
           <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
             {themeOptions.map(option => {
               const Icon = option.icon;
