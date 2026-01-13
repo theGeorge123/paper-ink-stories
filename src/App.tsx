@@ -86,7 +86,7 @@ const App = () => (
                 <Route
                   path="/read/:storyId"
                   element={
-                    <ErrorBoundary fallbackMessage="We couldn’t load the reader.">
+                    <ErrorBoundary fallbackMessage="Story magic is taking a rest. Please try refreshing the page or start a new story.">
                       <Suspense fallback={<ReaderLoader />}>
                         <Reader />
                       </Suspense>

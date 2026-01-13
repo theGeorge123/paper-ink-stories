@@ -677,6 +677,9 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       plot_outline: parsedContent.plot_outline || storyState.plot_outline || [],
     };
 
+    // Force is_ending to true if this is the last page, regardless of AI response
+    const finalIsEnding = isLastPage || parsedContent.is_ending || false;
+
     const storyUpdate: Record<string, unknown> = {
       current_page: currentPage,
       story_state: newState,
@@ -684,7 +687,9 @@ Make next_options VARIED - mix locations, activities, and companions.`;
 
     // If ending, save summary, themes, options, and mark inactive
     // Note: The cumulative life_summary update happens in the client when user confirms
-    if (parsedContent.is_ending) {
+    if (finalIsEnding) {
+      console.log(`[Story Ending] Marking story ${storyId} as complete (page ${currentPage}/${targetPages})`);
+
       const cumulativeSummary = parsedContent.adventure_summary
         ? [lifeSummary, parsedContent.adventure_summary].filter(Boolean).join("\n")
         : lifeSummary;
@@ -695,12 +700,12 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       storyUpdate.generated_options = parsedContent.next_options || [];
       storyUpdate.is_active = false;
       storyUpdate.themes = parsedContent.story_themes || [];
-      
+
       // Generate title if not set
       if (!story.title) {
         storyUpdate.title = `${character.name}'s Bedtime Adventure`;
       }
-      
+
       // Increment story count on character
       await supabase
         .from("characters")
@@ -717,7 +722,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
       console.error("Story update error:", updateError);
     }
 
-    if (parsedContent.is_ending && parsedContent.adventure_summary) {
+    if (finalIsEnding && parsedContent.adventure_summary) {
       const cumulativeSummary = [lifeSummary, parsedContent.adventure_summary].filter(Boolean).join("\n");
 
       const { error: characterUpdateError } = await supabase
@@ -737,7 +742,7 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     return jsonResponse({
       success: true,
       page_text: parsedContent.page_text,
-      is_ending: parsedContent.is_ending || false,
+      is_ending: finalIsEnding,
       adventure_summary: parsedContent.adventure_summary || null,
       next_options: parsedContent.next_options || null,
       story_themes: parsedContent.story_themes || null,
