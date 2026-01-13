@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -194,9 +194,13 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   }, [storyId, refetchPages, refetchStory]);
 
   // Initial page generation - only when no pages exist (Page 1 should already be generated)
+  // Add delay to allow questions to complete and system to settle
   useEffect(() => {
     if (pages.length === 0 && story && !generating && !inflightRequests.current.has(1)) {
-      generatePage(1, false);
+      const timer = setTimeout(() => {
+        generatePage(1, false);
+      }, 3000); // Wait 3 seconds before generating first page
+      return () => clearTimeout(timer);
     }
   }, [pages.length, story, generating, generatePage]);
 
@@ -322,23 +326,45 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
       pageNumber,
     });
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
-    // Show skeleton while loading signed URL
-    if (loading) {
+    // Show skeleton while loading signed URL or image
+    if (loading || (!imageLoaded && url && !imageError)) {
       return (
-        <div className="overflow-hidden rounded-xl shadow-lg">
-          <div className="aspect-[16/9] relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="overflow-hidden rounded-xl shadow-lg"
+        >
+          <div className="aspect-[16/9] relative bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5">
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              animate={{
+                x: ['-100%', '100%'],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'linear',
+              }}
+            />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm text-muted-foreground">Loading illustration...</span>
+              <motion.span
+                className="text-sm text-muted-foreground"
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                Loading illustration...
+              </motion.span>
             </div>
           </div>
-        </div>
+        </motion.div>
       );
     }
 
     // Don't render anything if no URL or error
-    if (!url || error) {
+    if (!url || error || imageError) {
       return null;
     }
 
@@ -351,19 +377,17 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         className="overflow-hidden rounded-xl shadow-lg"
       >
         <div className="aspect-[16/9] bg-black/5 relative">
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 animate-pulse" />
-          )}
           <motion.img
             src={url}
             alt="Story scene"
             className="h-full w-full object-cover"
-            initial={{ scale: 1.02, opacity: 0 }}
-            animate={{ scale: 1, opacity: imageLoaded ? 1 : 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ scale: 1.05, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
             onLoad={() => setImageLoaded(true)}
             onError={(e) => {
               e.preventDefault();
+              setImageError(true);
               handleError();
             }}
           />
@@ -475,23 +499,6 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Bookmark & Exit button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={async () => {
-              await saveProgress(currentPageIndex);
-              navigate('/dashboard');
-            }}
-            className="gap-2 text-xs"
-            aria-label="Bookmark and exit"
-          >
-            <Bookmark className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {t('bookmarkAndExit') || 'Bookmark & Exit'}
-            </span>
-          </Button>
-
           <div className="hidden sm:flex items-center gap-1 rounded-full border border-white/10 bg-black/5 px-2 py-1 backdrop-blur-md">
             {themeOptions.map(option => {
               const Icon = option.icon;
@@ -529,8 +536,8 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         </div>
       </header>
 
-      {/* Scrollable reading area */}
-      <main id="main-content" className="flex-1 overflow-y-auto px-6 pb-12">
+      {/* Reading area */}
+      <main id="main-content" className="flex-1 overflow-y-hidden px-6 pb-12">
         <div className="max-w-xl mx-auto" style={{ perspective: '1000px' }}>
           {story?.title && currentPageIndex === 0 && (
             <motion.h1

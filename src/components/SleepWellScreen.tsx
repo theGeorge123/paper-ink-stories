@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MoonStar, Library, Sparkles } from 'lucide-react';
+import { MoonStar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -223,16 +223,6 @@ export default function SleepWellScreen({
               </Button>
             </motion.div>
           )}
-
-          <Button
-            onClick={() => navigate('/dashboard')}
-            variant="ghost"
-            size="sm"
-            className="text-white/60 hover:text-white hover:bg-white/10"
-          >
-            <Library className="w-4 h-4 mr-2" />
-            {t('backToLibrary')}
-          </Button>
         </motion.div>
       </div>
     </motion.div>
