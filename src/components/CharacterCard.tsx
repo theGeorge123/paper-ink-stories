@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, BookOpen, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import LengthSelectModal from '@/components/LengthSelectModal';
 import { normalizeHeroImageUrl } from '@/lib/heroImage';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLastStory } from '@/hooks/useLastStory';
@@ -33,8 +32,6 @@ interface CharacterCardProps {
 }
 
 export default function CharacterCard({ character }: CharacterCardProps) {
-  const [showLengthModal, setShowLengthModal] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const navigate = useNavigate();
   const { language } = useLanguage();
@@ -51,10 +48,8 @@ export default function CharacterCard({ character }: CharacterCardProps) {
     setImageError(false);
   }, [heroImageUrl]);
 
-  const startNewStory = (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
-    setLoading(true);
-    setShowLengthModal(false);
-    navigate(`/questions/${character.id}?length=${length}`);
+  const startNewStory = () => {
+    navigate(`/questions/${character.id}`);
   };
 
   return (
@@ -161,7 +156,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             </HoverCard>
           )}
           <Button
-            onClick={() => setShowLengthModal(true)}
+            onClick={startNewStory}
             variant={activeStory ? 'outline' : 'default'}
             className="flex-1 gap-2"
           >
@@ -179,15 +174,6 @@ export default function CharacterCard({ character }: CharacterCardProps) {
           {language === 'nl' ? 'Verhalenbibliotheek' : language === 'sv' ? 'Berättelsebibliotek' : 'Story Library'}
         </Button>
       </motion.div>
-
-      <LengthSelectModal
-        open={showLengthModal}
-        onOpenChange={setShowLengthModal}
-        onSelect={startNewStory}
-        characterName={character.name}
-        ageBand={character.age_band}
-        loading={loading}
-      />
     </>
   );
 }

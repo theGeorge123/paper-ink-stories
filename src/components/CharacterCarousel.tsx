@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/hooks/useLanguage';
 import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
-import LengthSelectModal from './LengthSelectModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBatchSignedUrls } from '@/hooks/useBatchSignedUrls';
 
@@ -138,10 +137,8 @@ interface CharacterCarouselProps {
 const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showLengthModal, setShowLengthModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [startingAdventure, setStartingAdventure] = useState(false);
   const [loadingCharacterId, setLoadingCharacterId] = useState<string | null>(null);
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -239,38 +236,23 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
     }
   };
 
-  const startAdventure = async (character: Character, length: 'SHORT' | 'MEDIUM' | 'LONG') => {
-    setStartingAdventure(true);
+  const startAdventure = async (character: Character) => {
     setLoadingCharacterId(character.id);
 
     try {
-      // Navigate to questions page with character ID and length setting
-      // The Questions page will create the story and generate page 1 after questions are answered
-      setShowLengthModal(false);
-      navigate(`/questions/${character.id}?length=${length}`);
+      // Navigate to questions page with character ID
+      // The Questions page will create the story and adaptive questions will set length
+      navigate(`/questions/${character.id}`);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast.error('Failed to start adventure');
     } finally {
-      setStartingAdventure(false);
       setLoadingCharacterId(null);
     }
   };
 
   const handleNewAdventure = (character: Character) => {
-    setSelectedCharacter(character);
-
-    if (character.age_band === '1-2') {
-      startAdventure(character, 'SHORT');
-      return;
-    }
-
-    setShowLengthModal(true);
-  };
-
-  const handleLengthSelect = async (length: 'SHORT' | 'MEDIUM' | 'LONG') => {
-    if (!selectedCharacter) return;
-    await startAdventure(selectedCharacter, length);
+    startAdventure(character);
   };
 
   const handleContinueStory = (storyId: string) => {
@@ -569,16 +551,6 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
         />
       )}
 
-      {/* Length Selection Modal */}
-      {selectedCharacter && (
-        <LengthSelectModal
-          open={showLengthModal}
-          onOpenChange={setShowLengthModal}
-          onSelect={handleLengthSelect}
-          characterName={selectedCharacter.name}
-          loading={startingAdventure}
-        />
-      )}
     </>
   );
 });

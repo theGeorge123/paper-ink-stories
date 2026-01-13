@@ -75,7 +75,6 @@ export default function Questions() {
   const [adaptiveAnswers, setAdaptiveAnswers] = useState<Record<string, string>>({});
 
   const storyId = storyIdParam || searchParams.get('storyId') || createdStoryId || undefined;
-  const lengthSetting = searchParams.get('length');
 
   useEffect(() => {
     if (storyId || !characterId) return;
@@ -83,19 +82,16 @@ export default function Questions() {
     const createStory = async () => {
       setIsCreatingStory(true);
 
-      const length =
-        lengthSetting === 'SHORT' || lengthSetting === 'MEDIUM' || lengthSetting === 'LONG'
-          ? lengthSetting
-          : 'SHORT';
-
       try {
+        // Mark any existing stories for this character as inactive
         await supabase.from('stories').update({ is_active: false }).eq('character_id', characterId);
 
+        // Create new story with default length - adaptive questions will update it
         const { data: newStory, error } = await supabase
           .from('stories')
           .insert({
             character_id: characterId,
-            length_setting: length,
+            length_setting: 'MEDIUM', // Default, will be updated by adaptive questions
             is_active: true,
           })
           .select()
@@ -105,6 +101,7 @@ export default function Questions() {
           throw error || new Error('Story creation failed');
         }
 
+        console.log('[Questions] Created new story:', newStory.id);
         setCreatedStoryId(newStory.id);
       } catch (error) {
         console.error('[Questions] Failed to create story:', error);
@@ -122,7 +119,7 @@ export default function Questions() {
     };
 
     createStory();
-  }, [storyId, characterId, lengthSetting, language, navigate]);
+  }, [storyId, characterId, language, navigate]);
 
   const { data: story } = useQuery({
     queryKey: ['story', storyId],

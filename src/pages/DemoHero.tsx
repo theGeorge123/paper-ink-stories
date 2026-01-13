@@ -116,7 +116,7 @@ export default function DemoHero() {
     }
 
     trackDemoEvent('demo_start_clicked', { demoId });
-    
+
     const heroData: DemoHeroInput = {
       heroName: name.trim(),
       heroType: selectedArchetype?.label ?? archetype,
@@ -129,8 +129,8 @@ export default function DemoHero() {
 
     saveDemoHero(heroData);
 
-    // Navigate directly to DemoReader (bypass questions)
-    navigate(buildDemoRoute('/demo-reader'));
+    // Navigate to DemoQuestions (same flow as real story)
+    navigate(buildDemoRoute('/demo-questions'));
   };
 
   const goToStep = (newStep: number) => {
@@ -216,26 +216,36 @@ export default function DemoHero() {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2 }}
+                className="space-y-2"
               >
                 <Input
                   placeholder={t('heroNamePlaceholder')}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value.slice(0, 30))}
+                  maxLength={30}
                   className="h-16 text-xl text-center font-serif bg-card/50 border-2 border-border/50 focus:border-primary rounded-2xl"
                   autoFocus
                   aria-label={t('heroNamePlaceholder')}
                 />
+                {name && (
+                  <div className="flex justify-between items-center px-2">
+                    <motion.p
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-sm text-muted-foreground italic"
+                    >
+                      "{name}" sounds magical!
+                    </motion.p>
+                    <motion.span
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-xs text-muted-foreground"
+                    >
+                      {name.length}/30
+                    </motion.span>
+                  </div>
+                )}
               </motion.div>
-
-              {name && (
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center text-muted-foreground italic"
-                >
-                  "{name}" sounds like a hero ready for adventure!
-                </motion.p>
-              )}
             </motion.div>
           )}
 
@@ -383,8 +393,14 @@ export default function DemoHero() {
                     <motion.button
                       key={trait}
                       initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.05 }}
+                      animate={{
+                        opacity: 1,
+                        scale: isSelected ? [1, 1.1, 1] : 1
+                      }}
+                      transition={{
+                        opacity: { delay: index * 0.05 },
+                        scale: isSelected ? { duration: 0.3, times: [0, 0.5, 1] } : { delay: index * 0.05 }
+                      }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => toggleTrait(trait)}
@@ -394,7 +410,7 @@ export default function DemoHero() {
                       aria-pressed={isSelected}
                       className={`px-5 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
                         isSelected
-                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/20'
                           : traits.length >= 3
                           ? 'bg-muted/50 text-muted-foreground/50 cursor-not-allowed'
                           : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -479,18 +495,29 @@ export default function DemoHero() {
               )}
 
               <div className="space-y-3 pt-4">
-                <Button
-                  onClick={handleStartDemo}
-                  size="lg"
-                  className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary/30"
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.3, type: 'spring' }}
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
-                  Start Demo Story
-                </Button>
+                  <Button
+                    onClick={handleStartDemo}
+                    size="lg"
+                    className="w-full h-14 text-lg rounded-2xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+                    Start Demo Story
+                  </Button>
+                </motion.div>
 
-                <p className="text-xs text-center text-muted-foreground">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-xs text-center text-muted-foreground"
+                >
                   This is a demo preview. Sign up to save your hero and unlock personalized stories!
-                </p>
+                </motion.p>
               </div>
             </motion.div>
           )}
