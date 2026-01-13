@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, Bookmark, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -599,34 +599,8 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
             ) : null}
           </AnimatePresence>
 
-          {/* Page navigation footer */}
+          {/* Page navigation footer - minimal */}
           <div className="mt-8 pb-8 flex flex-col items-center gap-4">
-            {/* Page indicator */}
-            <p className={`text-sm ${activeTheme.muted}`}>
-              {t('pageOf', { current: currentPageIndex + 1, total: pages.length || '...' })}
-            </p>
-
-            {/* Continue/Finish button - explicit action required */}
-            {canGoNext && (
-              <Button
-                onClick={handleTapRight}
-                size="lg"
-                className="gap-2"
-              >
-                {t('continue') || 'Continue'}
-              </Button>
-            )}
-            
-            {canGenerate && !generating && (
-              <Button
-                onClick={handleTapRight}
-                size="lg"
-                className="gap-2"
-              >
-                {t('continue') || 'Continue'}
-              </Button>
-            )}
-
             {generating && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -656,19 +630,53 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         </div>
       </main>
 
-      {/* Navigation touch areas - overlay (keep for tap navigation) */}
-      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '160px' }}>
-        <button
-          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
-          onClick={handleTapLeft}
-          aria-label={t('readerPreviousPage')}
-        />
-        <div className="w-1/3" />
-        <button
-          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
-          onClick={handleTapRight}
-          aria-label={t('readerNextPage')}
-        />
+      {/* Navigation arrows - visible navigation controls */}
+      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none" style={{ top: '64px', bottom: '160px' }}>
+        {/* Previous page button */}
+        {currentPageIndex > 0 && (
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className={`pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md border transition-all ${
+              activeTheme.background === 'bg-white'
+                ? 'bg-white/90 border-gray-200 hover:bg-white'
+                : activeTheme.background === 'bg-[#f5e6c9]'
+                ? 'bg-[#f5e6c9]/90 border-[#d4c5a9] hover:bg-[#f5e6c9]'
+                : 'bg-[#1f2933]/90 border-white/10 hover:bg-[#1f2933]'
+            }`}
+            onClick={handleTapLeft}
+            aria-label={t('readerPreviousPage')}
+          >
+            <ChevronLeft className={`w-6 h-6 ${activeTheme.text}`} />
+          </motion.button>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Next page button */}
+        {(canGoNext || canGenerate) && !isOnFinalPage && (
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className={`pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md border transition-all ${
+              activeTheme.background === 'bg-white'
+                ? 'bg-white/90 border-gray-200 hover:bg-white'
+                : activeTheme.background === 'bg-[#f5e6c9]'
+                ? 'bg-[#f5e6c9]/90 border-[#d4c5a9] hover:bg-[#f5e6c9]'
+                : 'bg-[#1f2933]/90 border-white/10 hover:bg-[#1f2933]'
+            }`}
+            onClick={handleTapRight}
+            aria-label={t('readerNextPage')}
+            disabled={generating}
+          >
+            <ChevronRight className={`w-6 h-6 ${activeTheme.text}`} />
+          </motion.button>
+        )}
       </div>
 
     </div>
