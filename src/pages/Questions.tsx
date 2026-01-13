@@ -348,7 +348,8 @@ export default function Questions() {
   // Define handleAdaptiveComplete before conditional returns that use it
   const handleAdaptiveComplete = async (answers: Record<string, string>) => {
     if (!story) return;
-    
+
+    console.log('[Questions] Adaptive answers received:', answers);
     setAdaptiveAnswers(answers);
     setSaving(true);
 
@@ -356,6 +357,7 @@ export default function Questions() {
       // Extract story length from answers and map to database format
       const lengthValue = answers.story_length?.toLowerCase() || 'medium';
       const storyLength = lengthValue === 'short' ? 'SHORT' : lengthValue === 'long' ? 'LONG' : 'MEDIUM';
+      console.log('[Questions] Extracted story length:', storyLength);
       
       // Update story with length setting
       const storyState = normalizeStoryState(story.story_state as StoryState);
@@ -368,19 +370,28 @@ export default function Questions() {
       };
 
       // Extract tags from adaptive question answers (if available)
+      // The adaptive questions return question_types: story_length, setting, theme
       const selectionTags: string[] = [];
       if (answers.setting) selectionTags.push(answers.setting);
-      if (answers.companion) selectionTags.push(answers.companion);
-      if (answers.mood) selectionTags.push(answers.mood);
+      if (answers.theme) selectionTags.push(answers.theme);
+      // Add any other answer values as tags (excluding story_length which is not a theme)
+      Object.entries(answers).forEach(([key, value]) => {
+        if (key !== 'story_length' && !selectionTags.includes(value)) {
+          selectionTags.push(value);
+        }
+      });
 
       const character = story.characters as { id: string; preferred_themes?: string[] | null };
       const currentPreferred = (character.preferred_themes as string[]) || [];
       const updatedPreferred = Array.from(new Set([...currentPreferred, ...selectionTags])).slice(-10);
 
+      console.log('[Questions] Selection tags extracted:', selectionTags);
+      console.log('[Questions] Updated preferred themes:', updatedPreferred);
+
       await Promise.all([
         supabase
           .from('stories')
-          .update({ 
+          .update({
             story_state: updatedStoryState,
             length_setting: storyLength === 'SHORT' ? 'SHORT' : storyLength === 'LONG' ? 'LONG' : 'MEDIUM',
           })
@@ -388,12 +399,15 @@ export default function Questions() {
         supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
       ]);
 
+      console.log('[Questions] Story and character updated, starting page generation');
+
       // Start generating page 1 in background - don't await
       supabase.functions.invoke('generate-page', {
         body: { storyId: story.id, targetPage: 1 },
       }).catch(err => console.error('Background page generation error:', err));
 
       // Navigate immediately - Reader will poll for page 1
+      console.log('[Questions] Navigating to reader:', story.id);
       navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save adaptive question answers', error);
