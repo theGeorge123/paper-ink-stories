@@ -129,15 +129,16 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   // Generate page mutation with deduplication
   const generatePage = useCallback(async (targetPageNumber: number, isBackground = false) => {
     if (!storyId) return null;
-    
+
     // Prevent duplicate inflight requests for same page
     if (inflightRequests.current.has(targetPageNumber)) {
-      console.log(`Page ${targetPageNumber} already inflight, skipping`);
+      console.log(`[Reader] Page ${targetPageNumber} already inflight, skipping`);
       return null;
     }
-    
+
+    console.log(`[Reader] Generating page ${targetPageNumber} (background: ${isBackground})`);
     inflightRequests.current.add(targetPageNumber);
-    
+
     if (!isBackground) setGenerating(true);
     else {
       setPrefetchingNext(true);
@@ -180,6 +181,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
       await refetchPages();
       await refetchStory();
 
+      console.log(`[Reader] Page ${targetPageNumber} generated successfully`);
       return data;
     } finally {
       inflightRequests.current.delete(targetPageNumber);
@@ -246,15 +248,26 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   // CRITICAL: This does NOT change currentPageIndex - user must tap to progress
   useEffect(() => {
     if (!story || !storyId) return;
-    
+
     const targetPages = getTotalPages(story.length_setting as 'SHORT' | 'MEDIUM' | 'LONG');
     const isStoryEnded = !story.is_active || pages.length >= targetPages;
-    
+
     // Prefetch the next page only (1 page ahead of current read position)
     const nextPageToFetch = pages.length + 1;
-    // Only prefetch if user is close to reading it (within 2 pages)
-    const maxPrefetch = Math.min(currentPageIndex + 2, targetPages);
-    
+    // Prefetch if user is within 3 pages of needing it (more generous window)
+    const shouldPrefetch = nextPageToFetch <= Math.min(currentPageIndex + 3, targetPages);
+
+    console.log('[Reader] Prefetch check:', {
+      currentPageIndex,
+      pagesLength: pages.length,
+      nextPageToFetch,
+      shouldPrefetch,
+      isStoryEnded,
+      prefetchingNext,
+      generating,
+      targetPages
+    });
+
     // Only prefetch if:
     // 1. Story is not ended
     // 2. We're not already prefetching or generating
@@ -262,19 +275,20 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     // 4. Next page is within our prefetch window (user is close to needing it)
     // 5. Not already inflight
     if (
-      !isStoryEnded && 
-      !prefetchingNext && 
+      !isStoryEnded &&
+      !prefetchingNext &&
       !generating &&
       !prefetchInProgress.current &&
-      pages.length > 0 && 
-      nextPageToFetch <= maxPrefetch &&
+      pages.length > 0 &&
+      shouldPrefetch &&
       !inflightRequests.current.has(nextPageToFetch)
     ) {
+      console.log(`[Reader] Starting prefetch of page ${nextPageToFetch}`);
       // Small delay to let current render complete
       const timer = setTimeout(() => {
         generatePage(nextPageToFetch, true);
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [pages.length, story, storyId, prefetchingNext, generating, generatePage, currentPageIndex]);

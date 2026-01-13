@@ -111,7 +111,7 @@ You must output ONLY this JSON structure. DO NOT wrap in markdown code blocks.
 }
 `;
 
-const LENGTH_PAGES = { SHORT: 5, MEDIUM: 8, LONG: 12 };
+const LENGTH_PAGES = { SHORT: 5, MEDIUM: 9, LONG: 12 };
 
 // Image generation disabled to speed up page generation
 const IMAGE_GENERATION_LOGIC = "";
