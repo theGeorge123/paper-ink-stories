@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Sun, Sunrise, Moon, Sparkles, MoonStar, UserCircle } from 'lucide-react';
+import { Home, Sun, Sunrise, Moon, Sparkles, MoonStar, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -207,10 +207,10 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
             transition={{ delay: 0.9 }}
             className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
           >
-            <p className="text-white/80 text-sm text-center mb-4">
+            <p className="text-white/80 text-sm italic text-center leading-relaxed">
               {isDemo
-                ? "Loved this story? Create personalized adventures with YOUR child's name and favorite things!"
-                : "Create your own personalized characters and unlock infinite bedtime adventures."}
+                ? "loved this story? create personalized adventures with your child's name and favorite things..."
+                : "create your own personalized characters and unlock infinite bedtime adventures"}
             </p>
           </motion.div>
 
@@ -231,19 +231,7 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
                 className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
               >
                 <Sparkles className="w-5 h-5" />
-                {t('createFreeAccount')}
-              </Button>
-            </motion.div>
-
-            <motion.div whileTap={{ scale: 0.98 }}>
-              <Button
-                onClick={() => navigate(buildDemoRoute('/demo-hero'))}
-                size="lg"
-                variant="outline"
-                className="w-full gap-2 border-white/20 text-white hover:bg-white/10"
-              >
-                <Sparkles className="w-5 h-5" />
-                Create a new hero
+                create free account
               </Button>
             </motion.div>
 
@@ -253,7 +241,7 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
               size="sm"
               className="text-white/60 hover:text-white hover:bg-white/10"
             >
-              Back to home
+              back to home
             </Button>
           </motion.div>
         </div>
@@ -352,39 +340,53 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
             </motion.div>
           </AnimatePresence>
 
-          {/* Tap to continue hint on final page */}
-          {isLastPage && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-center mt-8 pb-8"
-            >
-              <motion.p
-                className={`text-sm ${activeTheme.muted}`}
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                {t('tapToContinue')}
-              </motion.p>
-            </motion.div>
-          )}
         </div>
       </main>
 
-      {/* Navigation touch areas - overlay */}
-      <div className="absolute inset-0 flex pointer-events-none" style={{ top: '64px', bottom: '96px' }}>
-        <button
-          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
-          onClick={handleTapLeft}
-          aria-label={t('readerPreviousPage')}
-        />
-        <div className="w-1/3" />
-        <button
-          className="w-1/3 h-full pointer-events-auto active:bg-black/5 transition-colors"
+      {/* Navigation arrows - visible navigation controls */}
+      <div className="absolute inset-0 flex items-center justify-between px-4 pointer-events-none" style={{ top: '64px', bottom: '96px' }}>
+        {/* Previous page button */}
+        {!isFirstPage && (
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className={`pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md border transition-all ${
+              activeTheme.background === 'bg-white'
+                ? 'bg-white/90 border-gray-200 hover:bg-white'
+                : activeTheme.background === 'bg-[#f5e6c9]'
+                ? 'bg-[#f5e6c9]/90 border-[#d4c5a9] hover:bg-[#f5e6c9]'
+                : 'bg-[#1f2933]/90 border-white/10 hover:bg-[#1f2933]'
+            }`}
+            onClick={handleTapLeft}
+            aria-label={t('readerPreviousPage')}
+          >
+            <ChevronLeft className={`w-6 h-6 ${activeTheme.text}`} />
+          </motion.button>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Next page button or finish button */}
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className={`pointer-events-auto w-12 h-12 rounded-full flex items-center justify-center shadow-lg backdrop-blur-md border transition-all ${
+            activeTheme.background === 'bg-white'
+              ? 'bg-white/90 border-gray-200 hover:bg-white'
+              : activeTheme.background === 'bg-[#f5e6c9]'
+              ? 'bg-[#f5e6c9]/90 border-[#d4c5a9] hover:bg-[#f5e6c9]'
+              : 'bg-[#1f2933]/90 border-white/10 hover:bg-[#1f2933]'
+          }`}
           onClick={handleTapRight}
           aria-label={isLastPage ? t('readerFinishStory') : t('readerNextPage')}
-        />
+        >
+          <ChevronRight className={`w-6 h-6 ${activeTheme.text}`} />
+        </motion.button>
       </div>
     </div>
   );
