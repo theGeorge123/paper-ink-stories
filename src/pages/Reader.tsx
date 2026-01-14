@@ -84,6 +84,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   const [hasOpenedCover, setHasOpenedCover] = useState(false);
   const [generationError, setGenerationError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [pageTransitioning, setPageTransitioning] = useState(false);
   const MAX_RETRIES = 3;
 
   // Track inflight requests by page number to prevent duplicates
@@ -215,13 +216,16 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     }
   }, [storyId, refetchPages, refetchStory, retryCount]);
 
-  // Initial page generation - only when no pages exist (Page 1 should already be generated)
-  // Add delay to allow questions to complete and system to settle
+  // Initial page generation - only when no pages exist
+  // The Questions page starts generation in background, so we poll for the result
   useEffect(() => {
     if (pages.length === 0 && story && !generating && !inflightRequests.current.has(1)) {
+      // If no pages exist after 5 seconds, trigger generation
+      // This handles cases where background generation from Questions failed
       const timer = setTimeout(() => {
+        console.log('[Reader] No pages found, starting generation');
         generatePage(1, false);
-      }, 3000); // Wait 3 seconds before generating first page
+      }, 5000); // Wait 5 seconds to allow background generation to complete
       return () => clearTimeout(timer);
     }
   }, [pages.length, story, generating, generatePage]);
@@ -421,7 +425,10 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   const handleTapLeft = () => {
     if (currentPageIndex > 0) {
       setDirection(-1);
+      setPageTransitioning(true);
       setCurrentPageIndex(currentPageIndex - 1);
+      // Clear transition state after animation
+      setTimeout(() => setPageTransitioning(false), 400);
     }
   };
 
@@ -430,8 +437,11 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     if (canGoNext) {
       const nextIndex = currentPageIndex + 1;
       setDirection(1);
+      setPageTransitioning(true);
       setCurrentPageIndex(nextIndex);
-    } 
+      // Clear transition state after animation
+      setTimeout(() => setPageTransitioning(false), 400);
+    }
     // If we're on the last available page but story isn't done, generate more
     else if (canGenerate && !generating) {
       const nextPage = pages.length + 1;
@@ -440,7 +450,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         // After generation, move to the new page
         setCurrentPageIndex(prev => prev + 1);
       });
-    } 
+    }
     // If we're on the final page of the story, show ending
     else if (isOnFinalPage) {
       setShowEnding(true);
@@ -572,29 +582,53 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
           )}
 
           <AnimatePresence mode="wait" custom={direction}>
-            {generationError && pages.length === 0 ? (
+            {pages.length === 0 ? (
+              // Initial loading state - show skeleton while waiting for first page
               <motion.div
-                key="error-state"
+                key="initial-loading"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                className="space-y-6"
               >
-                <StoryErrorState
-                  onRetry={() => {
-                    setRetryCount(prev => prev + 1);
-                    generatePage(1, false);
-                  }}
-                  isRetrying={generating}
-                />
-              </motion.div>
-            ) : generating && pages.length === 0 ? (
-              <motion.div
-                key="loading-skeleton"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <SkeletonLoader type="reader" />
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <motion.div
+                    className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      opacity: [0.5, 1, 0.5],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <MoonStar className="w-8 h-8 text-primary" />
+                  </motion.div>
+                  <p className={`font-serif text-center ${activeTheme.muted}`}>
+                    {t('preparingStory') || 'Your story is being prepared...'}
+                  </p>
+                  <p className={`text-sm text-center ${activeTheme.muted}`}>
+                    {t('oneMoreMoment') || 'Just one more moment...'}
+                  </p>
+                </div>
+                {/* Show retry button only after initial wait period and if generation actually failed */}
+                {generationError && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => {
+                        setRetryCount(prev => prev + 1);
+                        generatePage(1, false);
+                      }}
+                      disabled={generating}
+                      className="gap-2"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
+                      {generating ? 'Trying...' : 'Try Again'}
+                    </Button>
+                  </div>
+                )}
               </motion.div>
             ) : generationError && currentPageIndex === pages.length - 1 ? (
               <motion.div
@@ -660,8 +694,32 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                   opacity: { duration: 0.2 },
                   rotateY: { duration: 0.3 },
                 }}
-                className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
+                className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text} relative`}
               >
+                {/* Show subtle loading overlay during transitions */}
+                {pageTransitioning && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-sm rounded-lg z-10"
+                  >
+                    <motion.div
+                      className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
+                      animate={{
+                        scale: [1, 1.1, 1],
+                        opacity: [0.5, 1, 0.5],
+                      }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      <MoonStar className="w-4 h-4 text-primary" />
+                    </motion.div>
+                  </motion.div>
+                )}
                 {currentPage.image_url && <SceneImage imageUrl={currentPage.image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />}
                 <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>

@@ -216,7 +216,7 @@ export default function SleepWellScreen({
                 onClick={onStartNextStory}
                 size="lg"
                 variant="outline"
-                className="w-full gap-2 border-white/20 text-white hover:bg-white/10"
+                className="w-full gap-2 border-white/40 bg-white/10 text-white hover:bg-white/20 hover:border-white/60 font-semibold shadow-lg backdrop-blur-sm transition-all"
               >
                 <Sparkles className="w-5 h-5" />
                 {t('newAdventure')}
