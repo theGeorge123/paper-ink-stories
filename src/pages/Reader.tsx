@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, MoonStar, Sun, Sunrise, Moon, UserCircle, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import SleepWellScreen from '@/components/SleepWellScreen';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import CoverPage from '@/components/CoverPage';
+import StoryErrorState from '@/components/StoryErrorState';
 import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useStoryProgress } from '@/hooks/useStoryProgress';
@@ -81,6 +82,9 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   const [existingLifeSummary, setExistingLifeSummary] = useState<string | null>(null);
   const [theme, setTheme] = useState<ThemeKey>('day');
   const [hasOpenedCover, setHasOpenedCover] = useState(false);
+  const [generationError, setGenerationError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   // Track inflight requests by page number to prevent duplicates
   const inflightRequests = useRef<Set<number>>(new Set());
@@ -126,7 +130,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   // Bookmark and progress tracking
   const { savedPage, hasBookmark, saveProgress } = useStoryProgress(storyId, currentPageIndex);
 
-  // Generate page mutation with deduplication
+  // Generate page mutation with deduplication and error handling
   const generatePage = useCallback(async (targetPageNumber: number, isBackground = false) => {
     if (!storyId) return null;
 
@@ -139,8 +143,10 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     console.log(`[Reader] Generating page ${targetPageNumber} (background: ${isBackground})`);
     inflightRequests.current.add(targetPageNumber);
 
-    if (!isBackground) setGenerating(true);
-    else {
+    if (!isBackground) {
+      setGenerating(true);
+      setGenerationError(false);
+    } else {
       setPrefetchingNext(true);
       prefetchInProgress.current = true;
     }
@@ -153,17 +159,27 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
       if (error) {
         console.error('Generation error:', error);
         if (!isBackground) {
-          toast.error("The story magic is taking a short nap. Try again in a moment.");
+          setGenerationError(true);
+          if (retryCount < MAX_RETRIES) {
+            toast.error(`Story magic needs a moment. Retry ${retryCount + 1}/${MAX_RETRIES}`);
+          } else {
+            toast.error("The story magic is taking a longer rest. Please try again later.");
+          }
         }
         return null;
       }
 
       if (data?.fallback) {
         if (!isBackground) {
+          setGenerationError(true);
           toast.error(data.page_text || "The story magic is taking a short nap. Try again in a moment.");
         }
         return null;
       }
+
+      // Success - reset error state
+      setGenerationError(false);
+      setRetryCount(0);
 
       if (data?.is_ending) {
         if (data?.adventure_summary) {
@@ -183,6 +199,12 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
 
       console.log(`[Reader] Page ${targetPageNumber} generated successfully`);
       return data;
+    } catch (err) {
+      console.error('Generation exception:', err);
+      if (!isBackground) {
+        setGenerationError(true);
+      }
+      return null;
     } finally {
       inflightRequests.current.delete(targetPageNumber);
       if (!isBackground) setGenerating(false);
@@ -191,7 +213,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
         prefetchInProgress.current = false;
       }
     }
-  }, [storyId, refetchPages, refetchStory]);
+  }, [storyId, refetchPages, refetchStory, retryCount]);
 
   // Initial page generation - only when no pages exist (Page 1 should already be generated)
   // Add delay to allow questions to complete and system to settle
@@ -550,7 +572,22 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
           )}
 
           <AnimatePresence mode="wait" custom={direction}>
-            {generating && pages.length === 0 ? (
+            {generationError && pages.length === 0 ? (
+              <motion.div
+                key="error-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <StoryErrorState
+                  onRetry={() => {
+                    setRetryCount(prev => prev + 1);
+                    generatePage(1, false);
+                  }}
+                  isRetrying={generating}
+                />
+              </motion.div>
+            ) : generating && pages.length === 0 ? (
               <motion.div
                 key="loading-skeleton"
                 initial={{ opacity: 0 }}
@@ -558,6 +595,31 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                 exit={{ opacity: 0 }}
               >
                 <SkeletonLoader type="reader" />
+              </motion.div>
+            ) : generationError && currentPageIndex === pages.length - 1 ? (
+              <motion.div
+                key="error-mid-story"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="py-12"
+              >
+                <div className="text-center space-y-4">
+                  <p className={`${activeTheme.muted}`}>
+                    The next page needs a moment...
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setRetryCount(prev => prev + 1);
+                      generatePage(pages.length + 1, false);
+                    }}
+                    disabled={generating}
+                    className="gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
+                    {generating ? 'Trying...' : 'Try Again'}
+                  </Button>
+                </div>
               </motion.div>
             ) : generating && currentPageIndex === pages.length - 1 ? (
               <motion.div

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Sun, Sunrise, Moon, Sparkles, MoonStar, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, Sun, Sunrise, Moon, Sparkles, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -9,6 +9,7 @@ import { buildDemoRoute, clearDemoId, getDemoIdFromCookie } from '@/lib/demoStor
 import { trackDemoEvent } from '@/lib/performance';
 import type { DemoStoryRecord } from '@/lib/demoStoryTemplate';
 import CoverPage from '@/components/CoverPage';
+import DemoEndScreen from '@/components/DemoEndScreen';
 
 type ThemeKey = 'day' | 'sepia' | 'night';
 
@@ -136,117 +137,9 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
     );
   }
 
-  // End screen - matches SleepWellScreen styling
+  // End screen - use DemoEndScreen component
   if (showEndScreen) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 overflow-y-auto"
-        style={{ background: 'linear-gradient(180deg, #1A202C 0%, #2D3748 100%)' }}
-      >
-        {/* Stars decoration */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {starPositions.map((star, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0.2, 0.8, 0.2] }}
-              transition={{ 
-                duration: star.duration, 
-                repeat: Infinity, 
-                delay: star.delay 
-              }}
-              className="absolute w-1 h-1 bg-white rounded-full"
-              style={{
-                left: star.left,
-                top: star.top,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="relative z-10 max-w-md w-full flex flex-col items-center">
-          {/* Moon icon */}
-          <motion.div
-            initial={{ scale: 0, rotate: -30 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
-            className="mb-6"
-          >
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center shadow-[0_0_60px_rgba(251,191,36,0.4)]">
-              <MoonStar className="w-10 h-10 text-amber-900" />
-            </div>
-          </motion.div>
-
-          {/* The End text */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="font-serif text-4xl text-white mb-2 text-center"
-          >
-            {t('theEnd')}
-          </motion.h1>
-
-          {/* Subtext */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="text-lg text-white/70 mb-8 text-center"
-          >
-            {t('sleepWell')}, little one
-          </motion.p>
-
-          {/* Demo CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="w-full mb-6 rounded-xl border border-white/10 bg-white/5 p-4"
-          >
-            <p className="text-white/80 text-sm italic text-center leading-relaxed">
-              {isDemo
-                ? "loved this story? create personalized adventures with your child's name and favorite things..."
-                : "create your own personalized characters and unlock infinite bedtime adventures"}
-            </p>
-          </motion.div>
-
-          {/* Action buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-            className="flex flex-col gap-3 w-full"
-          >
-            <motion.div whileTap={{ scale: 0.98 }}>
-              <Button
-                onClick={() => {
-                  clearDemoId();
-                  navigate('/auth');
-                }}
-                size="lg"
-                className="w-full gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/30"
-              >
-                <Sparkles className="w-5 h-5" />
-                create free account
-              </Button>
-            </motion.div>
-
-            <Button
-              onClick={() => navigate('/')}
-              variant="ghost"
-              size="sm"
-              className="text-white/60 hover:text-white hover:bg-white/10"
-            >
-              back to home
-            </Button>
-          </motion.div>
-        </div>
-      </motion.div>
-    );
+    return <DemoEndScreen heroName={heroName || 'little one'} />;
   }
 
   return (
