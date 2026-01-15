@@ -375,10 +375,10 @@ serve(async (req) => {
       .order("page_number", { ascending: true });
 
     const pages = pagesData || [];
-    
+
     // Use targetPage if provided, otherwise next page
     const currentPage = targetPage || pages.length + 1;
-    
+
     // Check if this page already exists (idempotent)
     const existingPage = pages.find(p => p.page_number === currentPage);
     if (existingPage) {
@@ -398,6 +398,61 @@ serve(async (req) => {
         image_url: refreshedUrl || existingPage.image_url || null,
         already_existed: true,
       });
+    }
+
+    // Check credits only for first page (new story generation)
+    if (currentPage === 1) {
+      // Check if user has active subscription or enough credits
+      const { data: hasSubscription, error: subError } = await serviceClient.rpc(
+        "has_active_subscription",
+        { p_user_id: user.id }
+      );
+
+      if (subError) {
+        console.error("Failed to check subscription:", subError);
+        return errorResponse("Failed to verify account status", 500);
+      }
+
+      if (!hasSubscription) {
+        // Check credits
+        const { data: profileData, error: profileError } = await serviceClient
+          .from("profiles")
+          .select("credits")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError || !profileData) {
+          console.error("Failed to fetch profile:", profileError);
+          return errorResponse("Failed to check credits", 500);
+        }
+
+        if (profileData.credits < 1) {
+          return jsonResponse(
+            {
+              error: {
+                message: "insufficient_credits",
+                details: "You need 1 credit to generate a story",
+              },
+              current_credits: profileData.credits,
+              required_credits: 1,
+            },
+            402, // Payment Required
+          );
+        }
+
+        // Deduct credits for story generation
+        const { data: deductSuccess, error: deductError } = await serviceClient.rpc(
+          "deduct_credits_for_story",
+          { p_user_id: user.id }
+        );
+
+        if (deductError || !deductSuccess) {
+          console.error("Failed to deduct credits:", deductError);
+          return errorResponse("Failed to deduct credits", 500);
+        }
+
+        console.log(`Deducted 1 credit from user ${user.id} for story generation`);
+      }
     }
     
     const targetPages = LENGTH_PAGES[story.length_setting as keyof typeof LENGTH_PAGES] || 8;

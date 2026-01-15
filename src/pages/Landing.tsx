@@ -1,12 +1,11 @@
 import { motion } from "framer-motion";
-import { Book, Brain, Sparkles, Moon, ChevronRight, Globe } from "lucide-react";
+import { Book, Brain, Sparkles, Moon, ChevronRight, Globe, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, forwardRef } from "react";
 import { Language } from "@/lib/i18n";
-import { buildDemoRoute } from "@/lib/demoStorage";
 
 const FloatingBook = ({ delay = 0, className = "" }: { delay?: number; className?: string }) => (
   <motion.div
@@ -168,28 +167,23 @@ export default function Landing() {
             {t('heroSubtitle')}
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4">
             <Button
               size="lg"
-              onClick={() => navigate(buildDemoRoute("/demo-reader"))}
-              variant="outline"
-              className="px-8 py-6 text-lg font-medium rounded-xl border-primary/50 hover:bg-primary/10"
+              onClick={() => navigate(user ? "/dashboard" : "/auth")}
+              className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
-              {t('tryDemo')}
-            </Button>
-            <Button
-              size="lg"
-              onClick={() => navigate("/auth")}
-              className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated"
-            >
-              {t('startFree')}
+              <Gift className="w-5 h-5 mr-2" />
+              {user ? t('goToDashboard') : t('startFree')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
+            <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-full border border-amber-200 dark:border-amber-800">
+              <Sparkles className="w-5 h-5 text-amber-600" />
+              <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                Start with 5 free credits • No credit card required
+              </span>
+            </div>
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            No account needed to try the demo
-          </p>
         </motion.div>
 
         {/* Scroll indicator */}

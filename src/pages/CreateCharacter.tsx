@@ -164,7 +164,7 @@ export default function CreateCharacter() {
       if (error) {
         console.error('Create hero error:', error);
         console.error('Error details:', JSON.stringify(error, null, 2));
-        
+
         // Try multiple paths where the error body might be
         const errorBody = error.context?.json || error.context?.body || error.context || error;
         const errorMessage = errorBody?.message || errorBody?.error?.message || error.message;
@@ -172,7 +172,7 @@ export default function CreateCharacter() {
           errorBody?.error === 'limit_reached' ||
           errorBody?.error?.message === 'limit_reached' ||
           errorMessage?.includes('maximaal');
-        
+
         if (isLimitError) {
           setLimitReached(true);
           setLimitMessage(errorMessage || 'Je kunt maximaal 7 heroes per week maken.');
@@ -180,7 +180,23 @@ export default function CreateCharacter() {
           setLoading(false);
           return;
         }
-        
+
+        // Handle insufficient credits error
+        const isInsufficientCredits =
+          errorBody?.error === 'insufficient_credits' ||
+          errorBody?.error?.message === 'insufficient_credits';
+
+        if (isInsufficientCredits) {
+          toast.error('You need 2 credits to create a hero. Please purchase more credits or subscribe.', {
+            action: {
+              label: 'Get Credits',
+              onClick: () => navigate('/pricing'),
+            },
+          });
+          setLoading(false);
+          return;
+        }
+
         toast.error('Failed to create hero. Please try again.');
         setLoading(false);
         return;

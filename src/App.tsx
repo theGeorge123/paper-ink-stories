@@ -6,18 +6,16 @@ import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { LanguageProvider } from "@/hooks/useLanguage";
-import { GuestModeProvider } from "@/hooks/useGuestMode";
-import AuthPromptModal from "@/components/AuthPromptModal";
+import { CreditsProvider } from "@/hooks/useCredits";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import ReadEpisode from "./pages/ReadEpisode";
-import DemoHero from "./pages/DemoHero";
-import DemoQuestions from "./pages/DemoQuestions";
 import About from "./pages/About";
 import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +24,6 @@ const CreateCharacter = lazy(() => import("./pages/CreateCharacter"));
 const CreateQuestions = lazy(() => import("./pages/CreateQuestions"));
 const Questions = lazy(() => import("./pages/Questions"));
 const Reader = lazy(() => import("./pages/Reader"));
-const DemoReader = lazy(() => import("./pages/DemoReader"));
 const StoryHistory = lazy(() => import("./pages/StoryHistory"));
 
 const PageLoader = () => <SkeletonLoader type="page" />;
@@ -38,7 +35,7 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <LanguageProvider>
-          <GuestModeProvider>
+          <CreditsProvider>
             <TooltipProvider>
               <a
                 href="#main-content"
@@ -48,7 +45,6 @@ const App = () => (
               </a>
               <Toaster />
               <Sonner />
-              <AuthPromptModal />
               <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route
@@ -123,41 +119,13 @@ const App = () => (
                     </ErrorBoundary>
                   }
                 />
-                <Route
-                  path="/demo-hero"
-                  element={
-                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
-                      <DemoHero />
-                    </ErrorBoundary>
-                  }
-                />
-                <Route path="/demo-questions" element={<DemoQuestions />} />
-                <Route
-                  path="/demo-reader"
-                  element={
-                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
-                      <Suspense fallback={<ReaderLoader />}>
-                        <DemoReader />
-                      </Suspense>
-                    </ErrorBoundary>
-                  }
-                />
-                <Route
-                  path="/demo"
-                  element={
-                    <ErrorBoundary fallbackMessage="Demo temporarily unavailable">
-                      <Suspense fallback={<ReaderLoader />}>
-                        <DemoReader />
-                      </Suspense>
-                    </ErrorBoundary>
-                  }
-                />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>
-          </GuestModeProvider>
+          </CreditsProvider>
         </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>
