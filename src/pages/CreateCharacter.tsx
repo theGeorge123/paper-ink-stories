@@ -93,7 +93,7 @@ export default function CreateCharacter() {
   const generatePortrait = async (characterId: string) => {
     setGeneratingPortrait(true);
     setCreatedCharacterId(characterId);
-    setPortraitMessage('We maken een betoverend portret voor je held...');
+    setPortraitMessage('We maken een betoverend portret voor je held... Generation usually takes 30 seconds.');
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-hero-portrait', {

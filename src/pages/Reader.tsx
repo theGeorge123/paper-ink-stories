@@ -625,10 +625,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                     <MoonStar className="w-8 h-8 text-primary" />
                   </motion.div>
                   <p className={`font-serif text-center ${activeTheme.muted}`}>
-                    Your story is being prepared...
-                  </p>
-                  <p className={`text-sm text-center ${activeTheme.muted}`}>
-                    Just one more moment...
+                    It takes a few seconds to generate your story, please hold on
                   </p>
                 </div>
                 {/* Show retry button only after initial wait period and if generation actually failed */}
@@ -658,7 +655,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
               >
                 <div className="text-center space-y-4">
                   <p className={`${activeTheme.muted}`}>
-                    The next page needs a moment...
+                    It takes a few seconds to generate your story, please hold on
                   </p>
                   <Button
                     onClick={() => {
