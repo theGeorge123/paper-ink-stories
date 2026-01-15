@@ -481,6 +481,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      deduct_credits_for_story: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
