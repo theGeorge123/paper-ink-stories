@@ -481,6 +481,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      deduct_credits_for_hero: { Args: { p_user_id: string }; Returns: boolean }
       deduct_credits_for_story: {
         Args: { p_user_id: string }
         Returns: boolean
