@@ -1000,16 +1000,27 @@ Make next_options VARIED - mix locations, activities, and companions.`;
     let content = aiData.choices?.[0]?.message?.content || "";
     
     // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = content.match(/```json?\s*([\s\S]*?)```/) || content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      content = jsonMatch[1] || jsonMatch[0];
+    // First try to extract from markdown code blocks
+    const codeBlockMatch = content.match(/```json?\s*([\s\S]*?)```/);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      content = codeBlockMatch[1];
+    } else {
+      // Try to find the first complete JSON object
+      const jsonStartIndex = content.indexOf('{');
+      const jsonEndIndex = content.lastIndexOf('}');
+      if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+        content = content.slice(jsonStartIndex, jsonEndIndex + 1);
+      }
     }
 
     let parsedContent;
     try {
       parsedContent = JSON.parse(content.trim());
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      // Log the raw response for debugging
+      const rawContent = aiData.choices?.[0]?.message?.content || "";
+      console.error("Failed to parse AI response. Raw content:", rawContent.substring(0, 500));
+      console.error("Extracted content:", content.substring(0, 500));
       return jsonResponse(
         {
           error: { message: "Failed to parse AI response" },
