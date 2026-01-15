@@ -80,11 +80,50 @@ serve(async (req) => {
 
     const { name, archetype, age_band, traits, icon, sidekick_name, sidekick_archetype, preferred_language } = parseResult.data;
 
-    // Use service role client for rate limit check
+    // Use service role client for rate limit check and credit operations
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Check if user has active subscription or enough credits
+    const { data: hasSubscription, error: subError } = await adminClient.rpc(
+      "has_active_subscription",
+      { p_user_id: user.id }
+    );
+
+    if (subError) {
+      console.error("Failed to check subscription:", subError);
+      return errorResponse("Failed to verify account status", 500);
+    }
+
+    if (!hasSubscription) {
+      // Check credits
+      const { data: profile, error: profileError } = await adminClient
+        .from("profiles")
+        .select("credits")
+        .eq("id", user.id)
+        .single();
+
+      if (profileError || !profile) {
+        console.error("Failed to fetch profile:", profileError);
+        return errorResponse("Failed to check credits", 500);
+      }
+
+      if (profile.credits < 2) {
+        return jsonResponse(
+          {
+            error: {
+              message: "insufficient_credits",
+              details: "You need 2 credits to create a hero",
+            },
+            current_credits: profile.credits,
+            required_credits: 2,
+          },
+          402, // Payment Required
+        );
+      }
+    }
 
     // Check creation limit: count creations in last 7 days
     const sevenDaysAgo = new Date();
@@ -148,6 +187,27 @@ serve(async (req) => {
     if (createError) {
       console.error("Failed to create character:", createError);
       return errorResponse("Failed to create character", 500, createError.message);
+    }
+
+    // Deduct credits if user doesn't have active subscription
+    if (!hasSubscription) {
+      const { data: deductSuccess, error: deductError } = await adminClient.rpc(
+        "deduct_credits_for_hero",
+        { p_user_id: user.id }
+      );
+
+      if (deductError || !deductSuccess) {
+        console.error("Failed to deduct credits:", deductError);
+        // Delete the created character if credit deduction fails
+        await adminClient
+          .from("characters")
+          .delete()
+          .eq("id", character.id);
+
+        return errorResponse("Failed to deduct credits", 500);
+      }
+
+      console.log(`Deducted 2 credits from user ${user.id}`);
     }
 
     // Log the creation for rate limiting

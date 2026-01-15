@@ -13,6 +13,7 @@ import ParentalControls from "@/components/ParentalControls";
 import WelcomeModal from "@/components/WelcomeModal";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AgeUpdateManager from "@/components/AgeUpdateManager";
+import CreditsDisplay from "@/components/CreditsDisplay";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -103,6 +104,14 @@ export default function Dashboard() {
       </header>
 
       <main id="main-content" className="max-w-6xl mx-auto px-6 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <CreditsDisplay />
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

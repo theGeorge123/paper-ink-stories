@@ -159,6 +159,24 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
 
       if (error) {
         console.error('Generation error:', error);
+
+        // Check for insufficient credits error
+        const errorBody = error.context?.json || error.context?.body || error.context || error;
+        const isInsufficientCredits =
+          errorBody?.error === 'insufficient_credits' ||
+          errorBody?.error?.message === 'insufficient_credits';
+
+        if (isInsufficientCredits && !isBackground) {
+          setGenerationError(true);
+          toast.error('You need 1 credit to generate a story. Please purchase more credits or subscribe.', {
+            action: {
+              label: 'Get Credits',
+              onClick: () => navigate('/pricing'),
+            },
+          });
+          return null;
+        }
+
         if (!isBackground) {
           setGenerationError(true);
           if (retryCount < MAX_RETRIES) {
