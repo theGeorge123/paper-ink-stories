@@ -398,13 +398,25 @@ export default function Questions() {
 
       console.log('[Questions] Story and character updated, starting page generation');
 
-      // Start generating page 1 in background - don't await
-      supabase.functions.invoke('generate-page', {
+      // Wait for page 1 to be generated before navigating
+      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
         body: { storyId: story.id, targetPage: 1 },
-      }).catch(err => console.error('Background page generation error:', err));
+      });
 
-      // Navigate immediately - Reader will poll for page 1
-      console.log('[Questions] Navigating to reader:', story.id);
+      if (pageError) {
+        console.error('Page generation error:', pageError);
+        toast.error(
+          language === 'nl'
+            ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+            : language === 'sv'
+            ? 'Sagomagin vilar en stund. Försök igen snart.'
+            : 'Story magic is resting. Please try again soon.',
+        );
+        return;
+      }
+
+      // Only navigate once the first page is ready
+      console.log('[Questions] First page generated, navigating to reader:', story.id);
       navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save adaptive question answers', error);
@@ -560,12 +572,24 @@ export default function Questions() {
         supabase.from('characters').update({ preferred_themes: updatedPreferred }).eq('id', character.id),
       ]);
 
-      // Start generating page 1 in background - don't await
-      supabase.functions.invoke('generate-page', {
+      // Wait for page 1 to be generated before navigating
+      const { data: pageData, error: pageError } = await supabase.functions.invoke('generate-page', {
         body: { storyId: story.id, targetPage: 1 },
-      }).catch(err => console.error('Background page generation error:', err));
+      });
 
-      // Navigate immediately - Reader will poll for page 1
+      if (pageError) {
+        console.error('Page generation error:', pageError);
+        toast.error(
+          language === 'nl'
+            ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+            : language === 'sv'
+            ? 'Sagomagin vilar en stund. Försök igen snart.'
+            : 'Story magic is resting. Please try again soon.',
+        );
+        return;
+      }
+
+      // Only navigate once the first page is ready
       navigate(`/read/${story.id}`);
     } catch (error) {
       console.error('Failed to save question answers', error);
@@ -585,7 +609,70 @@ export default function Questions() {
   const heroAvatarUrl = heroPortrait.url || story.characters?.hero_image_url;
 
   return (
-    <div className="min-h-screen bg-background paper-texture">
+    <div className="min-h-screen bg-background paper-texture relative">
+      {/* Writing Story Overlay */}
+      {saving && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+          <div className="text-center space-y-6 px-6">
+            <motion.div
+              animate={{
+                rotate: 360,
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                rotate: { duration: 3, repeat: Infinity, ease: "linear" },
+                scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+              }}
+              className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center"
+            >
+              <Sparkles className="w-10 h-10 text-primary" />
+            </motion.div>
+            <div className="space-y-2">
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground">
+                {language === 'nl'
+                  ? 'Je verhaal wordt geschreven...'
+                  : language === 'sv'
+                  ? 'Din berättelse skrivs...'
+                  : 'Writing your story...'}
+              </h2>
+              <p className="text-muted-foreground">
+                {language === 'nl'
+                  ? 'De magie gebeurt, nog een momentje...'
+                  : language === 'sv'
+                  ? 'Magin händer, bara ett ögonblick...'
+                  : 'The magic is happening, just a moment...'}
+              </p>
+            </div>
+            <motion.div
+              className="flex items-center justify-center gap-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-2 h-2 rounded-full bg-primary"
+                  animate={{
+                    scale: [1, 1.5, 1],
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+
       <main id="main-content" className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
