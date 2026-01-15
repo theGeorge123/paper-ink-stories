@@ -246,15 +246,37 @@ export default function CreateQuestions() {
 
       saveHero(profileId, hero);
       navigate('/read');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate story', error);
-      toast.error(
-        language === 'nl'
-          ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
-          : language === 'sv'
-          ? 'Sagomagin vilar en stund. Försök igen snart.'
-          : 'Story magic is resting. Please try again soon.',
-      );
+      
+      // Check for insufficient credits error
+      const errorMessage = error?.message || error?.error?.message || '';
+      const isInsufficientCredits = errorMessage.includes('insufficient_credits') || 
+        (typeof error === 'object' && error?.context?.body?.includes?.('insufficient_credits'));
+      
+      if (isInsufficientCredits) {
+        toast.error(
+          language === 'nl'
+            ? 'Je hebt geen credits meer. Koop credits om door te gaan.'
+            : language === 'sv'
+            ? 'Du har slut på krediter. Köp krediter för att fortsätta.'
+            : "You're out of credits. Purchase credits to continue.",
+          {
+            action: {
+              label: language === 'nl' ? 'Credits kopen' : language === 'sv' ? 'Köp krediter' : 'Get Credits',
+              onClick: () => navigate('/pricing'),
+            },
+          }
+        );
+      } else {
+        toast.error(
+          language === 'nl'
+            ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+            : language === 'sv'
+            ? 'Sagomagin vilar en stund. Försök igen snart.'
+            : 'Story magic is resting. Please try again soon.',
+        );
+      }
     } finally {
       setGenerating(false);
     }
