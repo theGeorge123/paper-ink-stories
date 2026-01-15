@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2024-11-20.acacia",
@@ -13,25 +14,36 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface CheckoutRequest {
-  type: "subscription" | "credits";
-  priceId?: string; // For subscription
-  packageId?: string; // For credit package
-  successUrl: string;
-  cancelUrl: string;
-}
+// Input validation schema
+const checkoutSchema = z.object({
+  type: z.enum(["subscription", "credits"]),
+  priceId: z.string().min(1).max(200).optional(),
+  packageId: z.string().uuid().optional(),
+  successUrl: z.string().url().max(2000),
+  cancelUrl: z.string().url().max(2000),
+}).refine(
+  (data) => {
+    if (data.type === "subscription") return !!data.priceId;
+    if (data.type === "credits") return !!data.packageId;
+    return false;
+  },
+  { message: "priceId required for subscription, packageId required for credits" }
+);
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("No authorization header");
+      return new Response(
+        JSON.stringify({ error: "No authorization header" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
 
     // Initialize Supabase client
@@ -52,11 +64,33 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser();
 
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
     }
 
-    const body: CheckoutRequest = await req.json();
-    const { type, priceId, packageId, successUrl, cancelUrl } = body;
+    // Parse and validate request body
+    let rawBody;
+    try {
+      rawBody = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    const parseResult = checkoutSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      console.error("Validation error:", parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: parseResult.error.errors }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
+
+    const { type, priceId, packageId, successUrl, cancelUrl } = parseResult.data;
 
     // Get or create Stripe customer
     let customerId: string;
