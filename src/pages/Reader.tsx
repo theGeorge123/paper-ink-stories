@@ -628,49 +628,8 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                     It takes a few seconds to generate your story, please hold on
                   </p>
                 </div>
-                {/* Show retry button only after initial wait period and if generation actually failed */}
-                {generationError && (
-                  <div className="text-center">
-                    <Button
-                      onClick={() => {
-                        setRetryCount(prev => prev + 1);
-                        generatePage(1, false);
-                      }}
-                      disabled={generating}
-                      className="gap-2"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
-                      {generating ? 'Trying...' : 'Try Again'}
-                    </Button>
-                  </div>
-                )}
               </motion.div>
-            ) : generationError && currentPageIndex === pages.length - 1 ? (
-              <motion.div
-                key="error-mid-story"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="py-12"
-              >
-                <div className="text-center space-y-4">
-                  <p className={`${activeTheme.muted}`}>
-                    It takes a few seconds to generate your story, please hold on
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setRetryCount(prev => prev + 1);
-                      generatePage(pages.length + 1, false);
-                    }}
-                    disabled={generating}
-                    className="gap-2"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} />
-                    {generating ? 'Trying...' : 'Try Again'}
-                  </Button>
-                </div>
-              </motion.div>
-            ) : generating && currentPageIndex === pages.length - 1 ? (
+            ) : (generating || generationError) && currentPageIndex === pages.length - 1 ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
