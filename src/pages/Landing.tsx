@@ -174,7 +174,7 @@ export default function Landing() {
               className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               <Gift className="w-5 h-5 mr-2" />
-              {user ? t('goToDashboard') : t('startFree')}
+              {user ? 'Go to Dashboard' : t('startFree')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
             <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-full border border-amber-200 dark:border-amber-800">
