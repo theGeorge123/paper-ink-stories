@@ -83,6 +83,72 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_packages: {
+        Row: {
+          created_at: string
+          credits: number
+          currency: string
+          id: string
+          is_active: boolean | null
+          name: string
+          price_amount: number
+          sort_order: number | null
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          currency?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price_amount: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          currency?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price_amount?: number
+          sort_order?: number | null
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          stripe_payment_intent_id: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          stripe_payment_intent_id?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hero_creation_log: {
         Row: {
           created_at: string
@@ -186,6 +252,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          credits: number
           id: string
           language: string
           parent_pin: number | null
@@ -193,6 +260,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credits?: number
           id: string
           language?: string
           parent_pin?: number | null
@@ -200,6 +268,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credits?: number
           id?: string
           language?: string
           parent_pin?: number | null
@@ -343,12 +412,75 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created_at: string
+          credits_per_period: number | null
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: string
+          price_amount: number | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string
+          credits_per_period?: number | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string
+          price_amount?: number | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string
+          credits_per_period?: number | null
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string
+          price_amount?: number | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_credits: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_stripe_payment_intent_id?: string
+          p_transaction_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
