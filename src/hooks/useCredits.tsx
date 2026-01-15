@@ -47,31 +47,37 @@ export function CreditsProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
 
-      // Fetch credits from profile
+      // Fetch credits from profile using explicit select with type casting
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("credits")
+        .select("id, credits")
         .eq("id", user.id)
         .single();
 
       if (profileError) {
         console.error("Error fetching credits:", profileError);
-      } else {
-        setCredits(profile?.credits || 0);
+        setCredits(0);
+      } else if (profile) {
+        // Type assertion since we know the column exists after migration
+        const profileWithCredits = profile as { id: string; credits?: number };
+        setCredits(profileWithCredits.credits ?? 0);
       }
 
-      // Fetch subscription
+      // Fetch subscription using explicit type casting
       const { data: subData, error: subError } = await supabase
         .from("subscriptions")
-        .select("*")
+        .select("id, status, plan_type, current_period_end, cancel_at_period_end")
         .eq("user_id", user.id)
         .eq("status", "active")
         .maybeSingle();
 
       if (subError) {
         console.error("Error fetching subscription:", subError);
+        setSubscription(null);
+      } else if (subData) {
+        setSubscription(subData as Subscription);
       } else {
-        setSubscription(subData);
+        setSubscription(null);
       }
     } catch (error) {
       console.error("Error in fetchCredits:", error);

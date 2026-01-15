@@ -625,10 +625,10 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                     <MoonStar className="w-8 h-8 text-primary" />
                   </motion.div>
                   <p className={`font-serif text-center ${activeTheme.muted}`}>
-                    {t('preparingStory') || 'Your story is being prepared...'}
+                    Your story is being prepared...
                   </p>
                   <p className={`text-sm text-center ${activeTheme.muted}`}>
-                    {t('oneMoreMoment') || 'Just one more moment...'}
+                    Just one more moment...
                   </p>
                 </div>
                 {/* Show retry button only after initial wait period and if generation actually failed */}

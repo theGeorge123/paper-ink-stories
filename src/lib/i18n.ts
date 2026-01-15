@@ -256,6 +256,36 @@ export const translations = {
     signUpToCreate: 'create your own character',
     signUpToSave: 'save this story',
     signUpToPersonalize: 'personalize stories',
+    
+    // Additional keys
+    goToDashboard: 'Go to Dashboard',
+    preparingStory: 'Your story is being prepared...',
+    oneMoreMoment: 'Just one more moment...',
+    
+    // Pricing
+    pricingTitle: 'Choose Your Plan',
+    pricingSubtitle: 'Create magical bedtime stories for your children',
+    currentBalance: 'Current Balance',
+    credits: 'credits',
+    monthlyPlan: 'Monthly',
+    yearlyPlan: 'Yearly',
+    savingsLabel: 'Save 17%',
+    perMonth: '/month',
+    perYear: '/year',
+    unlimitedHeroes: 'Unlimited hero creation',
+    unlimitedStories: 'Unlimited story generation',
+    priorityGeneration: 'Priority AI generation',
+    cancelAnytime: 'Cancel anytime',
+    supportDevelopment: 'Support development',
+    subscribeNow: 'Subscribe Now',
+    manageSubscription: 'Manage Subscription',
+    buyCredits: 'Buy Credits',
+    howCreditsWork: 'How Credits Work',
+    heroCredits: 'Create a unique hero with AI-generated portrait',
+    storyCredits: 'Generate a personalized bedtime story',
+    freeCreditsNote: 'New accounts start with 5 free credits',
+    purchase: 'Purchase',
+    backToDashboard: 'Back to Dashboard',
   },
   
   nl: {
