@@ -8,12 +8,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import CharacterCarousel from '@/components/CharacterCarousel';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function Index() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -127,18 +129,18 @@ export default function Index() {
             transition={{ delay: 0.2 }}
             className="text-center py-16"
           >
-            <motion.div 
+            <motion.div
               className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 mb-6"
-              animate={{ 
+              animate={{
                 scale: [1, 1.05, 1],
               }}
               transition={{ duration: 3, repeat: Infinity }}
             >
               <Sparkles className="w-12 h-12 text-primary" />
             </motion.div>
-            <h3 className="font-serif text-2xl text-foreground mb-3">No characters yet</h3>
+            <h3 className="font-serif text-2xl text-foreground mb-3">{t('noCharactersYet')}</h3>
             <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
-              Create your first hero to begin magical bedtime adventures
+              {t('noCharactersDesc')}
             </p>
             <motion.div whileTap={{ scale: 0.98 }}>
               <Button onClick={() => navigate('/create')} size="lg" className="gap-2">

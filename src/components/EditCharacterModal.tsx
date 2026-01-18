@@ -198,12 +198,12 @@ export default function EditCharacterModal({
 
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Hero Name</Label>
+            <Label htmlFor="name">{t('heroNameLabel')}</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name..."
+              placeholder={t('enterNamePlaceholder')}
               className="bg-background/50"
             />
           </div>
@@ -267,12 +267,12 @@ export default function EditCharacterModal({
 
           {/* Sidekick */}
           <div className="space-y-2">
-            <Label htmlFor="sidekick">Sidekick Name (optional)</Label>
+            <Label htmlFor="sidekick">{t('sidekickNameLabel')}</Label>
             <Input
               id="sidekick"
               value={sidekickName}
               onChange={(e) => setSidekickName(e.target.value)}
-              placeholder="e.g., Whiskers, Sparky..."
+              placeholder={t('sidekickNamePlaceholder')}
               className="bg-background/50"
             />
           </div>

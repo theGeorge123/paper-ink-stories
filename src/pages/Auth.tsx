@@ -117,7 +117,7 @@ export default function Auth() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="email"
-              placeholder="Email"
+              placeholder={t('emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12 bg-card"
@@ -129,7 +129,7 @@ export default function Auth() {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder={t('passwordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 h-12 bg-card"
@@ -143,17 +143,17 @@ export default function Auth() {
             </p>
           </div>
           <Button type="submit" className="w-full h-12" disabled={loading}>
-            {loading ? t('loading') : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? t('loading') : isSignUp ? t('createAccount') : t('signIn')}
           </Button>
         </form>
 
         <p className="text-center mt-6 text-muted-foreground">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          {isSignUp ? t('alreadyHaveAccount') : t('noAccount')}{' '}
           <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-primary hover:underline"
           >
-            {isSignUp ? 'Sign In' : 'Create Account'}
+            {isSignUp ? t('signIn') : t('createAccount')}
           </button>
         </p>
       </motion.div>
