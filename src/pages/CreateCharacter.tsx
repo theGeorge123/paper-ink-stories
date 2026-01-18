@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, A
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -420,42 +421,49 @@ export default function CreateCharacter() {
               <div className="grid grid-cols-4 gap-3">
                 {ARCHETYPES.map((a, index) => {
                   const isSelected = archetype === a.id;
+                  const descKey = `${a.id}Desc` as TranslationKey;
                   return (
-                    <motion.button
-                      key={a.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.03 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setArchetype(a.id)}
-                      type="button"
-                      aria-label={`${a.label} archetype`}
-                      aria-pressed={isSelected}
-                      className={`relative aspect-square rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
-                        isSelected 
-                          ? `border-primary bg-gradient-to-br ${a.color} shadow-lg ${a.glow}` 
-                          : 'border-border/50 bg-card/50 hover:border-border'
-                      }`}
-                    >
-                      {isSelected && (
-                        <motion.div
-                          layoutId="archetype-glow"
-                          className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent"
-                        />
-                      )}
-                      <div className="relative z-10 h-full flex flex-col items-center justify-center gap-1 p-2">
-                        <motion.div
-                          animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
-                          transition={{ duration: 0.3 }}
+                    <Tooltip key={a.id}>
+                      <TooltipTrigger asChild>
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.03 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setArchetype(a.id)}
+                          type="button"
+                          aria-label={`${a.label} archetype`}
+                          aria-pressed={isSelected}
+                          className={`relative aspect-square rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
+                            isSelected
+                              ? `border-primary bg-gradient-to-br ${a.color} shadow-lg ${a.glow}`
+                              : 'border-border/50 bg-card/50 hover:border-border'
+                          }`}
                         >
-                          <a.icon className={`w-7 h-7 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                        </motion.div>
-                        <span className={`text-[10px] font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
-                          {a.label}
-                        </span>
-                      </div>
-                    </motion.button>
+                          {isSelected && (
+                            <motion.div
+                              layoutId="archetype-glow"
+                              className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent"
+                            />
+                          )}
+                          <div className="relative z-10 h-full flex flex-col items-center justify-center gap-1 p-2">
+                            <motion.div
+                              animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <a.icon className={`w-7 h-7 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                            </motion.div>
+                            <span className={`text-[10px] font-medium ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                              {a.label}
+                            </span>
+                          </div>
+                        </motion.button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-sm">{t(descKey)}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   );
                 })}
               </div>

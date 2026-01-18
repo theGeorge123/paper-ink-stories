@@ -118,6 +118,20 @@ export const translations = {
     cat: 'Cat',
     owl: 'Owl',
     bunny: 'Bunny',
+
+    // Archetype descriptions
+    knightDesc: 'Brave and noble, protects others',
+    wizardDesc: 'Wise and magical, loves learning',
+    catDesc: 'Curious and clever, always exploring',
+    robotDesc: 'Smart and helpful, solves problems',
+    princessDesc: 'Kind and graceful, leads with heart',
+    dragonDesc: 'Strong and loyal, breathes magic',
+    astronautDesc: 'Adventurous explorer of space',
+    pirateDesc: 'Bold seafarer seeking treasure',
+    fairyDesc: 'Magical friend spreading joy',
+    owlDesc: 'Wise guardian of the night',
+    bunnyDesc: 'Gentle and quick, loves nature',
+    bearDesc: 'Warm and caring, gives big hugs',
     
     // Traits
     brave: 'Brave',
@@ -431,6 +445,20 @@ export const translations = {
     cat: 'Kat',
     owl: 'Uil',
     bunny: 'Konijn',
+
+    // Archetype descriptions
+    knightDesc: 'Dapper en nobel, beschermt anderen',
+    wizardDesc: 'Wijs en magisch, houdt van leren',
+    catDesc: 'Nieuwsgierig en slim, altijd aan het ontdekken',
+    robotDesc: 'Slim en behulpzaam, lost problemen op',
+    princessDesc: 'Vriendelijk en gracieus, leidt met hart',
+    dragonDesc: 'Sterk en loyaal, ademt magie',
+    astronautDesc: 'Avontuurlijke ruimteverkenner',
+    pirateDesc: 'Moedige zeevaarder op zoek naar schatten',
+    fairyDesc: 'Magische vriend die vreugde verspreidt',
+    owlDesc: 'Wijze bewaker van de nacht',
+    bunnyDesc: 'Zachtaardig en snel, houdt van natuur',
+    bearDesc: 'Warm en zorgzaam, geeft grote knuffels',
     
     // Traits
     brave: 'Dapper',
@@ -720,6 +748,20 @@ export const translations = {
     cat: 'Katt',
     owl: 'Uggla',
     bunny: 'Kanin',
+
+    // Archetype descriptions
+    knightDesc: 'Modig och ädel, skyddar andra',
+    wizardDesc: 'Vis och magisk, älskar att lära',
+    catDesc: 'Nyfiken och klok, utforskar alltid',
+    robotDesc: 'Smart och hjälpsam, löser problem',
+    princessDesc: 'Vänlig och graciös, leder med hjärtat',
+    dragonDesc: 'Stark och lojal, andas magi',
+    astronautDesc: 'Äventyrlig rymdutforskare',
+    pirateDesc: 'Djärv sjöfarare som söker skatter',
+    fairyDesc: 'Magisk vän som sprider glädje',
+    owlDesc: 'Vis väktare av natten',
+    bunnyDesc: 'Mild och snabb, älskar naturen',
+    bearDesc: 'Varm och omtänksam, ger stora kramar',
     
     // Traits
     brave: 'Modig',
