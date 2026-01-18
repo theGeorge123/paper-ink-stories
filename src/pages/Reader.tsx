@@ -160,11 +160,14 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
       if (error) {
         console.error('Generation error:', error);
 
-        // Check for insufficient credits error
+        // Check for insufficient credits error - handle multiple response structures
         const errorBody = error.context?.json || error.context?.body || error.context || error;
+        const errorMessage = error.message || '';
         const isInsufficientCredits =
           errorBody?.error === 'insufficient_credits' ||
-          errorBody?.error?.message === 'insufficient_credits';
+          errorBody?.error?.message === 'insufficient_credits' ||
+          errorMessage.includes('insufficient_credits') ||
+          (typeof errorBody === 'string' && errorBody.includes('insufficient_credits'));
 
         if (isInsufficientCredits && !isBackground) {
           setGenerationError(true);
