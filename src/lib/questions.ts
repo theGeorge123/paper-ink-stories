@@ -1,5 +1,8 @@
 import { getHero, getLastEpisode, getTopPreferenceTags, loadProfileId, type HeroProfile } from './storyMemory';
 
+// Re-export HeroProfile for consumers
+export type { HeroProfile } from './storyMemory';
+
 export type QuestionOption = {
   id: string;
   label: string;
