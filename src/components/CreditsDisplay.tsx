@@ -4,11 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Coins, Crown, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function CreditsDisplay() {
   const { credits, subscription, hasActiveSubscription, isLoading } =
     useCredits();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -31,10 +33,10 @@ export default function CreditsDisplay() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-100">
-                  Premium Member
+                  {t('premiumMember')}
                 </h3>
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  Unlimited stories & heroes
+                  {t('unlimitedAccess')}
                 </p>
               </div>
             </div>
@@ -44,7 +46,7 @@ export default function CreditsDisplay() {
               onClick={() => navigate("/pricing")}
               className="border-amber-300 hover:bg-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/40"
             >
-              Manage
+              {t('manage')}
             </Button>
           </div>
           {subscription?.cancel_at_period_end && (
@@ -70,10 +72,10 @@ export default function CreditsDisplay() {
             </div>
             <div>
               <h3 className="font-semibold text-lg text-purple-900 dark:text-purple-100">
-                {credits} Credits
+                {credits} {t('credits')}
               </h3>
               <p className="text-sm text-purple-700 dark:text-purple-300">
-                2 for hero • 1 for story
+                {t('creditCost')}
               </p>
             </div>
           </div>
@@ -83,7 +85,7 @@ export default function CreditsDisplay() {
             size="sm"
           >
             <Zap className="w-4 h-4 mr-2" />
-            Get More
+            {t('getMore')}
           </Button>
         </div>
 

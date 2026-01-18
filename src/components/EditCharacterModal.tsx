@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight' },
@@ -80,6 +81,7 @@ export default function EditCharacterModal({
     initialUrl: character.hero_image_url,
     heroId: character.id,
   });
+  const { t } = useLanguage();
 
   // Keep form state in sync when switching between characters
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function EditCharacterModal({
       toast.error('Failed to save changes');
       console.error('Update error:', error);
     } else {
-      toast.success('Character updated!');
+      toast.success(t('characterSaved'));
       onOpenChange(false);
       onSaved?.();
     }

@@ -281,6 +281,25 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
           <ChevronRight className={`w-6 h-6 ${activeTheme.text}`} />
         </motion.button>
       </div>
+
+      {/* Page Progress Indicator */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`px-4 py-2 rounded-full shadow-lg backdrop-blur-md border ${
+            activeTheme.background === 'bg-white'
+              ? 'bg-white/90 border-gray-200'
+              : activeTheme.background === 'bg-[#f5e6c9]'
+              ? 'bg-[#f5e6c9]/90 border-[#d4c5a9]'
+              : 'bg-[#1f2933]/90 border-white/10'
+          }`}
+        >
+          <p className={`text-sm font-medium ${activeTheme.muted}`} aria-live="polite">
+            {t('pageOf', { current: currentPageIndex + 1, total: pages.length })}
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 }

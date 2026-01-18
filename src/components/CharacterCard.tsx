@@ -106,9 +106,10 @@ export default function CharacterCard({ character }: CharacterCardProps) {
                 <Button
                   onClick={() => navigate(`/read/${activeStory.id}`)}
                   className="flex-1 gap-2"
+                  aria-label={language === 'nl' ? 'Ga verder met lezen' : language === 'sv' ? 'Fortsätt läsa saga' : 'Continue reading story'}
                 >
                   <Play className="w-4 h-4" />
-                  Continue
+                  {language === 'nl' ? 'Doorgaan' : language === 'sv' ? 'Fortsätt' : 'Continue'}
                 </Button>
               </HoverCardTrigger>
               {lastStory && (
@@ -159,9 +160,10 @@ export default function CharacterCard({ character }: CharacterCardProps) {
             onClick={startNewStory}
             variant={activeStory ? 'outline' : 'default'}
             className="flex-1 gap-2"
+            aria-label={language === 'nl' ? 'Begin een nieuw avontuur' : language === 'sv' ? 'Börja ett nytt äventyr' : 'Start a new adventure'}
           >
             <Sparkles className="w-4 h-4" />
-            New Adventure
+            {language === 'nl' ? 'Nieuw Avontuur' : language === 'sv' ? 'Nytt Äventyr' : 'New Adventure'}
           </Button>
         </div>
         <Button
@@ -169,6 +171,7 @@ export default function CharacterCard({ character }: CharacterCardProps) {
           size="sm"
           onClick={() => navigate(`/stories/${character.id}`)}
           className="w-full mt-2 text-muted-foreground hover:text-foreground"
+          aria-label={language === 'nl' ? 'Bekijk verhalenbibliotheek' : language === 'sv' ? 'Visa berättelsebibliotek' : 'View story library'}
         >
           <BookOpen className="w-4 h-4 mr-2" />
           {language === 'nl' ? 'Verhalenbibliotheek' : language === 'sv' ? 'Berättelsebibliotek' : 'Story Library'}

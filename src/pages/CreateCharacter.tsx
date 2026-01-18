@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Moon, Sun, Heart, Zap, TreePine } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Shield, Wand2, Cat, Bot, Crown, Flame, Rocket, Anchor, Sparkles, Bird, Rabbit, Moon, Sun, Heart, Zap, TreePine, Coins } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import type { TranslationKey } from '@/lib/i18n';
 import { loadProfileId, saveHero } from '@/lib/storyMemory';
 import { toast } from 'sonner';
+import { useCredits } from '@/hooks/useCredits';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight', color: 'from-blue-400/20 to-blue-600/20', glow: 'shadow-blue-500/30' },
@@ -78,6 +79,7 @@ export default function CreateCharacter() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const profileId = useMemo(() => loadProfileId(), []);
+  const { credits, hasActiveSubscription } = useCredits();
 
   const toggleTrait = (trait: string) => {
     if (traits.includes(trait)) {
@@ -93,7 +95,13 @@ export default function CreateCharacter() {
   const generatePortrait = async (characterId: string) => {
     setGeneratingPortrait(true);
     setCreatedCharacterId(characterId);
-    setPortraitMessage('We maken een betoverend portret voor je held... Generation usually takes 30 seconds.');
+    const portraitMsg =
+      language === 'nl'
+        ? 'We maken een betoverend portret voor je held... Dit duurt meestal 30 seconden.'
+        : language === 'sv'
+        ? 'Vi skapar ett förtrollande porträtt för din hjälte... Det tar vanligtvis 30 sekunder.'
+        : 'Creating an enchanting portrait for your hero... This usually takes 30 seconds.';
+    setPortraitMessage(portraitMsg);
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-hero-portrait', {
@@ -265,20 +273,20 @@ export default function CreateCharacter() {
     <div className="min-h-screen bg-background paper-texture overflow-hidden">
       {/* Header */}
       <header className="px-6 py-4 flex items-center justify-between">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => (step > 1 ? goToStep(step - 1) : navigate('/dashboard'))}
           className="gap-2"
         >
           <ArrowLeft className="w-5 h-5" />
           {t('back')}
         </Button>
-        
+
         {/* Step indicator */}
         <div className="flex gap-2">
           {[1, 2, 3, 4].map((s) => (
-            <motion.div 
-              key={s} 
+            <motion.div
+              key={s}
               className={`h-2 rounded-full transition-all duration-300 ${
                 s === step ? 'w-8 bg-primary' : s < step ? 'w-2 bg-primary/60' : 'w-2 bg-muted'
               }`}
@@ -287,6 +295,47 @@ export default function CreateCharacter() {
           ))}
         </div>
       </header>
+
+      {/* Cost Preview Banner */}
+      {step === 1 && !hasActiveSubscription && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-6 mb-4 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 dark:bg-purple-800 rounded-full">
+              <Coins className="w-5 h-5 text-purple-600 dark:text-purple-300" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+                {language === 'nl'
+                  ? 'Held maken kost 2 credits'
+                  : language === 'sv'
+                  ? 'Att skapa en hjälte kostar 2 krediter'
+                  : 'Creating a hero costs 2 credits'}
+              </p>
+              <p className="text-xs text-purple-700 dark:text-purple-300">
+                {language === 'nl'
+                  ? `Je hebt ${credits} credits • ${credits >= 2 ? 'Genoeg om te maken!' : 'Meer credits nodig'}`
+                  : language === 'sv'
+                  ? `Du har ${credits} krediter • ${credits >= 2 ? 'Tillräckligt för att skapa!' : 'Fler krediter behövs'}`
+                  : `You have ${credits} credits • ${credits >= 2 ? 'Enough to create!' : 'More credits needed'}`}
+              </p>
+            </div>
+            {credits < 2 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate('/pricing')}
+                className="border-purple-300 dark:border-purple-700"
+              >
+                {t('getMore')}
+              </Button>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       <main id="main-content" className="px-6 pb-32 max-w-lg mx-auto">
         <AnimatePresence mode="wait" custom={direction}>
@@ -340,7 +389,7 @@ export default function CreateCharacter() {
                   animate={{ opacity: 1, y: 0 }}
                   className="text-center text-muted-foreground italic"
                 >
-                  "{name}" sounds like a hero ready for adventure!
+                  {t('soundsLikeHero', { name })}
                 </motion.p>
               )}
             </motion.div>

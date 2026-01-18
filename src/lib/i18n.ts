@@ -263,7 +263,25 @@ export const translations = {
     goToDashboard: 'Go to Dashboard',
     preparingStory: 'Your story is being prepared...',
     oneMoreMoment: 'Just one more moment...',
-    
+    continueWithGoogle: 'Continue with Google',
+    passwordRequirements: 'Minimum 6 characters',
+    freeCreditsPromo: 'Start with 5 free credits • No credit card required',
+    about: 'About',
+    support: 'Support',
+    storyLibrary: 'Story Library',
+    premiumMember: 'Premium Member',
+    unlimitedAccess: 'Unlimited stories & heroes',
+    manage: 'Manage',
+    creditCost: '2 for hero • 1 for story',
+    getMore: 'Get More',
+    languageSelectorLabel: 'Select language',
+    parentalControlsLabel: 'Open parental controls (hold to unlock)',
+    continueReading: 'Continue reading story',
+    startNewAdventure: 'Start a new adventure',
+    viewStoryLibrary: 'View story library',
+    characterSaved: 'Character saved successfully!',
+    soundsLikeHero: '"{name}" sounds like a hero ready for adventure!',
+
     // Pricing
     pricingTitle: 'Choose Your Plan',
     pricingSubtitle: 'Create magical bedtime stories for your children',
@@ -548,8 +566,33 @@ export const translations = {
     signUpToCreate: 'je eigen personage te maken',
     signUpToSave: 'dit verhaal op te slaan',
     signUpToPersonalize: 'verhalen te personaliseren',
+
+    // Additional keys
+    goToDashboard: 'Ga naar Dashboard',
+    preparingStory: 'Je verhaal wordt voorbereid...',
+    oneMoreMoment: 'Nog een momentje...',
+    continueWithGoogle: 'Doorgaan met Google',
+    passwordRequirements: 'Minimaal 6 karakters',
+    freeCreditsPromo: 'Start met 5 gratis credits • Geen creditcard nodig',
+    about: 'Over',
+    support: 'Ondersteuning',
+    storyLibrary: 'Verhalenbibliotheek',
+    premiumMember: 'Premium Lid',
+    unlimitedAccess: 'Onbeperkte verhalen & helden',
+    manage: 'Beheren',
+    creditCost: '2 voor held • 1 voor verhaal',
+    getMore: 'Meer Halen',
+    languageSelectorLabel: 'Selecteer taal',
+    parentalControlsLabel: 'Open ouderlijk toezicht (houd vast om te ontgrendelen)',
+    continueReading: 'Ga verder met lezen',
+    startNewAdventure: 'Begin een nieuw avontuur',
+    viewStoryLibrary: 'Bekijk verhalenbibliotheek',
+    characterSaved: 'Personage succesvol opgeslagen!',
+    soundsLikeHero: '"{name}" klinkt als een held die klaar is voor avontuur!',
+
+    // Pricing
   },
-  
+
   sv: {
     // General
     appName: 'Papper & Bläck',
@@ -807,6 +850,31 @@ export const translations = {
     signUpToCreate: 'skapa din egen karaktär',
     signUpToSave: 'spara denna saga',
     signUpToPersonalize: 'personanpassa sagor',
+
+    // Additional keys
+    goToDashboard: 'Gå till instrumentpanelen',
+    preparingStory: 'Din saga förbereds...',
+    oneMoreMoment: 'Bara ett ögonblick till...',
+    continueWithGoogle: 'Fortsätt med Google',
+    passwordRequirements: 'Minst 6 tecken',
+    freeCreditsPromo: 'Börja med 5 gratis krediter • Inget kreditkort krävs',
+    about: 'Om',
+    support: 'Support',
+    storyLibrary: 'Berättelsebibliotek',
+    premiumMember: 'Premiummedlem',
+    unlimitedAccess: 'Obegränsade sagor & hjältar',
+    manage: 'Hantera',
+    creditCost: '2 för hjälte • 1 för saga',
+    getMore: 'Hämta Mer',
+    languageSelectorLabel: 'Välj språk',
+    parentalControlsLabel: 'Öppna föräldrakontroller (håll för att låsa upp)',
+    continueReading: 'Fortsätt läsa saga',
+    startNewAdventure: 'Börja ett nytt äventyr',
+    viewStoryLibrary: 'Visa berättelsebibliotek',
+    characterSaved: 'Karaktär sparades framgångsrikt!',
+    soundsLikeHero: '"{name}" låter som en hjälte redo för äventyr!',
+
+    // Pricing
   },
 } as const;
 

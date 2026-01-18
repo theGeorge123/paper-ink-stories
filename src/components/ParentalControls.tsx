@@ -67,6 +67,9 @@ export default function ParentalControls({ trigger }: ParentalControlsProps) {
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
         className="relative cursor-pointer select-none"
+        role="button"
+        aria-label={t('parentalControlsLabel')}
+        tabIndex={0}
       >
         {trigger}
         
