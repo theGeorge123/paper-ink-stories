@@ -101,7 +101,7 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
   const showCover = !!heroImageUrl && !hasOpenedCover;
 
   // Generate stable star positions once
-  const starPositions = useMemo(() => 
+  const starPositions = useMemo(() =>
     [...Array(30)].map(() => ({
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 60}%`,
@@ -125,6 +125,27 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
       setShowEndScreen(true);
     }
   };
+
+  // Keyboard navigation for arrow keys
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft' && !isFirstPage) {
+        e.preventDefault();
+        handleTapLeft();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleTapRight();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPageIndex, isFirstPage, isLastPage]);
 
   // Show cover page before story content
   if (showCover) {
@@ -280,6 +301,25 @@ export default function Reader({ story, heroName, isDemo = false, heroImageUrl }
         >
           <ChevronRight className={`w-6 h-6 ${activeTheme.text}`} />
         </motion.button>
+      </div>
+
+      {/* Page Progress Indicator */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`px-4 py-2 rounded-full shadow-lg backdrop-blur-md border ${
+            activeTheme.background === 'bg-white'
+              ? 'bg-white/90 border-gray-200'
+              : activeTheme.background === 'bg-[#f5e6c9]'
+              ? 'bg-[#f5e6c9]/90 border-[#d4c5a9]'
+              : 'bg-[#1f2933]/90 border-white/10'
+          }`}
+        >
+          <p className={`text-sm font-medium ${activeTheme.muted}`} aria-live="polite">
+            {t('pageOf', { current: currentPageIndex + 1, total: pages.length })}
+          </p>
+        </motion.div>
       </div>
     </div>
   );

@@ -98,6 +98,7 @@ export default function Landing() {
             size="sm"
             onClick={() => setShowLangMenu(!showLangMenu)}
             className="flex items-center gap-2 bg-card/80 backdrop-blur-sm border border-border/50 hover:bg-card"
+            aria-label={t('languageSelectorLabel')}
           >
             <Globe className="w-4 h-4" />
             <span>{currentLang.flag}</span>
@@ -174,13 +175,13 @@ export default function Landing() {
               className="px-8 py-6 text-lg font-medium rounded-xl shadow-elevated bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
             >
               <Gift className="w-5 h-5 mr-2" />
-              {user ? 'Go to Dashboard' : t('startFree')}
+              {user ? t('goToDashboard') : t('startFree')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
             <div className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-full border border-amber-200 dark:border-amber-800">
               <Sparkles className="w-5 h-5 text-amber-600" />
               <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                Start with 5 free credits • No credit card required
+                {t('freeCreditsPromo')}
               </span>
             </div>
           </div>
@@ -278,10 +279,10 @@ export default function Landing() {
           </div>
           <div className="flex items-center gap-6">
             <button onClick={() => navigate("/about")} className="hover:text-foreground transition-colors">
-              About
+              {t('about')}
             </button>
             <button onClick={() => navigate("/support")} className="hover:text-foreground transition-colors">
-              Support
+              {t('support')}
             </button>
           </div>
           <p>© {new Date().getFullYear()} {t('appName')}. {t('madeWithLove')}</p>

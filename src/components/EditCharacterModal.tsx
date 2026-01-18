@@ -23,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSignedImageUrl } from '@/hooks/useSignedImageUrl';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const ARCHETYPES = [
   { id: 'knight', icon: Shield, label: 'Knight' },
@@ -80,6 +81,7 @@ export default function EditCharacterModal({
     initialUrl: character.hero_image_url,
     heroId: character.id,
   });
+  const { t } = useLanguage();
 
   // Keep form state in sync when switching between characters
   useEffect(() => {
@@ -113,7 +115,7 @@ export default function EditCharacterModal({
       toast.error('Failed to save changes');
       console.error('Update error:', error);
     } else {
-      toast.success('Character updated!');
+      toast.success(t('characterSaved'));
       onOpenChange(false);
       onSaved?.();
     }
@@ -189,19 +191,19 @@ export default function EditCharacterModal({
             </Button>
             {portraitError && (
               <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
-                {loading ? 'Refreshing...' : 'Retry loading portrait'}
+                {loading ? t('refreshing') : t('retryLoadingPortrait')}
               </Button>
             )}
           </div>
 
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Hero Name</Label>
+            <Label htmlFor="name">{t('heroNameLabel')}</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter name..."
+              placeholder={t('enterNamePlaceholder')}
               className="bg-background/50"
             />
           </div>
@@ -265,12 +267,12 @@ export default function EditCharacterModal({
 
           {/* Sidekick */}
           <div className="space-y-2">
-            <Label htmlFor="sidekick">Sidekick Name (optional)</Label>
+            <Label htmlFor="sidekick">{t('sidekickNameLabel')}</Label>
             <Input
               id="sidekick"
               value={sidekickName}
               onChange={(e) => setSidekickName(e.target.value)}
-              placeholder="e.g., Whiskers, Sparky..."
+              placeholder={t('sidekickNamePlaceholder')}
               className="bg-background/50"
             />
           </div>

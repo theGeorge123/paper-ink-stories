@@ -118,6 +118,20 @@ export const translations = {
     cat: 'Cat',
     owl: 'Owl',
     bunny: 'Bunny',
+
+    // Archetype descriptions
+    knightDesc: 'Brave and noble, protects others',
+    wizardDesc: 'Wise and magical, loves learning',
+    catDesc: 'Curious and clever, always exploring',
+    robotDesc: 'Smart and helpful, solves problems',
+    princessDesc: 'Kind and graceful, leads with heart',
+    dragonDesc: 'Strong and loyal, breathes magic',
+    astronautDesc: 'Adventurous explorer of space',
+    pirateDesc: 'Bold seafarer seeking treasure',
+    fairyDesc: 'Magical friend spreading joy',
+    owlDesc: 'Wise guardian of the night',
+    bunnyDesc: 'Gentle and quick, loves nature',
+    bearDesc: 'Warm and caring, gives big hugs',
     
     // Traits
     brave: 'Brave',
@@ -263,7 +277,48 @@ export const translations = {
     goToDashboard: 'Go to Dashboard',
     preparingStory: 'Your story is being prepared...',
     oneMoreMoment: 'Just one more moment...',
-    
+    continueWithGoogle: 'Continue with Google',
+    passwordRequirements: 'Minimum 6 characters',
+    freeCreditsPromo: 'Start with 5 free credits • No credit card required',
+    about: 'About',
+    support: 'Support',
+    storyLibrary: 'Story Library',
+    premiumMember: 'Premium Member',
+    unlimitedAccess: 'Unlimited stories & heroes',
+    manage: 'Manage',
+    creditCost: '2 for hero • 1 for story',
+    getMore: 'Get More',
+    languageSelectorLabel: 'Select language',
+    parentalControlsLabel: 'Open parental controls (hold to unlock)',
+    continueReading: 'Continue reading story',
+    startNewAdventure: 'Start a new adventure',
+    viewStoryLibrary: 'View story library',
+    characterSaved: 'Character saved successfully!',
+    soundsLikeHero: '"{name}" sounds like a hero ready for adventure!',
+    or: 'or',
+    starting: 'Starting...',
+    deleting: 'Deleting...',
+    refreshing: 'Refreshing...',
+    retryLoadingPortrait: 'Retry loading portrait',
+
+    // Auth form
+    emailPlaceholder: 'Email',
+    passwordPlaceholder: 'Password',
+    alreadyHaveAccount: 'Already have an account?',
+    noAccount: "Don't have an account?",
+    createAccount: 'Create Account',
+    signIn: 'Sign In',
+
+    // Edit character modal
+    heroNameLabel: 'Hero Name',
+    enterNamePlaceholder: 'Enter name...',
+    sidekickNameLabel: 'Sidekick Name (optional)',
+    sidekickNamePlaceholder: 'e.g., Whiskers, Sparky...',
+
+    // Empty states
+    noCharactersYet: 'No characters yet',
+    noCharactersDesc: 'Create your first hero to start magical adventures!',
+
     // Pricing
     pricingTitle: 'Choose Your Plan',
     pricingSubtitle: 'Create magical bedtime stories for your children',
@@ -288,6 +343,12 @@ export const translations = {
     freeCreditsNote: 'New accounts start with 5 free credits',
     purchase: 'Purchase',
     backToDashboard: 'Back to Dashboard',
+
+    // Credit warnings
+    outOfCredits: "You're out of credits! Purchase more or subscribe for unlimited access.",
+    lowOnCredits: 'Low on credits! You need 2 credits to create a hero and 1 to generate a story.',
+    enoughForOneHero: 'You have enough credits for 1 hero creation.',
+    subscriptionEndsOn: 'Your subscription will end on',
   },
   
   nl: {
@@ -408,6 +469,20 @@ export const translations = {
     cat: 'Kat',
     owl: 'Uil',
     bunny: 'Konijn',
+
+    // Archetype descriptions
+    knightDesc: 'Dapper en nobel, beschermt anderen',
+    wizardDesc: 'Wijs en magisch, houdt van leren',
+    catDesc: 'Nieuwsgierig en slim, altijd aan het ontdekken',
+    robotDesc: 'Slim en behulpzaam, lost problemen op',
+    princessDesc: 'Vriendelijk en gracieus, leidt met hart',
+    dragonDesc: 'Sterk en loyaal, ademt magie',
+    astronautDesc: 'Avontuurlijke ruimteverkenner',
+    pirateDesc: 'Moedige zeevaarder op zoek naar schatten',
+    fairyDesc: 'Magische vriend die vreugde verspreidt',
+    owlDesc: 'Wijze bewaker van de nacht',
+    bunnyDesc: 'Zachtaardig en snel, houdt van natuur',
+    bearDesc: 'Warm en zorgzaam, geeft grote knuffels',
     
     // Traits
     brave: 'Dapper',
@@ -548,8 +623,85 @@ export const translations = {
     signUpToCreate: 'je eigen personage te maken',
     signUpToSave: 'dit verhaal op te slaan',
     signUpToPersonalize: 'verhalen te personaliseren',
+
+    // Additional keys
+    goToDashboard: 'Ga naar Dashboard',
+    preparingStory: 'Je verhaal wordt voorbereid...',
+    oneMoreMoment: 'Nog een momentje...',
+    continueWithGoogle: 'Doorgaan met Google',
+    passwordRequirements: 'Minimaal 6 karakters',
+    freeCreditsPromo: 'Start met 5 gratis credits • Geen creditcard nodig',
+    about: 'Over',
+    support: 'Ondersteuning',
+    storyLibrary: 'Verhalenbibliotheek',
+    premiumMember: 'Premium Lid',
+    unlimitedAccess: 'Onbeperkte verhalen & helden',
+    manage: 'Beheren',
+    creditCost: '2 voor held • 1 voor verhaal',
+    getMore: 'Meer Halen',
+    languageSelectorLabel: 'Selecteer taal',
+    parentalControlsLabel: 'Open ouderlijk toezicht (houd vast om te ontgrendelen)',
+    continueReading: 'Ga verder met lezen',
+    startNewAdventure: 'Begin een nieuw avontuur',
+    viewStoryLibrary: 'Bekijk verhalenbibliotheek',
+    characterSaved: 'Personage succesvol opgeslagen!',
+    soundsLikeHero: '"{name}" klinkt als een held die klaar is voor avontuur!',
+    or: 'of',
+    starting: 'Starten...',
+    deleting: 'Verwijderen...',
+    refreshing: 'Verversen...',
+    retryLoadingPortrait: 'Probeer portret opnieuw te laden',
+
+    // Auth form
+    emailPlaceholder: 'E-mail',
+    passwordPlaceholder: 'Wachtwoord',
+    alreadyHaveAccount: 'Heb je al een account?',
+    noAccount: 'Heb je nog geen account?',
+    createAccount: 'Account Aanmaken',
+    signIn: 'Inloggen',
+
+    // Edit character modal
+    heroNameLabel: 'Heldennaam',
+    enterNamePlaceholder: 'Voer naam in...',
+    sidekickNameLabel: 'Sidekick Naam (optioneel)',
+    sidekickNamePlaceholder: 'bijv. Whiskers, Sparky...',
+
+    // Empty states
+    noCharactersYet: 'Nog geen personages',
+    noCharactersDesc: 'Maak je eerste held om magische avonturen te beginnen!',
+
+    // Pricing
+    pricingTitle: 'Kies Je Plan',
+    pricingSubtitle: 'Maak magische slaapverhaaltjes voor je kinderen',
+    currentBalance: 'Huidige Saldo',
+    credits: 'credits',
+    monthlyPlan: 'Maandelijks',
+    yearlyPlan: 'Jaarlijks',
+    savingsLabel: 'Bespaar 17%',
+    perMonth: '/maand',
+    perYear: '/jaar',
+    unlimitedHeroes: 'Onbeperkte held creatie',
+    unlimitedStories: 'Onbeperkte verhaal generatie',
+    priorityGeneration: 'Prioriteit AI generatie',
+    cancelAnytime: 'Op elk moment annuleren',
+    supportDevelopment: 'Ondersteun ontwikkeling',
+    subscribeNow: 'Abonneer Nu',
+    manageSubscription: 'Abonnement Beheren',
+    buyCredits: 'Koop Credits',
+    howCreditsWork: 'Hoe Credits Werken',
+    heroCredits: 'Maak een unieke held met AI-gegenereerd portret',
+    storyCredits: 'Genereer een gepersonaliseerd slaapverhaaltje',
+    freeCreditsNote: 'Nieuwe accounts beginnen met 5 gratis credits',
+    purchase: 'Kopen',
+    backToDashboard: 'Terug naar Dashboard',
+
+    // Credit warnings
+    outOfCredits: 'Je hebt geen credits meer! Koop meer credits of neem een abonnement voor onbeperkte toegang.',
+    lowOnCredits: 'Weinig credits over! Je hebt 2 credits nodig om een held te maken en 1 om een verhaal te genereren.',
+    enoughForOneHero: 'Je hebt genoeg credits voor 1 held creatie.',
+    subscriptionEndsOn: 'Je abonnement eindigt op',
   },
-  
+
   sv: {
     // General
     appName: 'Papper & Bläck',
@@ -667,6 +819,20 @@ export const translations = {
     cat: 'Katt',
     owl: 'Uggla',
     bunny: 'Kanin',
+
+    // Archetype descriptions
+    knightDesc: 'Modig och ädel, skyddar andra',
+    wizardDesc: 'Vis och magisk, älskar att lära',
+    catDesc: 'Nyfiken och klok, utforskar alltid',
+    robotDesc: 'Smart och hjälpsam, löser problem',
+    princessDesc: 'Vänlig och graciös, leder med hjärtat',
+    dragonDesc: 'Stark och lojal, andas magi',
+    astronautDesc: 'Äventyrlig rymdutforskare',
+    pirateDesc: 'Djärv sjöfarare som söker skatter',
+    fairyDesc: 'Magisk vän som sprider glädje',
+    owlDesc: 'Vis väktare av natten',
+    bunnyDesc: 'Mild och snabb, älskar naturen',
+    bearDesc: 'Varm och omtänksam, ger stora kramar',
     
     // Traits
     brave: 'Modig',
@@ -807,6 +973,83 @@ export const translations = {
     signUpToCreate: 'skapa din egen karaktär',
     signUpToSave: 'spara denna saga',
     signUpToPersonalize: 'personanpassa sagor',
+
+    // Additional keys
+    goToDashboard: 'Gå till instrumentpanelen',
+    preparingStory: 'Din saga förbereds...',
+    oneMoreMoment: 'Bara ett ögonblick till...',
+    continueWithGoogle: 'Fortsätt med Google',
+    passwordRequirements: 'Minst 6 tecken',
+    freeCreditsPromo: 'Börja med 5 gratis krediter • Inget kreditkort krävs',
+    about: 'Om',
+    support: 'Support',
+    storyLibrary: 'Berättelsebibliotek',
+    premiumMember: 'Premiummedlem',
+    unlimitedAccess: 'Obegränsade sagor & hjältar',
+    manage: 'Hantera',
+    creditCost: '2 för hjälte • 1 för saga',
+    getMore: 'Hämta Mer',
+    languageSelectorLabel: 'Välj språk',
+    parentalControlsLabel: 'Öppna föräldrakontroller (håll för att låsa upp)',
+    continueReading: 'Fortsätt läsa saga',
+    startNewAdventure: 'Börja ett nytt äventyr',
+    viewStoryLibrary: 'Visa berättelsebibliotek',
+    characterSaved: 'Karaktär sparades framgångsrikt!',
+    soundsLikeHero: '"{name}" låter som en hjälte redo för äventyr!',
+    or: 'eller',
+    starting: 'Startar...',
+    deleting: 'Raderar...',
+    refreshing: 'Uppdaterar...',
+    retryLoadingPortrait: 'Försök ladda porträtt igen',
+
+    // Auth form
+    emailPlaceholder: 'E-post',
+    passwordPlaceholder: 'Lösenord',
+    alreadyHaveAccount: 'Har du redan ett konto?',
+    noAccount: 'Har du inget konto?',
+    createAccount: 'Skapa Konto',
+    signIn: 'Logga In',
+
+    // Edit character modal
+    heroNameLabel: 'Hjältens Namn',
+    enterNamePlaceholder: 'Ange namn...',
+    sidekickNameLabel: 'Sidekick Namn (valfritt)',
+    sidekickNamePlaceholder: 't.ex. Whiskers, Sparky...',
+
+    // Empty states
+    noCharactersYet: 'Inga karaktärer ännu',
+    noCharactersDesc: 'Skapa din första hjälte för att börja magiska äventyr!',
+
+    // Pricing
+    pricingTitle: 'Välj Din Plan',
+    pricingSubtitle: 'Skapa magiska godnattsagor för dina barn',
+    currentBalance: 'Nuvarande Saldo',
+    credits: 'krediter',
+    monthlyPlan: 'Månadsvis',
+    yearlyPlan: 'Årsvis',
+    savingsLabel: 'Spara 17%',
+    perMonth: '/månad',
+    perYear: '/år',
+    unlimitedHeroes: 'Obegränsat hjälteskapande',
+    unlimitedStories: 'Obegränsad sagogenerering',
+    priorityGeneration: 'Prioriterad AI-generering',
+    cancelAnytime: 'Avsluta när som helst',
+    supportDevelopment: 'Stöd utvecklingen',
+    subscribeNow: 'Prenumerera Nu',
+    manageSubscription: 'Hantera Prenumeration',
+    buyCredits: 'Köp Krediter',
+    howCreditsWork: 'Hur Krediter Fungerar',
+    heroCredits: 'Skapa en unik hjälte med AI-genererat porträtt',
+    storyCredits: 'Generera en personlig godnattsaga',
+    freeCreditsNote: 'Nya konton börjar med 5 gratis krediter',
+    purchase: 'Köp',
+    backToDashboard: 'Tillbaka till Instrumentpanelen',
+
+    // Credit warnings
+    outOfCredits: 'Du har slut på krediter! Köp fler eller prenumerera för obegränsad tillgång.',
+    lowOnCredits: 'Lågt på krediter! Du behöver 2 krediter för att skapa en hjälte och 1 för att generera en saga.',
+    enoughForOneHero: 'Du har tillräckligt med krediter för 1 hjälteskapande.',
+    subscriptionEndsOn: 'Din prenumeration slutar den',
   },
 } as const;
 
