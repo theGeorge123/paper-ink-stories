@@ -145,7 +145,7 @@ export default function Index() {
             <motion.div whileTap={{ scale: 0.98 }}>
               <Button onClick={() => navigate('/create')} size="lg" className="gap-2">
                 <Plus className="w-5 h-5" />
-                Create Your First Hero
+                {t('createFirstHero')}
               </Button>
             </motion.div>
           </motion.div>

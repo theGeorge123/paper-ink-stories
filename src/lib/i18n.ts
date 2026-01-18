@@ -343,6 +343,12 @@ export const translations = {
     freeCreditsNote: 'New accounts start with 5 free credits',
     purchase: 'Purchase',
     backToDashboard: 'Back to Dashboard',
+
+    // Credit warnings
+    outOfCredits: "You're out of credits! Purchase more or subscribe for unlimited access.",
+    lowOnCredits: 'Low on credits! You need 2 credits to create a hero and 1 to generate a story.',
+    enoughForOneHero: 'You have enough credits for 1 hero creation.',
+    subscriptionEndsOn: 'Your subscription will end on',
   },
   
   nl: {
@@ -665,6 +671,35 @@ export const translations = {
     noCharactersDesc: 'Maak je eerste held om magische avonturen te beginnen!',
 
     // Pricing
+    pricingTitle: 'Kies Je Plan',
+    pricingSubtitle: 'Maak magische slaapverhaaltjes voor je kinderen',
+    currentBalance: 'Huidige Saldo',
+    credits: 'credits',
+    monthlyPlan: 'Maandelijks',
+    yearlyPlan: 'Jaarlijks',
+    savingsLabel: 'Bespaar 17%',
+    perMonth: '/maand',
+    perYear: '/jaar',
+    unlimitedHeroes: 'Onbeperkte held creatie',
+    unlimitedStories: 'Onbeperkte verhaal generatie',
+    priorityGeneration: 'Prioriteit AI generatie',
+    cancelAnytime: 'Op elk moment annuleren',
+    supportDevelopment: 'Ondersteun ontwikkeling',
+    subscribeNow: 'Abonneer Nu',
+    manageSubscription: 'Abonnement Beheren',
+    buyCredits: 'Koop Credits',
+    howCreditsWork: 'Hoe Credits Werken',
+    heroCredits: 'Maak een unieke held met AI-gegenereerd portret',
+    storyCredits: 'Genereer een gepersonaliseerd slaapverhaaltje',
+    freeCreditsNote: 'Nieuwe accounts beginnen met 5 gratis credits',
+    purchase: 'Kopen',
+    backToDashboard: 'Terug naar Dashboard',
+
+    // Credit warnings
+    outOfCredits: 'Je hebt geen credits meer! Koop meer credits of neem een abonnement voor onbeperkte toegang.',
+    lowOnCredits: 'Weinig credits over! Je hebt 2 credits nodig om een held te maken en 1 om een verhaal te genereren.',
+    enoughForOneHero: 'Je hebt genoeg credits voor 1 held creatie.',
+    subscriptionEndsOn: 'Je abonnement eindigt op',
   },
 
   sv: {
@@ -986,6 +1021,35 @@ export const translations = {
     noCharactersDesc: 'Skapa din första hjälte för att börja magiska äventyr!',
 
     // Pricing
+    pricingTitle: 'Välj Din Plan',
+    pricingSubtitle: 'Skapa magiska godnattsagor för dina barn',
+    currentBalance: 'Nuvarande Saldo',
+    credits: 'krediter',
+    monthlyPlan: 'Månadsvis',
+    yearlyPlan: 'Årsvis',
+    savingsLabel: 'Spara 17%',
+    perMonth: '/månad',
+    perYear: '/år',
+    unlimitedHeroes: 'Obegränsat hjälteskapande',
+    unlimitedStories: 'Obegränsad sagogenerering',
+    priorityGeneration: 'Prioriterad AI-generering',
+    cancelAnytime: 'Avsluta när som helst',
+    supportDevelopment: 'Stöd utvecklingen',
+    subscribeNow: 'Prenumerera Nu',
+    manageSubscription: 'Hantera Prenumeration',
+    buyCredits: 'Köp Krediter',
+    howCreditsWork: 'Hur Krediter Fungerar',
+    heroCredits: 'Skapa en unik hjälte med AI-genererat porträtt',
+    storyCredits: 'Generera en personlig godnattsaga',
+    freeCreditsNote: 'Nya konton börjar med 5 gratis krediter',
+    purchase: 'Köp',
+    backToDashboard: 'Tillbaka till Instrumentpanelen',
+
+    // Credit warnings
+    outOfCredits: 'Du har slut på krediter! Köp fler eller prenumerera för obegränsad tillgång.',
+    lowOnCredits: 'Lågt på krediter! Du behöver 2 krediter för att skapa en hjälte och 1 för att generera en saga.',
+    enoughForOneHero: 'Du har tillräckligt med krediter för 1 hjälteskapande.',
+    subscriptionEndsOn: 'Din prenumeration slutar den',
   },
 } as const;
 
