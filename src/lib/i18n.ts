@@ -281,6 +281,11 @@ export const translations = {
     viewStoryLibrary: 'View story library',
     characterSaved: 'Character saved successfully!',
     soundsLikeHero: '"{name}" sounds like a hero ready for adventure!',
+    or: 'or',
+    starting: 'Starting...',
+    deleting: 'Deleting...',
+    refreshing: 'Refreshing...',
+    retryLoadingPortrait: 'Retry loading portrait',
 
     // Pricing
     pricingTitle: 'Choose Your Plan',
@@ -589,6 +594,11 @@ export const translations = {
     viewStoryLibrary: 'Bekijk verhalenbibliotheek',
     characterSaved: 'Personage succesvol opgeslagen!',
     soundsLikeHero: '"{name}" klinkt als een held die klaar is voor avontuur!',
+    or: 'of',
+    starting: 'Starten...',
+    deleting: 'Verwijderen...',
+    refreshing: 'Verversen...',
+    retryLoadingPortrait: 'Probeer portret opnieuw te laden',
 
     // Pricing
   },
@@ -873,6 +883,11 @@ export const translations = {
     viewStoryLibrary: 'Visa berättelsebibliotek',
     characterSaved: 'Karaktär sparades framgångsrikt!',
     soundsLikeHero: '"{name}" låter som en hjälte redo för äventyr!',
+    or: 'eller',
+    starting: 'Startar...',
+    deleting: 'Raderar...',
+    refreshing: 'Uppdaterar...',
+    retryLoadingPortrait: 'Försök ladda porträtt igen',
 
     // Pricing
   },

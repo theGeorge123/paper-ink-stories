@@ -108,7 +108,7 @@ export default function Auth() {
 
         <div className="flex items-center gap-4 my-4">
           <Separator className="flex-1" />
-          <span className="text-muted-foreground text-sm">or</span>
+          <span className="text-muted-foreground text-sm">{t('or')}</span>
           <Separator className="flex-1" />
         </div>
 
@@ -143,7 +143,7 @@ export default function Auth() {
             </p>
           </div>
           <Button type="submit" className="w-full h-12" disabled={loading}>
-            {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading ? t('loading') : isSignUp ? 'Create Account' : 'Sign In'}
           </Button>
         </form>
 

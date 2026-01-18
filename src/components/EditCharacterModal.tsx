@@ -191,7 +191,7 @@ export default function EditCharacterModal({
             </Button>
             {portraitError && (
               <Button variant="ghost" size="sm" onClick={refresh} disabled={loading}>
-                {loading ? 'Refreshing...' : 'Retry loading portrait'}
+                {loading ? t('refreshing') : t('retryLoadingPortrait')}
               </Button>
             )}
           </div>

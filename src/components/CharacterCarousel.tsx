@@ -339,7 +339,7 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
               ) : (
                 <Sparkles className="w-5 h-5" />
               )}
-              {isLoading ? 'Starting...' : t('newAdventure')}
+              {isLoading ? t('starting') : t('newAdventure')}
             </Button>
           </div>
         </div>
@@ -460,7 +460,7 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            {isLoading ? 'Starting...' : t('newAdventure')}
+            {isLoading ? t('starting') : t('newAdventure')}
           </Button>
         </div>
       </motion.div>
@@ -535,7 +535,7 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
               disabled={deleting}
               className="flex-1"
             >
-              {deleting ? 'Deleting...' : t('delete')}
+              {deleting ? t('deleting') : t('delete')}
             </Button>
           </div>
         </DialogContent>
