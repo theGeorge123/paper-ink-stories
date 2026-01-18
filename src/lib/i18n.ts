@@ -301,23 +301,18 @@ export const translations = {
     refreshing: 'Refreshing...',
     retryLoadingPortrait: 'Retry loading portrait',
 
-    // Auth form
+    // Auth form (additional)
     emailPlaceholder: 'Email',
     passwordPlaceholder: 'Password',
     alreadyHaveAccount: 'Already have an account?',
-    noAccount: "Don't have an account?",
-    createAccount: 'Create Account',
-    signIn: 'Sign In',
 
     // Edit character modal
     heroNameLabel: 'Hero Name',
     enterNamePlaceholder: 'Enter name...',
     sidekickNameLabel: 'Sidekick Name (optional)',
-    sidekickNamePlaceholder: 'e.g., Whiskers, Sparky...',
 
     // Empty states
     noCharactersYet: 'No characters yet',
-    noCharactersDesc: 'Create your first hero to start magical adventures!',
 
     // Pricing
     pricingTitle: 'Choose Your Plan',
@@ -652,23 +647,18 @@ export const translations = {
     refreshing: 'Verversen...',
     retryLoadingPortrait: 'Probeer portret opnieuw te laden',
 
-    // Auth form
+    // Auth form (additional)
     emailPlaceholder: 'E-mail',
     passwordPlaceholder: 'Wachtwoord',
     alreadyHaveAccount: 'Heb je al een account?',
-    noAccount: 'Heb je nog geen account?',
-    createAccount: 'Account Aanmaken',
-    signIn: 'Inloggen',
 
     // Edit character modal
     heroNameLabel: 'Heldennaam',
     enterNamePlaceholder: 'Voer naam in...',
     sidekickNameLabel: 'Sidekick Naam (optioneel)',
-    sidekickNamePlaceholder: 'bijv. Whiskers, Sparky...',
 
     // Empty states
     noCharactersYet: 'Nog geen personages',
-    noCharactersDesc: 'Maak je eerste held om magische avonturen te beginnen!',
 
     // Pricing
     pricingTitle: 'Kies Je Plan',
@@ -1002,23 +992,18 @@ export const translations = {
     refreshing: 'Uppdaterar...',
     retryLoadingPortrait: 'Försök ladda porträtt igen',
 
-    // Auth form
+    // Auth form (additional)
     emailPlaceholder: 'E-post',
     passwordPlaceholder: 'Lösenord',
     alreadyHaveAccount: 'Har du redan ett konto?',
-    noAccount: 'Har du inget konto?',
-    createAccount: 'Skapa Konto',
-    signIn: 'Logga In',
 
     // Edit character modal
     heroNameLabel: 'Hjältens Namn',
     enterNamePlaceholder: 'Ange namn...',
     sidekickNameLabel: 'Sidekick Namn (valfritt)',
-    sidekickNamePlaceholder: 't.ex. Whiskers, Sparky...',
 
     // Empty states
     noCharactersYet: 'Inga karaktärer ännu',
-    noCharactersDesc: 'Skapa din första hjälte för att börja magiska äventyr!',
 
     // Pricing
     pricingTitle: 'Välj Din Plan',

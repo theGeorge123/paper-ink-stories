@@ -405,13 +405,36 @@ export default function Questions() {
 
       if (pageError) {
         console.error('Page generation error:', pageError);
-        toast.error(
-          language === 'nl'
-            ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
-            : language === 'sv'
-            ? 'Sagomagin vilar en stund. Försök igen snart.'
-            : 'Story magic is resting. Please try again soon.',
-        );
+        
+        // Check for insufficient credits error
+        const errorBody = pageData?.error || {};
+        const isInsufficientCredits = errorBody?.message === 'insufficient_credits' || 
+          pageError.message?.includes('insufficient_credits') ||
+          (pageError.context && JSON.stringify(pageError.context).includes('insufficient_credits'));
+        
+        if (isInsufficientCredits) {
+          toast.error(
+            language === 'nl'
+              ? 'Je hebt geen credits meer. Koop credits om door te gaan.'
+              : language === 'sv'
+              ? 'Du har slut på krediter. Köp krediter för att fortsätta.'
+              : "You're out of credits. Purchase credits to continue.",
+            {
+              action: {
+                label: language === 'nl' ? 'Credits kopen' : language === 'sv' ? 'Köp krediter' : 'Get Credits',
+                onClick: () => navigate('/pricing'),
+              },
+            }
+          );
+        } else {
+          toast.error(
+            language === 'nl'
+              ? 'De verhaalmagie rust even. Probeer het straks opnieuw.'
+              : language === 'sv'
+              ? 'Sagomagin vilar en stund. Försök igen snart.'
+              : 'Story magic is resting. Please try again soon.',
+          );
+        }
         return;
       }
 
