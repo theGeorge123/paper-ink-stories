@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2 } from 'lucide-react';
+import { Play, Sparkles, Shield, Wand2, Cat, Bot, Crown, Flame, Settings, Trash2, Rocket, Anchor, Bird, Rabbit, Heart, AlertTriangle, Loader2, Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import EditCharacterModal from './EditCharacterModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBatchSignedUrls } from '@/hooks/useBatchSignedUrls';
+import { useCredits } from '@/hooks/useCredits';
 
 const ARCHETYPE_ICONS: Record<string, React.ElementType> = {
   knight: Shield,
@@ -137,12 +138,14 @@ interface CharacterCarouselProps {
 const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharacterUpdated }: CharacterCarouselProps) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showNoCreditsModal, setShowNoCreditsModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loadingCharacterId, setLoadingCharacterId] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { credits, hasActiveSubscription, isLoading: creditsLoading } = useCredits();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldVirtualize = characters.length > 10;
   const [visibleRange, setVisibleRange] = useState({
@@ -237,6 +240,12 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
   };
 
   const startAdventure = async (character: Character) => {
+    // Check credits before starting - user needs 1 credit for a story
+    if (!hasActiveSubscription && credits < 1 && !creditsLoading) {
+      setShowNoCreditsModal(true);
+      return;
+    }
+
     setLoadingCharacterId(character.id);
 
     try {
@@ -536,6 +545,50 @@ const CharacterCarousel = memo(function CharacterCarousel({ characters, onCharac
               className="flex-1"
             >
               {deleting ? t('deleting') : t('delete')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* No Credits Modal */}
+      <Dialog open={showNoCreditsModal} onOpenChange={setShowNoCreditsModal}>
+        <DialogContent className="glass max-w-sm">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Coins className="w-6 h-6 text-primary" />
+            </div>
+            <DialogTitle className="font-serif text-xl text-center">
+              {language === 'nl'
+                ? 'Oeps! Je credits zijn op'
+                : language === 'sv'
+                ? 'Hoppsan! Du har inga krediter kvar'
+                : "Oops! You're out of credits"}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {language === 'nl'
+                ? 'Je hebt 1 credit nodig om een nieuw verhaal te maken. Koop credits of abonneer je voor onbeperkte verhalen!'
+                : language === 'sv'
+                ? 'Du behöver 1 kredit för att skapa en ny berättelse. Köp krediter eller prenumerera för obegränsade berättelser!'
+                : 'You need 1 credit to create a new story. Buy credits or subscribe for unlimited stories!'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 pt-4">
+            <Button
+              onClick={() => {
+                setShowNoCreditsModal(false);
+                navigate('/pricing');
+              }}
+              className="w-full gap-2"
+            >
+              <Coins className="w-4 h-4" />
+              {language === 'nl' ? 'Credits kopen' : language === 'sv' ? 'Köp krediter' : 'Get Credits'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowNoCreditsModal(false)}
+              className="w-full"
+            >
+              {t('cancel')}
             </Button>
           </div>
         </DialogContent>

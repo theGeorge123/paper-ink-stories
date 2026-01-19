@@ -79,6 +79,9 @@ export default function SleepWellScreen({
 
   // Handle goodnight - save summary and navigate
   const handleGoodnight = async () => {
+    // Save themes from this story
+    await updatePreferredThemes();
+    
     // Save cumulative summary even if no option selected
     if (adventureSummary) {
       const newLifeSummary = buildCumulativeLifeSummary(adventureSummary);
@@ -86,6 +89,12 @@ export default function SleepWellScreen({
         .from('stories')
         .update({ last_summary: newLifeSummary })
         .eq('id', storyId);
+      
+      // Also update the character's last_summary for continuity
+      await supabase
+        .from('characters')
+        .update({ last_summary: newLifeSummary })
+        .eq('id', characterId);
     }
     
     navigate('/dashboard');

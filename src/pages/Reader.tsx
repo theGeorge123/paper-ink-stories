@@ -84,7 +84,6 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   const [hasOpenedCover, setHasOpenedCover] = useState(false);
   const [generationError, setGenerationError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const [pageTransitioning, setPageTransitioning] = useState(false);
   const MAX_RETRIES = 3;
 
   // Track inflight requests by page number to prevent duplicates
@@ -446,10 +445,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
   const handleTapLeft = () => {
     if (currentPageIndex > 0) {
       setDirection(-1);
-      setPageTransitioning(true);
       setCurrentPageIndex(currentPageIndex - 1);
-      // Clear transition state after animation
-      setTimeout(() => setPageTransitioning(false), 400);
     }
   };
 
@@ -458,10 +454,7 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     if (canGoNext) {
       const nextIndex = currentPageIndex + 1;
       setDirection(1);
-      setPageTransitioning(true);
       setCurrentPageIndex(nextIndex);
-      // Clear transition state after animation
-      setTimeout(() => setPageTransitioning(false), 400);
     }
     // If we're on the last available page but story isn't done, generate more
     else if (canGenerate && !generating) {
@@ -667,36 +660,12 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                 animate="center"
                 exit="exit"
                 transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                  rotateY: { duration: 0.3 },
+                  x: { type: "spring", stiffness: 400, damping: 35 },
+                  opacity: { duration: 0.15 },
+                  rotateY: { duration: 0.2 },
                 }}
-                className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text} relative`}
+                className={`story-text text-lg leading-relaxed py-4 space-y-6 ${activeTheme.text}`}
               >
-                {/* Show subtle loading overlay during transitions */}
-                {pageTransitioning && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 flex items-center justify-center bg-background/30 backdrop-blur-sm rounded-lg z-10"
-                  >
-                    <motion.div
-                      className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        opacity: [0.5, 1, 0.5],
-                      }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <MoonStar className="w-4 h-4 text-primary" />
-                    </motion.div>
-                  </motion.div>
-                )}
                 {currentPage.image_url && <SceneImage imageUrl={currentPage.image_url} pageNumber={currentPage.page_number || currentPageIndex + 1} />}
                 <div className="whitespace-pre-line">{currentPage.content}</div>
               </motion.div>
