@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Home, UserCircle, Sparkles, Loader2 } from 'lucide-react';
+import { BookOpen, Home, UserCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
@@ -16,7 +16,7 @@ import {
   type QuestionLevel,
   type ThreeLevelQuestions,
 } from '@/lib/questions';
-import { Skeleton } from '@/components/ui/skeleton';
+
 import AdaptiveQuestions from '@/components/AdaptiveQuestions';
 import { useAdaptiveQuestions } from '@/hooks/useAdaptiveQuestions';
 
@@ -300,44 +300,63 @@ export default function Questions() {
     loadQuestions();
   }, [heroProfile, questions, generateAiQuestions, getStaticQuestions, language, adaptiveQuestionsData, isLoadingAdaptive]);
 
-  // Loading state while generating questions
+  // Loading state while generating questions - use a gentle, non-error appearance
   if (isCreatingStory) {
     return (
-      <div className="min-h-screen bg-background paper-texture">
-        <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-          <header className="flex items-center gap-3">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-6 w-64" />
-            </div>
-          </header>
-
-          <div className="book-cover relative overflow-hidden p-6 sm:p-8">
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-3"
-              >
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              </motion.div>
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-muted-foreground text-center"
-              >
-                {language === 'nl'
-                  ? 'Verhaal klaarmaken...'
-                  : language === 'sv'
-                  ? 'Förbereder berättelse...'
-                  : 'Preparing your story...'}
-              </motion.p>
-            </div>
+      <div className="min-h-screen bg-background paper-texture flex items-center justify-center">
+        <div className="text-center space-y-6 px-6 max-w-md">
+          <motion.div
+            animate={{
+              rotate: 360,
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              rotate: { duration: 4, repeat: Infinity, ease: "linear" },
+              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+            }}
+            className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center"
+          >
+            <Sparkles className="w-10 h-10 text-primary" />
+          </motion.div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-serif font-semibold text-foreground">
+              {language === 'nl'
+                ? 'Een moment geduld...'
+                : language === 'sv'
+                ? 'Ett ögonblick...'
+                : 'Just a moment...'}
+            </h2>
+            <p className="text-muted-foreground">
+              {language === 'nl'
+                ? 'We maken alles klaar voor je verhaal'
+                : language === 'sv'
+                ? 'Vi förbereder allt för din berättelse'
+                : 'Getting everything ready for your story'}
+            </p>
           </div>
-        </main>
+          <motion.div
+            className="flex items-center justify-center gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary"
+                animate={{
+                  scale: [1, 1.5, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </motion.div>
+        </div>
       </div>
     );
   }
@@ -502,41 +521,60 @@ export default function Questions() {
 
   if (isGeneratingQuestions || !questions) {
     return (
-      <div className="min-h-screen bg-background paper-texture">
-        <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
-          <header className="flex items-center gap-3">
-            <Skeleton className="h-12 w-12 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-6 w-64" />
-            </div>
-          </header>
-
-          <div className="book-cover relative overflow-hidden p-6 sm:p-8">
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-3"
-              >
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              </motion.div>
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-muted-foreground text-center"
-              >
-                {language === 'nl'
-                  ? `Magische vragen maken voor ${heroProfile.heroName}...`
-                  : language === 'sv'
-                  ? `Skapar magiska frågor för ${heroProfile.heroName}...`
-                  : `Creating magical questions for ${heroProfile.heroName}...`}
-              </motion.p>
-            </div>
+      <div className="min-h-screen bg-background paper-texture flex items-center justify-center">
+        <div className="text-center space-y-6 px-6 max-w-md">
+          <motion.div
+            animate={{
+              rotate: 360,
+              scale: [1, 1.05, 1],
+            }}
+            transition={{
+              rotate: { duration: 4, repeat: Infinity, ease: "linear" },
+              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+            }}
+            className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center"
+          >
+            <Sparkles className="w-10 h-10 text-primary" />
+          </motion.div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-serif font-semibold text-foreground">
+              {language === 'nl'
+                ? `Magische vragen maken voor ${heroProfile.heroName}...`
+                : language === 'sv'
+                ? `Skapar magiska frågor för ${heroProfile.heroName}...`
+                : `Creating magical questions for ${heroProfile.heroName}...`}
+            </h2>
+            <p className="text-muted-foreground">
+              {language === 'nl'
+                ? 'Dit duurt maar een paar seconden'
+                : language === 'sv'
+                ? 'Detta tar bara några sekunder'
+                : 'This only takes a few seconds'}
+            </p>
           </div>
-        </main>
+          <motion.div
+            className="flex items-center justify-center gap-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-primary"
+                animate={{
+                  scale: [1, 1.5, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </motion.div>
+        </div>
       </div>
     );
   }
