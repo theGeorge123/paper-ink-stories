@@ -255,7 +255,7 @@ export type Database = {
           credits: number
           id: string
           language: string
-          parent_pin: number | null
+          parent_pin_hash: string | null
           updated_at: string
         }
         Insert: {
@@ -263,7 +263,7 @@ export type Database = {
           credits?: number
           id: string
           language?: string
-          parent_pin?: number | null
+          parent_pin_hash?: string | null
           updated_at?: string
         }
         Update: {
@@ -271,7 +271,7 @@ export type Database = {
           credits?: number
           id?: string
           language?: string
-          parent_pin?: number | null
+          parent_pin_hash?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -466,6 +466,36 @@ export type Database = {
         }
         Relationships: []
       }
+      unsubscribe_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          token_type: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          token_type?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          token_type?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -487,6 +517,14 @@ export type Database = {
         Returns: boolean
       }
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
+      set_parent_pin: {
+        Args: { p_pin: string; p_user_id: string }
+        Returns: boolean
+      }
+      verify_parent_pin: {
+        Args: { p_pin: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

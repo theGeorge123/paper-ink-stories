@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret, x-timestamp, x-signature",
 };
 
 const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
@@ -16,19 +16,109 @@ const jsonResponse = (payload: Record<string, unknown>, status = 200) =>
 const errorResponse = (message: string, status = 500, details?: string) =>
   jsonResponse({ error: { message, details } }, status);
 
-// Generate secure token for disable links
-async function generateDisableToken(userId: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(userId + Date.now().toString().slice(0, -5));
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, data);
-  return btoa(String.fromCharCode(...new Uint8Array(signature))).slice(0, 32);
+// Track request timestamps for simple in-memory rate limiting
+const requestLog: Map<string, number[]> = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 5; // Max 5 requests per minute
+
+function checkRateLimit(key: string): boolean {
+  const now = Date.now();
+  const timestamps = requestLog.get(key) || [];
+  const recentTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
+  
+  if (recentTimestamps.length >= RATE_LIMIT_MAX) {
+    return false;
+  }
+  
+  recentTimestamps.push(now);
+  requestLog.set(key, recentTimestamps);
+  return true;
+}
+
+// Validate HMAC-signed timestamp for cron requests
+async function validateCronRequest(
+  req: Request, 
+  cronSecret: string
+): Promise<{ valid: boolean; error?: string }> {
+  const providedSecret = req.headers.get("x-cron-secret");
+  const timestamp = req.headers.get("x-timestamp");
+  const signature = req.headers.get("x-signature");
+  
+  // Support simple secret validation for backwards compatibility
+  if (providedSecret && providedSecret === cronSecret) {
+    // Check rate limiting
+    const clientIP = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    if (!checkRateLimit(clientIP)) {
+      return { valid: false, error: "Rate limit exceeded" };
+    }
+    return { valid: true };
+  }
+  
+  // Support HMAC-signed timestamp validation for enhanced security
+  if (timestamp && signature) {
+    const ts = parseInt(timestamp, 10);
+    const now = Date.now();
+    
+    // Reject requests older than 5 minutes
+    if (Math.abs(now - ts) > 5 * 60 * 1000) {
+      return { valid: false, error: "Request timestamp expired" };
+    }
+    
+    // Verify HMAC signature
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(cronSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const expectedSig = await crypto.subtle.sign("HMAC", key, encoder.encode(timestamp));
+    const expectedSigBase64 = btoa(String.fromCharCode(...new Uint8Array(expectedSig)));
+    
+    if (signature === expectedSigBase64) {
+      return { valid: true };
+    }
+    
+    return { valid: false, error: "Invalid signature" };
+  }
+  
+  return { valid: false, error: "Unauthorized - missing authentication" };
+}
+
+// Generate cryptographically secure random token and store in database
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function generateSecureDisableToken(
+  supabase: SupabaseClient<any, any, any>,
+  userId: string,
+  tokenType: string = 'all'
+): Promise<string> {
+  // Generate 32 cryptographically secure random bytes
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  
+  // Convert to URL-safe base64
+  const token = btoa(String.fromCharCode(...randomBytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  
+  // Store token in database with 30-day expiration
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  
+  const { error } = await supabase.from('unsubscribe_tokens').insert({
+    user_id: userId,
+    token: token,
+    token_type: tokenType,
+    expires_at: expiresAt.toISOString(),
+  });
+  
+  if (error) {
+    console.error(`Failed to store unsubscribe token for user ${userId}:`, error);
+    throw new Error('Failed to generate unsubscribe token');
+  }
+  
+  return token;
 }
 
 serve(async (req) => {
@@ -41,9 +131,8 @@ serve(async (req) => {
   const startTime = Date.now();
 
   try {
-    // SECURITY: Validate X-CRON-SECRET header for cron-triggered execution
+    // SECURITY: Validate authentication
     const cronSecret = Deno.env.get("CRON_SECRET");
-    const providedSecret = req.headers.get("x-cron-secret");
     
     if (!cronSecret) {
       console.error("CRITICAL: CRON_SECRET not configured");
@@ -54,12 +143,14 @@ serve(async (req) => {
       );
     }
     
-    if (!providedSecret || providedSecret !== cronSecret) {
-      console.error("Unauthorized: Invalid or missing X-CRON-SECRET header");
-      return errorResponse("Unauthorized", 401, "Valid X-CRON-SECRET header required");
+    const authResult = await validateCronRequest(req, cronSecret);
+    if (!authResult.valid) {
+      console.error("Unauthorized:", authResult.error);
+      return errorResponse("Unauthorized", 401, authResult.error);
     }
     
-    console.log("CRON secret validated successfully");
+    console.log("Authentication validated successfully");
+    
     // Validate Resend API key
     const resendApiKey = Deno.env.get("resend");
     if (!resendApiKey) {
@@ -163,10 +254,6 @@ serve(async (req) => {
 
         console.log(`User ${setting.user_id}: local time ${userTimeStr} (${userTimezone})`);
 
-        // Generate secure disable token
-        const disableToken = await generateDisableToken(setting.user_id, serviceRoleKey);
-        const disableAllUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=all`;
-
         // Check bedtime reminder
         if (setting.bedtime_enabled && setting.bedtime_time) {
           const [bedHours, bedMinutes] = setting.bedtime_time.split(":").map(Number);
@@ -176,7 +263,12 @@ serve(async (req) => {
           if (userTimeStr === bedTimeStr) {
             console.log(`Sending bedtime reminder to ${userEmail}`);
             
-            const disableBedtimeUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=bedtime`;
+            // Generate secure tokens for unsubscribe links
+            const disableAllToken = await generateSecureDisableToken(supabase, setting.user_id, 'all');
+            const disableBedtimeToken = await generateSecureDisableToken(supabase, setting.user_id, 'bedtime');
+            
+            const disableAllUrl = `${functionsUrl}/disable-reminders?token=${disableAllToken}`;
+            const disableBedtimeUrl = `${functionsUrl}/disable-reminders?token=${disableBedtimeToken}`;
             
             const { error: sendError } = await resend.emails.send({
               from: "Paper & Ink <reminders@resend.dev>",
@@ -219,7 +311,12 @@ serve(async (req) => {
           if (userTimeStr === storyTimeStr) {
             console.log(`Sending story reminder to ${userEmail}`);
             
-            const disableStoryUrl = `${functionsUrl}/disable-reminders?user=${setting.user_id}&token=${disableToken}&type=story`;
+            // Generate secure tokens for unsubscribe links
+            const disableAllToken = await generateSecureDisableToken(supabase, setting.user_id, 'all');
+            const disableStoryToken = await generateSecureDisableToken(supabase, setting.user_id, 'story');
+            
+            const disableAllUrl = `${functionsUrl}/disable-reminders?token=${disableAllToken}`;
+            const disableStoryUrl = `${functionsUrl}/disable-reminders?token=${disableStoryToken}`;
             
             const { error: sendError } = await resend.emails.send({
               from: "Paper & Ink <reminders@resend.dev>",
