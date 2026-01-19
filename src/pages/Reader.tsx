@@ -471,21 +471,25 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
     }
   };
 
-  // Resume from bookmark or URL parameter
+  // Resume from bookmark or URL parameter - only run ONCE on initial mount
+  const hasInitializedPage = useRef(false);
   useEffect(() => {
-    if (!storyId || !story) return;
+    if (!storyId || !story || pages.length === 0) return;
+    // Only run once on initial load
+    if (hasInitializedPage.current) return;
+    hasInitializedPage.current = true;
     
     const urlPage = searchParams.get('page');
     if (urlPage) {
       const pageIndex = Number(urlPage) - 1;
-      if (!Number.isNaN(pageIndex) && pageIndex >= 0) {
+      if (!Number.isNaN(pageIndex) && pageIndex >= 0 && pageIndex < pages.length) {
         setCurrentPageIndex(pageIndex);
         return;
       }
     }
 
     // Resume from bookmark if available and no URL page specified
-    if (hasBookmark && savedPage > 0 && pages.length > 0) {
+    if (hasBookmark && savedPage > 0) {
       const bookmarkIndex = savedPage - 1; // Convert 1-based to 0-based
       // Only resume if bookmark is within available pages
       if (bookmarkIndex < pages.length) {
@@ -623,32 +627,6 @@ const Reader = forwardRef<HTMLDivElement, Record<string, never>>(function Reader
                   <p className={`font-serif text-center ${activeTheme.muted}`}>
                     It takes a few seconds to generate your story, please hold on
                   </p>
-                </div>
-              </motion.div>
-            ) : (generating || generationError) && currentPageIndex === pages.length - 1 ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className={`text-center py-20 ${activeTheme.muted}`}
-              >
-                <div className="flex flex-col items-center gap-4">
-                  <motion.div
-                    className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center"
-                    animate={{
-                      scale: [1, 1.1, 1],
-                      opacity: [0.5, 1, 0.5],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <MoonStar className="w-8 h-8 text-primary" />
-                  </motion.div>
-                  <p className="font-serif">Writing...</p>
                 </div>
               </motion.div>
             ) : currentPage ? (
