@@ -12,39 +12,23 @@ const htmlResponse = (message: string, type: "success" | "error", status = 200) 
     headers: { ...corsHeaders, "Content-Type": "text/html" },
   });
 
-// Simple HMAC-like token generation using Web Crypto API
-async function generateToken(userId: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(userId + Date.now().toString().slice(0, -5)); // 10-second window
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const signature = await crypto.subtle.sign("HMAC", key, data);
-  return btoa(String.fromCharCode(...new Uint8Array(signature))).slice(0, 32);
-}
+// Track request attempts for rate limiting
+const requestLog: Map<string, number[]> = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const RATE_LIMIT_MAX = 10; // Max 10 attempts per minute per IP
 
-async function verifyToken(userId: string, token: string, secret: string): Promise<boolean> {
-  // Check current and previous time windows
-  for (let i = 0; i < 6; i++) { // Allow 1 hour window for email clicks
-    const encoder = new TextEncoder();
-    const timestamp = (Date.now() - i * 10000).toString().slice(0, -5);
-    const data = encoder.encode(userId + timestamp);
-    const key = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(secret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    const signature = await crypto.subtle.sign("HMAC", key, data);
-    const expectedToken = btoa(String.fromCharCode(...new Uint8Array(signature))).slice(0, 32);
-    if (token === expectedToken) return true;
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = requestLog.get(ip) || [];
+  const recentTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW);
+  
+  if (recentTimestamps.length >= RATE_LIMIT_MAX) {
+    return false;
   }
-  return false;
+  
+  recentTimestamps.push(now);
+  requestLog.set(ip, recentTimestamps);
+  return true;
 }
 
 serve(async (req) => {
@@ -53,30 +37,70 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const userId = url.searchParams.get("user");
-    const token = url.searchParams.get("token");
-    const type = url.searchParams.get("type"); // "all", "bedtime", or "story"
-
-    if (!userId || !token) {
-      return htmlResponse("Invalid link", "error", 400);
+    // Rate limiting
+    const clientIP = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    if (!checkRateLimit(clientIP)) {
+      return htmlResponse(
+        "Too many requests. Please try again later.",
+        "error",
+        429,
+      );
     }
 
-    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const isValid = await verifyToken(userId, token, secret);
+    const url = new URL(req.url);
+    const token = url.searchParams.get("token");
 
-    if (!isValid) {
-      return htmlResponse(
-        "This link has expired. Please use the settings in the app to manage reminders.",
-        "error",
-        401,
-      );
+    // Validate token parameter
+    if (!token) {
+      return htmlResponse("Invalid link - missing token", "error", 400);
+    }
+
+    // Token format validation (URL-safe base64, ~43 chars)
+    if (!/^[A-Za-z0-9_-]{40,50}$/.test(token)) {
+      return htmlResponse("Invalid link format", "error", 400);
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Look up token in database
+    const { data: tokenData, error: tokenError } = await supabase
+      .from("unsubscribe_tokens")
+      .select("user_id, token_type, expires_at, used_at")
+      .eq("token", token)
+      .single();
+
+    if (tokenError || !tokenData) {
+      console.error("Token lookup failed:", tokenError);
+      return htmlResponse(
+        "This link is invalid or has already been used. Please use the settings in the app to manage reminders.",
+        "error",
+        404,
+      );
+    }
+
+    // Check if token is expired
+    if (new Date(tokenData.expires_at) < new Date()) {
+      return htmlResponse(
+        "This link has expired. Please use the settings in the app to manage reminders.",
+        "error",
+        410,
+      );
+    }
+
+    // Check if token was already used
+    if (tokenData.used_at) {
+      return htmlResponse(
+        "This link has already been used. Please use the settings in the app to manage reminders.",
+        "error",
+        410,
+      );
+    }
+
+    const userId = tokenData.user_id;
+    const type = tokenData.token_type;
 
     // Build update based on type
     const updateData: Record<string, boolean> = {};
@@ -91,15 +115,22 @@ serve(async (req) => {
       updateData.story_enabled = false;
     }
 
-    const { error } = await supabase
+    // Update reminder settings
+    const { error: updateError } = await supabase
       .from("reminder_settings")
       .update(updateData)
       .eq("user_id", userId);
 
-    if (error) {
-      console.error("Failed to update settings:", error);
+    if (updateError) {
+      console.error("Failed to update settings:", updateError);
       return htmlResponse("Failed to update settings. Please try again.", "error", 500);
     }
+
+    // Mark token as used
+    await supabase
+      .from("unsubscribe_tokens")
+      .update({ used_at: new Date().toISOString() })
+      .eq("token", token);
 
     const message = type === "all" || !type 
       ? "All email reminders have been disabled." 
